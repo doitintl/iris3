@@ -9,6 +9,3 @@ Iris is extensible through plugins and new Google Cloud products may be supporte
  - Google CloudSQL
  - Google BigQuery
  - Google Bigtable
- - Google App Engine
- 
- 
