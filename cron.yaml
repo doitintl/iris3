@@ -1,0 +1,5 @@
+cron:
+- description: "check cluster load"
+  url: //tasks/schedule
+  schedule: every 15 minutes
+  target: iris
