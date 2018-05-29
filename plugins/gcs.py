@@ -5,7 +5,7 @@ from googleapiclient import discovery
 
 from pluginbase import Plugin
 
-SCOPES = ['https://www.googleapis.com/auth/devstorage.read_write']
+SCOPES = ['https://www.googleapis.com/auth/devstorage.full_control']
 
 CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
@@ -29,7 +29,6 @@ class Gcs(Plugin):
                         "otag": bucket['name'].replace(".", "_")
                     }
                 }
-                print(gcs_body)
                 self.storage.buckets().patch(
                     bucket=bucket['name'], body=gcs_body).execute()
             if 'nextPageToken' in response:

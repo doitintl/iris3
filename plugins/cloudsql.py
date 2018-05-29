@@ -10,7 +10,7 @@ SCOPES = ['https://www.googleapis.com/auth/sqlservice.admin']
 CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
 
-class BigTable(Plugin):
+class CloudSql(Plugin):
 
     def register_signals(self):
         self.sqladmin = discovery.build(
