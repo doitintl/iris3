@@ -25,7 +25,8 @@ Iris is extensible through plugins and new Google Cloud products may be supporte
 
 
 #### Authentication
-In order to allow Iris to manage instances on your behalf in any project under your organization, you will need to create a new entry in your Organization IAM and assign Iris’s service account with a role of XXXX
+In order to allow Iris to manage instances on your behalf in any project under your organization, you will need to create a new entry in your Organization IAM and assign Iris’s service account.
+
 First, navigate to https://console.cloud.google.com, then IAM from the menu and then select the name of your project that you deployed Iris in, from the dropdown at the top of the page:
 
 ![](iam.png)
@@ -43,9 +44,9 @@ For local development run:
 
  `dev_appserver.py --log_level=debug app.yaml`
  
- Iris is easly extendable to support tagging of other GCP service.
- Yopu will nee to create a python file in the plugin directory with
- register_signals function
+ Iris is easly extendable to support tagging of other GCP services.
+ You will need to create a Python file in the /plugin directory with
+ `register_signals` function as following:
  
      def register_signals(self):
  
@@ -59,7 +60,5 @@ For local development run:
         logging.debug("BigQuery class created and registering signals")
  
  
- You will need to create also a `def do_tag(self, project_id):` function that will do the actuale work.
- 
- The plugin manager will automatically load and run any code in the plugin directory which have this interface.
+You will need to create also a `def do_tag(self, project_id):` function that will do the actual work. The plugin manager will automatically load and run any code in the plugin directory which have this interface.
  
