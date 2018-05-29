@@ -1,6 +1,8 @@
 # Iris
 [![License](https://img.shields.io/github/license/doitintl/iris.svg)](LICENSE) [![GitHub stars](https://img.shields.io/github/stars/doitintl/iris.svg?style=social&label=Stars&style=for-the-badge)](https://github.com/doitintl/iris)
 
+[Blog Post](https://blog.doit-intl.com/auto-tagging-google-cloud-resources-6647cc7477c5)
+
 In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. Iris was mostly the handmaiden to Hera.
 
 Iris helps to automatically assign labels to Google Cloud resources for better manageability and billing reporting. Each resource in Google Cloud will get an automatically generated label in a form of [otag:name], for example if you have a Google Compute Engine instance named `webserver`, Iris will automatically label this instance with [otag:webserver].
