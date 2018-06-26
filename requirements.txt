@@ -2,4 +2,5 @@ Flask==0.12.2
 google-api-python-client
 google-auth
 google-auth-httplib2
+oauth2client
 six
