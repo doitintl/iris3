@@ -1,5 +1,5 @@
 import logging
-
+from googleapiclient import errors
 from google.auth import app_engine
 from googleapiclient import discovery
 
@@ -31,8 +31,11 @@ class Gcs(Plugin):
                         gcp.get_loc_tag(): bucket['location'].lower(),
                     }
                 }
-                self.storage.buckets().patch(
-                    bucket=bucket['name'], body=gcs_body).execute()
+                try:
+                    self.storage.buckets().patch(
+                        bucket=bucket['name'], body=gcs_body).execute()
+                except errors.HttpError as e:
+                    logging.error(e)
 
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']

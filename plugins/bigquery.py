@@ -3,6 +3,7 @@ import logging
 
 from google.auth import app_engine
 from googleapiclient import discovery
+from googleapiclient import errors
 
 from pluginbase import Plugin
 from utils import gcp
@@ -41,11 +42,14 @@ class BigQuery(Plugin):
                                                                          "_"),
                     }
                 }
-                self.bigquery.datasets().patch(
-                    projectId=project_id,
-                    body=ds_body,
-                    datasetId=dataset['datasetReference'][
-                        'datasetId']).execute()
+                try:
+                    self.bigquery.datasets().patch(
+                        projectId=project_id,
+                        body=ds_body,
+                        datasetId=dataset['datasetReference'][
+                            'datasetId']).execute()
+                except errors.HttpError as e:
+                    logging.error(e)
 
                 if 'nextPageToken' in response:
                     page_token = response['nextPageToken']
@@ -67,13 +71,16 @@ class BigQuery(Plugin):
                                 gcp.get_loc_tag(): location,
                             }
                         }
-                        self.bigquery.tables().patch(
-                            projectId=project_id,
-                            body=table_body,
-                            datasetId=dataset['datasetReference'][
-                                'datasetId'],
-                            tableId=table['tableReference'][
-                                'tableId']).execute()
+                        try:
+                            self.bigquery.tables().patch(
+                                projectId=project_id,
+                                body=table_body,
+                                datasetId=dataset['datasetReference'][
+                                    'datasetId'],
+                                tableId=table['tableReference'][
+                                    'tableId']).execute()
+                        except errors.HttpError as e:
+                            logging.error(e)
                         if 'nextPageToken' in tresponse:
                             table_page_token = tresponse['nextPageToken']
                         else:
