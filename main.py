@@ -53,15 +53,14 @@ def schedule():
     Checks if it's time to run a schedule.
     Returns:
     """
+
     logging.debug("From Cron start /tasks/schedule")
     projects = gcp.get_all_projetcs()
     for project in sorted(projects, key=lambda x: x['name']):
         project_id = str(project['projectId'])
         logging.debug("Creating deferred task for   %s", project_id)
         for plugin in Plugin.plugins:
-
             store(plugin.__class__.__name__, plugin)
-
             task = taskqueue.add(queue_name='iris-tasks',
                                  url="/tasks/do_tag",
                                  method='GET',
@@ -75,6 +74,7 @@ def schedule():
 
 @app.route('/tasks/do_tag', methods=['GET'])
 def do_tag():
+
     f = retrieve(request.args['plugin'])
     project_id = request.args['project_id']
     f.do_tag(project_id)
