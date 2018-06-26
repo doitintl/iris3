@@ -33,7 +33,7 @@ class BigQuery(Plugin):
             response = self.bigquery.datasets().list(
                 projectId=project_id, pageToken=page_token).execute()
             for dataset in response['datasets']:
-                location = dataset['location']
+                location = dataset['location'].lower()
                 ds_body = {
                     "labels": {
                         gcp.get_loc_tag(): location,
@@ -46,6 +46,7 @@ class BigQuery(Plugin):
                     body=ds_body,
                     datasetId=dataset['datasetReference'][
                         'datasetId']).execute()
+
                 if 'nextPageToken' in response:
                     page_token = response['nextPageToken']
                 else:

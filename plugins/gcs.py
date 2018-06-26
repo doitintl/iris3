@@ -28,11 +28,12 @@ class Gcs(Plugin):
                 gcs_body = {
                     "labels": {
                         gcp.get_name_tag(): bucket['name'].replace(".", "_"),
-                        gcp.get_loc_tag(): bucket['location']
+                        gcp.get_loc_tag(): bucket['location'].lower(),
                     }
                 }
                 self.storage.buckets().patch(
                     bucket=bucket['name'], body=gcs_body).execute()
+
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']
             else:
