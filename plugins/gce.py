@@ -4,6 +4,7 @@ from google.auth import app_engine
 from googleapiclient import discovery
 
 from pluginbase import Plugin
+from utils import gcp
 
 SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 
@@ -62,7 +63,7 @@ class Gce(Plugin):
             for instance in instances:
                 labels = {
                     "labels": {
-                        'otag': instance['name'].replace(".", "_")
+                        gcp.get_name_tag(): instance['name'].replace(".", "_")
                     },
                     'labelFingerprint': instance.get('labelFingerprint', '')
                 }
