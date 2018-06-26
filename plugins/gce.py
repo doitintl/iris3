@@ -18,6 +18,7 @@ class Gce(Plugin):
             'compute', 'v1', credentials=CREDENTIALS)
         logging.debug("GCE class created and registering signals")
 
+
     def get_zones(self, projectid):
         """
         Get all available zones.
@@ -33,6 +34,7 @@ class Gce(Plugin):
         for region in response['items']:
             zones.append(region['description'])
         return zones
+
 
     def list_instances(self, project_id, zone):
         """
@@ -57,16 +59,24 @@ class Gce(Plugin):
                 more_results = False
         return instances
 
+
     def do_tag(self, project_id):
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
+                org_labels = instance['labels']
                 labels = {
-                    "labels": {
-                        gcp.get_name_tag(): instance['name'].replace(".", "_")
-                    },
                     'labelFingerprint': instance.get('labelFingerprint', '')
                 }
+                labels['labels'] = {}
+                labels['labels'][gcp.get_name_tag()] = instance[
+                    'name'].replace(".",
+                                    "_")
+                labels['labels'][gcp.get_zone_tag()] = zone
+                labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
+                    zone)
+                for k, v in org_labels.items():
+                    labels['labels'][k] = v
                 request = self.compute.instances().setLabels(
                     project=project_id,
                     zone=zone,

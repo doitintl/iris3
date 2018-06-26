@@ -33,11 +33,12 @@ class BigQuery(Plugin):
             response = self.bigquery.datasets().list(
                 projectId=project_id, pageToken=page_token).execute()
             for dataset in response['datasets']:
+                location = dataset['location']
                 ds_body = {
                     "labels": {
-                        gcp.get_name_tag():
-                        dataset['datasetReference']['datasetId'].replace(".",
-                                                                         "_")
+                        gcp.get_loc_tag(): location,
+                        gcp.get_name_tag(): dataset['datasetReference']['datasetId'].replace(".",
+                                                                         "_"),
                     }
                 }
                 self.bigquery.datasets().patch(
@@ -61,7 +62,8 @@ class BigQuery(Plugin):
                             "labels": {
                                 gcp.get_name_tag():
                                 table['tableReference']['tableId'].replace(
-                                    ".", "_")
+                                    ".", "_"),
+                                gcp.get_loc_tag(): location,
                             }
                         }
                         self.bigquery.tables().patch(

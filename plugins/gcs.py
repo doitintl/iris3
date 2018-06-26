@@ -27,7 +27,8 @@ class Gcs(Plugin):
             for bucket in response['items']:
                 gcs_body = {
                     "labels": {
-                        gcp.get_name_tag(): bucket['name'].replace(".", "_")
+                        gcp.get_name_tag(): bucket['name'].replace(".", "_"),
+                        gcp.get_loc_tag(): bucket['location']
                     }
                 }
                 self.storage.buckets().patch(
