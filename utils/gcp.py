@@ -1,9 +1,9 @@
 import logging
 
 from googleapiclient import discovery
-from oauth2client.client import GoogleCredentials
+from google.auth import app_engine
 
-credentials = GoogleCredentials.get_application_default()
+credentials = app_engine.Credentials()
 
 service = discovery.build(
     'cloudresourcemanager', 'v1', credentials=credentials)
