@@ -3,6 +3,7 @@ import logging
 from google.auth import app_engine
 from googleapiclient import discovery
 
+from utils import gcp
 from pluginbase import Plugin
 
 SCOPES = ['https://www.googleapis.com/auth/devstorage.full_control']
@@ -26,7 +27,7 @@ class Gcs(Plugin):
             for bucket in response['items']:
                 gcs_body = {
                     "labels": {
-                        "otag": bucket['name'].replace(".", "_")
+                        gcp.get_name_tag(): bucket['name'].replace(".", "_")
                     }
                 }
                 self.storage.buckets().patch(

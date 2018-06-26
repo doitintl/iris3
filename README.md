@@ -5,7 +5,7 @@
 
 In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. Iris was mostly the handmaiden to Hera.
 
-Iris helps to automatically assign labels to Google Cloud resources for better manageability and billing reporting. Each resource in Google Cloud will get an automatically generated label in a form of [otag:name], for example if you have a Google Compute Engine instance named `webserver`, Iris will automatically label this instance with [otag:webserver].
+Iris helps to automatically assign labels to Google Cloud resources for better manageability and billing reporting. Each resource in Google Cloud will get an automatically generated label in a form of [iris_name:name], for example if you have a Google Compute Engine instance named `webserver`, Iris will automatically label this instance with [iris_name:webserver].
 
 **Supported Google Cloud Products**
 

@@ -19,3 +19,7 @@ def get_all_projetcs():
         request = service.projects().list_next(
             previous_request=request, previous_response=response)
     return projects
+
+
+def get_name_tag():
+    return "iris_name"

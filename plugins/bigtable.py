@@ -4,6 +4,7 @@ from google.auth import app_engine
 from googleapiclient import discovery
 
 from pluginbase import Plugin
+from utils import gcp
 
 SCOPES = ['https://www.googleapis.com/auth/bigtable.admin']
 
@@ -30,10 +31,10 @@ class BigTable(Plugin):
             if 'instances' in result:
                 for inst in result['instances']:
                     if 'labels' in inst:
-                        inst['labels'].update({'otag': inst['displayName']})
+                        inst['labels'].update({gcp.get_name_tag(): inst['displayName']})
                     else:
                         inst['labels'] = {
-                            'otag': inst['displayName'].replace(".", "_")
+                            gcp.get_name_tag(): inst['displayName'].replace(".", "_")
                         }
                     self.bigtable.projects().instances(
                     ).partialUpdateInstance(

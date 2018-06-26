@@ -4,6 +4,7 @@ from google.auth import app_engine
 from googleapiclient import discovery
 
 from pluginbase import Plugin
+from utils import gcp
 
 SCOPES = ['https://www.googleapis.com/auth/sqlservice.admin']
 
@@ -29,7 +30,7 @@ class CloudSql(Plugin):
                 database_instance_body = {
                     "settings": {
                         "userLabels": {
-                            "otag":
+                            gcp.get_name_tag():
                             database_instance['name'].replace(".", "_")
                         }
                     }

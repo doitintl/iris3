@@ -5,6 +5,7 @@ from google.auth import app_engine
 from googleapiclient import discovery
 
 from pluginbase import Plugin
+from utils import gcp
 
 SCOPES = ['https://www.googleapis.com/auth/bigquery']
 
@@ -34,7 +35,7 @@ class BigQuery(Plugin):
             for dataset in response['datasets']:
                 ds_body = {
                     "labels": {
-                        'otag':
+                        gcp.get_name_tag():
                         dataset['datasetReference']['datasetId'].replace(".",
                                                                          "_")
                     }
@@ -58,7 +59,7 @@ class BigQuery(Plugin):
                     for table in tresponse['tables']:
                         table_body = {
                             "labels": {
-                                'otag':
+                                gcp.get_name_tag():
                                 table['tableReference']['tableId'].replace(
                                     ".", "_")
                             }
