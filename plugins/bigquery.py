@@ -2,8 +2,7 @@
 import logging
 
 from google.auth import app_engine
-from googleapiclient import discovery
-from googleapiclient import errors
+from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
 from utils import gcp
@@ -23,6 +22,7 @@ class BigQuery(Plugin):
             'bigquery', 'v2', credentials=CREDENTIALS)
         logging.debug("BigQuery class created and registering signals")
 
+
     def do_tag(self, project_id):
         """
         tag tables and data sets
@@ -38,8 +38,9 @@ class BigQuery(Plugin):
                 ds_body = {
                     "labels": {
                         gcp.get_loc_tag(): location,
-                        gcp.get_name_tag(): dataset['datasetReference']['datasetId'].replace(".",
-                                                                         "_"),
+                        gcp.get_name_tag(): dataset['datasetReference'][
+                            'datasetId'].replace(".",
+                                                 "_"),
                     }
                 }
                 try:
@@ -66,8 +67,8 @@ class BigQuery(Plugin):
                         table_body = {
                             "labels": {
                                 gcp.get_name_tag():
-                                table['tableReference']['tableId'].replace(
-                                    ".", "_"),
+                                    table['tableReference']['tableId'].replace(
+                                        ".", "_"),
                                 gcp.get_loc_tag(): location,
                             }
                         }
