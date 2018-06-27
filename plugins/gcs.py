@@ -18,24 +18,27 @@ class Gcs(Plugin):
             'storage', 'v1', credentials=CREDENTIALS)
         logging.debug("Storage class created and registering signals")
 
+
     def do_tag(self, project_id):
         page_token = None
         more_results = True
         while more_results:
             response = self.storage.buckets().list(
                 project=project_id, pageToken=page_token).execute()
-            for bucket in response['items']:
-                gcs_body = {
-                    "labels": {
-                        gcp.get_name_tag(): bucket['name'].replace(".", "_"),
-                        gcp.get_loc_tag(): bucket['location'].lower(),
+            if 'items' in response:
+                for bucket in response['items']:
+                    gcs_body = {
+                        "labels": {
+                            gcp.get_name_tag(): bucket['name'].replace(".",
+                                                                       "_").lower(),
+                            gcp.get_loc_tag(): bucket['location'].lower(),
+                        }
                     }
-                }
-                try:
-                    self.storage.buckets().patch(
-                        bucket=bucket['name'], body=gcs_body).execute()
-                except errors.HttpError as e:
-                    logging.error(e)
+                    try:
+                        self.storage.buckets().patch(
+                            bucket=bucket['name'], body=gcs_body).execute()
+                    except errors.HttpError as e:
+                        logging.error(e)
 
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']
