@@ -69,7 +69,10 @@ class Gce(Plugin):
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
-                org_labels = instance['labels']
+                try:
+                    org_labels = instance['labels']
+                except KeyError:
+                    continue
                 labels = {
                     'labelFingerprint': instance.get('labelFingerprint', '')
                 }
