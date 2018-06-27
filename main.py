@@ -1,11 +1,15 @@
 """Entry point for Iris."""
+import base64
+import json
 import logging
-from flask import Flask, request
-from pluginbase import Plugin
-from google.appengine.api import taskqueue, memcache
-import pkgutil
-from utils import gcp
 import pickle
+import pkgutil
+
+from flask import Flask, request
+from google.appengine.api import memcache, taskqueue
+
+from pluginbase import Plugin
+from utils import gcp, pubsub, utils
 
 app = Flask(__name__)
 plugins = []
@@ -30,6 +34,14 @@ def create_app():
     """
     Do initialization
     """
+    hostname = utils.get_host_name()
+    logging.info("Starting Iris on %s", hostname)
+    client = pubsub.get_pubsub_client()
+    pubsub.create_subscriptions(client, 'iris_preemptible_subscription',
+                                'iris_preemptible_topic')
+    pubsub.pull(client, 'iris_preemptible_subscription',
+                "https://iris-dot-{}/tag_preemptible".format(hostname))
+
     for _, module, _ in pkgutil.iter_modules(["plugins"]):
         __import__('plugins' + '.' + module)
 
@@ -47,13 +59,24 @@ def index():
     return 'this aren\'t the droids you\'re looking for', 200
 
 
+@app.route('/tag_preemptible', methods=['POST'])
+def tag_preemptible():
+    data = json.loads(base64.b64decode(request.json['message']['data']))
+    logging.info(data)
+    logging.info(data['resource']['labels']['project_id'])
+    logging.info(data['resource']['labels']['zone'])
+    logging.info(data['protoPayload']['request']['name'])
+
+    return 'ok', 200
+
+
 @app.route('/tasks/schedule', methods=['GET'])
 def schedule():
     """
     Checks if it's time to run a schedule.
     Returns:
     """
-
+    return 'ok', 200
     logging.debug("From Cron start /tasks/schedule")
     projects = gcp.get_all_projetcs()
     for project in sorted(projects, key=lambda x: x['name']):
@@ -74,7 +97,6 @@ def schedule():
 
 @app.route('/tasks/do_tag', methods=['GET'])
 def do_tag():
-
     f = retrieve(request.args['plugin'])
     project_id = request.args['project_id']
     f.do_tag(project_id)
