@@ -79,10 +79,10 @@ class Gce(Plugin):
                 labels['labels'] = {}
                 labels['labels'][gcp.get_name_tag()] = instance[
                     'name'].replace(".",
-                                    "_")
-                labels['labels'][gcp.get_zone_tag()] = zone
+                                    "_").lower()
+                labels['labels'][gcp.get_zone_tag()] = zone.lower()
                 labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
-                    zone)
+                    zone).lower()
                 for k, v in org_labels.items():
                     labels['labels'][k] = v
                 try:

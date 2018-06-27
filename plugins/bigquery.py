@@ -33,24 +33,25 @@ class BigQuery(Plugin):
         while more_results:
             response = self.bigquery.datasets().list(
                 projectId=project_id, pageToken=page_token).execute()
-            for dataset in response['datasets']:
-                location = dataset['location'].lower()
-                ds_body = {
-                    "labels": {
-                        gcp.get_loc_tag(): location,
-                        gcp.get_name_tag(): dataset['datasetReference'][
-                            'datasetId'].replace(".",
-                                                 "_"),
+            if 'datasets' in response:
+                for dataset in response['datasets']:
+                    location = dataset['location'].lower()
+                    ds_body = {
+                        "labels": {
+                            gcp.get_loc_tag(): location,
+                            gcp.get_name_tag(): dataset['datasetReference'][
+                                'datasetId'].replace(".",
+                                                     "_").lower(),
+                        }
                     }
-                }
-                try:
-                    self.bigquery.datasets().patch(
-                        projectId=project_id,
-                        body=ds_body,
-                        datasetId=dataset['datasetReference'][
-                            'datasetId']).execute()
-                except errors.HttpError as e:
-                    logging.error(e)
+                    try:
+                        self.bigquery.datasets().patch(
+                            projectId=project_id,
+                            body=ds_body,
+                            datasetId=dataset['datasetReference'][
+                                'datasetId']).execute()
+                    except errors.HttpError as e:
+                        logging.error(e)
 
                 if 'nextPageToken' in response:
                     page_token = response['nextPageToken']
@@ -63,26 +64,27 @@ class BigQuery(Plugin):
                         projectId=project_id,
                         datasetId=dataset['datasetReference']['datasetId'],
                         pageToken=table_page_token).execute()
-                    for table in tresponse['tables']:
-                        table_body = {
-                            "labels": {
-                                gcp.get_name_tag():
-                                    table['tableReference']['tableId'].replace(
-                                        ".", "_"),
-                                gcp.get_loc_tag(): location,
+                    if 'tables' in tresponse:
+                        for table in tresponse['tables']:
+                            table_body = {
+                                "labels": {
+                                    gcp.get_name_tag():
+                                        table['tableReference']['tableId'].replace(
+                                            ".", "_").lower(),
+                                    gcp.get_loc_tag(): location,
+                                }
                             }
-                        }
-                        try:
-                            self.bigquery.tables().patch(
-                                projectId=project_id,
-                                body=table_body,
-                                datasetId=dataset['datasetReference'][
-                                    'datasetId'],
-                                tableId=table['tableReference'][
-                                    'tableId']).execute()
-                        except errors.HttpError as e:
-                            logging.error(e)
-                        if 'nextPageToken' in tresponse:
-                            table_page_token = tresponse['nextPageToken']
-                        else:
-                            table_more_results = False
+                            try:
+                                self.bigquery.tables().patch(
+                                    projectId=project_id,
+                                    body=table_body,
+                                    datasetId=dataset['datasetReference'][
+                                        'datasetId'],
+                                    tableId=table['tableReference'][
+                                        'tableId']).execute()
+                            except errors.HttpError as e:
+                                logging.error(e)
+                            if 'nextPageToken' in tresponse:
+                                table_page_token = tresponse['nextPageToken']
+                            else:
+                                table_more_results = False
