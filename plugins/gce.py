@@ -1,7 +1,7 @@
 import logging
 
 from google.auth import app_engine
-from googleapiclient import discovery
+from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
 from utils import gcp
@@ -49,14 +49,19 @@ class Gce(Plugin):
         page_token = None
         more_results = True
         while more_results:
-            result = self.compute.instances().list(
-                project=project_id, zone=zone, pageToken=page_token).execute()
-            if 'items' in result:
-                instances = instances + result['items']
-            if 'nextPageToken' in result:
-                page_token = result['nextPageToken']
-            else:
-                more_results = False
+            try:
+                result = self.compute.instances().list(
+                    project=project_id, zone=zone,
+                    pageToken=page_token).execute()
+                if 'items' in result:
+                    instances = instances + result['items']
+                if 'nextPageToken' in result:
+                    page_token = result['nextPageToken']
+                else:
+                    more_results = False
+            except errors.HttpError as e:
+                logging.error(e)
+
         return instances
 
 
@@ -77,10 +82,13 @@ class Gce(Plugin):
                     zone)
                 for k, v in org_labels.items():
                     labels['labels'][k] = v
-                request = self.compute.instances().setLabels(
-                    project=project_id,
-                    zone=zone,
-                    instance=instance['name'],
-                    body=labels)
-                request.execute()
+                try:
+                    request = self.compute.instances().setLabels(
+                        project=project_id,
+                        zone=zone,
+                        instance=instance['name'],
+                        body=labels)
+                    request.execute()
+                except errors.HttpError as e:
+                    logging.error(e)
         return 'ok', 200

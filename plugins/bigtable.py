@@ -1,7 +1,7 @@
 import logging
 
 from google.auth import app_engine
-from googleapiclient import discovery
+from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
 from utils import gcp
@@ -21,6 +21,7 @@ class BigTable(Plugin):
             'bigtableadmin', 'v2', credentials=CREDENTIALS)
         logging.debug("BigTable class created and registering signals")
 
+
     def do_tag(self, project_id):
         page_token = None
         more_results = True
@@ -31,15 +32,20 @@ class BigTable(Plugin):
             if 'instances' in result:
                 for inst in result['instances']:
                     if 'labels' in inst:
-                        inst['labels'].update({gcp.get_name_tag(): inst['displayName']})
+                        inst['labels'].update(
+                            {gcp.get_name_tag(): inst['displayName']})
                     else:
                         inst['labels'] = {
-                            gcp.get_name_tag(): inst['displayName'].replace(".", "_")
+                            gcp.get_name_tag(): inst['displayName'].replace(
+                                ".", "_")
                         }
-                    self.bigtable.projects().instances(
-                    ).partialUpdateInstance(
-                        name=inst['name'], body=inst,
-                        updateMask='labels').execute()
+                    try:
+                        self.bigtable.projects().instances(
+                        ).partialUpdateInstance(
+                            name=inst['name'], body=inst,
+                            updateMask='labels').execute()
+                    except errors.HttpError as e:
+                        logging.error(e)
             if 'nextPageToken' in result:
                 page_token = result['nextPageToken']
             else:

@@ -1,7 +1,7 @@
 import logging
 
 from google.auth import app_engine
-from googleapiclient import discovery
+from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
 from utils import gcp
@@ -18,6 +18,7 @@ class CloudSql(Plugin):
             'sqladmin', 'v1beta4', credentials=CREDENTIALS)
         logging.debug("Cloud SQL class created and registering signals")
 
+
     def do_tag(self, project_id):
         page_token = None
         more_results = True
@@ -31,16 +32,20 @@ class CloudSql(Plugin):
                     "settings": {
                         "userLabels": {
                             gcp.get_name_tag():
-                            database_instance['name'].replace(".", "_"),
+                                database_instance['name'].replace(".", "_"),
                             gcp.get_zone_tag(): database_instance["gceZones"],
-                            gcp.get_region_tag(): gcp.region_from_zone(database_instance["gceZones"]),
+                            gcp.get_region_tag(): gcp.region_from_zone(
+                                database_instance["gceZones"]),
                         }
                     }
                 }
-                self.sqladmin.instances().patch(
-                    project=project_id,
-                    instance=database_instance['name'],
-                    body=database_instance_body).execute()
+                try:
+                    self.sqladmin.instances().patch(
+                        project=project_id,
+                        instance=database_instance['name'],
+                        body=database_instance_body).execute()
+                except errors.HttpError as e:
+                    logging.error(e)
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']
             else:
