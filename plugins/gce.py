@@ -31,8 +31,8 @@ class Gce(Plugin):
 
         response = request.execute()
         zones = []
-        for region in response['items']:
-            zones.append(region['description'])
+        for zone in response['items']:
+            zones.append(zone['description'])
         return zones
 
 
@@ -69,23 +69,23 @@ class Gce(Plugin):
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
+                org_labels = {}
                 try:
                     org_labels = instance['labels']
                 except KeyError:
-                    continue
+                    pass
                 labels = {
                     'labelFingerprint': instance.get('labelFingerprint', '')
                 }
                 labels['labels'] = {}
                 labels['labels'][gcp.get_name_tag()] = instance[
-                    'name'].replace(".",
-                                    "_").lower()
+                    'name'].replace(".", "_").lower()
                 labels['labels'][gcp.get_zone_tag()] = zone.lower()
                 labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
                     zone).lower()
                 for k, v in org_labels.items():
                     labels['labels'][k] = v
-                try:
+\                try:
                     request = self.compute.instances().setLabels(
                         project=project_id,
                         zone=zone,
