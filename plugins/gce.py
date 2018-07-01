@@ -85,7 +85,7 @@ class Gce(Plugin):
                     zone).lower()
                 for k, v in org_labels.items():
                     labels['labels'][k] = v
-\                try:
+                try:
                     request = self.compute.instances().setLabels(
                         project=project_id,
                         zone=zone,
