@@ -19,5 +19,10 @@ gcloud config set project $PROJECTID
 if [ `gcloud services list --filter cloudresourcemanager.googleapis.com | wc -l` -eq 0 ]; then
   gcloud services enable cloudresourcemanager.googleapis.com
 fi
-
+ORGID=` gcloud organizations list      |awk '{print $2}'`
+# create a sink at org level
+gcloud logging sinks create iris_preemptible  \
+pubsub.googleapis.com/projects/$PROJECTID/topics/iris_preemptible --include-children \
+--organization=$ORGID --log-filter="resource.type="gce_instance"
+protoPayload.methodName="v1.compute.instances.insert""
 gcloud app deploy -q app.yaml cron.yaml queue.yaml

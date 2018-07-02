@@ -65,33 +65,60 @@ class Gce(Plugin):
         return instances
 
 
+    def get_instance(self, project_id, zone, name):
+        """
+       get an instance
+        Args:
+            zone: zone
+            project_id: project id
+            name: instance name
+        Returns:
+        """
+
+        try:
+            result = self.compute.instances().get(
+                project=project_id, zone=zone,
+                instance=name).execute()
+        except errors.HttpError as e:
+            logging.error(e)
+            return None
+        return result
+
+
+
     def do_tag(self, project_id):
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
-                org_labels = {}
-                try:
-                    org_labels = instance['labels']
-                except KeyError:
-                    pass
-                labels = {
-                    'labelFingerprint': instance.get('labelFingerprint', '')
-                }
-                labels['labels'] = {}
-                labels['labels'][gcp.get_name_tag()] = instance[
-                    'name'].replace(".", "_").lower()
-                labels['labels'][gcp.get_zone_tag()] = zone.lower()
-                labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
-                    zone).lower()
-                for k, v in org_labels.items():
-                    labels['labels'][k] = v
-                try:
-                    request = self.compute.instances().setLabels(
-                        project=project_id,
-                        zone=zone,
-                        instance=instance['name'],
-                        body=labels)
-                    request.execute()
-                except errors.HttpError as e:
-                    logging.error(e)
+                self._do_tag(project_id,instance,zone)
+        return 'ok', 200
+
+
+    def tag_one(self, project_id, zone, instance):
+        try:
+            org_labels = {}
+            org_labels = instance['labels']
+        except KeyError:
+            pass
+        labels = {
+            'labelFingerprint': instance.get('labelFingerprint', '')
+        }
+        labels['labels'] = {}
+        labels['labels'][gcp.get_name_tag()] = instance[
+            'name'].replace(".",
+                            "_").lower()
+        labels['labels'][gcp.get_zone_tag()] = zone.lower()
+        labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
+            zone).lower()
+        for k, v in org_labels.items():
+            labels['labels'][k] = v
+        try:
+            request = self.compute.instances().setLabels(
+                project=project_id,
+                zone=zone,
+                instance=instance['name'],
+                body=labels)
+            request.execute()
+        except errors.HttpError as e:
+            logging.error(e)
         return 'ok', 200
