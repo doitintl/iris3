@@ -65,6 +65,27 @@ class Gce(Plugin):
         return instances
 
 
+    def get_instance(self, project_id, zone, name):
+        """
+       get an instance
+        Args:
+            zone: zone
+            project_id: project id
+            name: instance name
+        Returns:
+        """
+
+        try:
+            result = self.compute.instances().get(
+                project=project_id, zone=zone,
+                instance=name).execute()
+        except errors.HttpError as e:
+            logging.error(e)
+            return None
+        return result
+
+
+
     def do_tag(self, project_id):
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
@@ -73,8 +94,9 @@ class Gce(Plugin):
         return 'ok', 200
 
 
-    def _do_tag(self, project_id, instance, zone):
+    def tag_one(self, project_id, zone, instance):
         try:
+            org_labels = {}
             org_labels = instance['labels']
         except KeyError:
             pass

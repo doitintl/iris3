@@ -9,6 +9,7 @@ from flask import Flask, request
 from google.appengine.api import memcache, taskqueue
 
 from pluginbase import Plugin
+from plugins import gce
 from utils import gcp, pubsub, utils
 
 app = Flask(__name__)
@@ -37,9 +38,10 @@ def create_app():
     hostname = utils.get_host_name()
     logging.info("Starting Iris on %s", hostname)
     client = pubsub.get_pubsub_client()
-    pubsub.create_subscriptions(client, 'iris_preemptible_subscription',
-                                'iris_preemptible_topic')
-    pubsub.pull(client, 'iris_preemptible_subscription',
+    pubsub.create_topic(client,'iris_preemptible')
+    pubsub.create_subscriptions(client, 'iris_preemptible',
+                                'iris_preemptible')
+    pubsub.pull(client, 'iris_preemptible',
                 "https://iris-dot-{}/tag_preemptible".format(hostname))
 
     for _, module, _ in pkgutil.iter_modules(["plugins"]):
@@ -61,12 +63,16 @@ def index():
 
 @app.route('/tag_preemptible', methods=['POST'])
 def tag_preemptible():
+    logging.debug("Got a new preemptible instance")
     data = json.loads(base64.b64decode(request.json['message']['data']))
-    logging.info(data)
-    logging.info(data['resource']['labels']['project_id'])
-    logging.info(data['resource']['labels']['zone'])
-    logging.info(data['protoPayload']['request']['name'])
-
+    g = gce.Gce()
+    g.register_signals()
+    res = g.get_instance(data['resource']['labels']['project_id'],
+                         data['resource']['labels']['zone'],
+                         data['protoPayload']['request']['name'])
+    if res is not None:
+        g.tag_one(data['resource']['labels']['project_id'],
+                  data['resource']['labels']['zone'], res)
     return 'ok', 200
 
 
@@ -76,7 +82,6 @@ def schedule():
     Checks if it's time to run a schedule.
     Returns:
     """
-    return 'ok', 200
     logging.debug("From Cron start /tasks/schedule")
     projects = gcp.get_all_projetcs()
     for project in sorted(projects, key=lambda x: x['name']):
