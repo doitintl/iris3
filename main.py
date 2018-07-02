@@ -38,11 +38,11 @@ def create_app():
     hostname = utils.get_host_name()
     logging.info("Starting Iris on %s", hostname)
     client = pubsub.get_pubsub_client()
-    pubsub.create_topic(client,'iris_preemptible')
-    pubsub.create_subscriptions(client, 'iris_preemptible',
-                                'iris_preemptible')
-    pubsub.pull(client, 'iris_preemptible',
-                "https://iris-dot-{}/tag_preemptible".format(hostname))
+    pubsub.create_topic(client,'iris_gce')
+    pubsub.create_subscriptions(client, 'iris_gce',
+                                'iris_gce')
+    pubsub.pull(client, 'iris_gce',
+                "https://iris-dot-{}/tag_gce".format(hostname))
 
     for _, module, _ in pkgutil.iter_modules(["plugins"]):
         __import__('plugins' + '.' + module)
@@ -61,9 +61,9 @@ def index():
     return 'this aren\'t the droids you\'re looking for', 200
 
 
-@app.route('/tag_preemptible', methods=['POST'])
-def tag_preemptible():
-    logging.debug("Got a new preemptible instance")
+@app.route('/tag_gce', methods=['POST'])
+def tag_gce():
+    logging.debug("Got a new gce instance")
     data = json.loads(base64.b64decode(request.json['message']['data']))
     g = gce.Gce()
     g.register_signals()
