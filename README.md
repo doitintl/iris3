@@ -1,5 +1,4 @@
 # Iris
-[![License](https://img.shields.io/github/license/doitintl/iris.svg)](LICENSE) [![GitHub stars](https://img.shields.io/github/stars/doitintl/iris.svg?style=social&label=Stars&style=for-the-badge)](https://github.com/doitintl/iris)
 
 [Blog Post](https://blog.doit-intl.com/auto-tagging-google-cloud-resources-6647cc7477c5)
 
