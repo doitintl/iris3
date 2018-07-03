@@ -3,6 +3,10 @@ api_version: 1
 threadsafe: true
 service: default
 
+basic_scaling:
+  max_instances: 11
+  idle_timeout: 2m
+
 builtins:
 - deferred: on
 
