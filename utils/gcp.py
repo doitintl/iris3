@@ -8,7 +8,6 @@ service = discovery.build(
 
 
 def get_all_projetcs():
-    logging.debug("starting get_all_projetcs")
     request = service.projects().list()
     projects = []
     logging.debug(request)
@@ -16,11 +15,9 @@ def get_all_projetcs():
         response = request.execute()
         logging.debug(response)
         if 'projects' in response:
-            logging.debug("Found project %s", response['projects'])
             projects.extend(response['projects'])
         request = service.projects().list_next(
             previous_request=request, previous_response=response)
-    logging.debug(projects)
     return projects
 
 
