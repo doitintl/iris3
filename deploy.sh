@@ -29,9 +29,6 @@ fi
 # create custom role to run iris
 gcloud iam roles create iris --project $PROJECTID --file roles.yaml
 
-# assign default iris app engine service account with role on organization level
-gcloud projects add-iam-policy-binding $PROJECTID --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" --role projects/$PROJECTIDD/roles/iris
-
 # get organization id
 ORGID=`gcloud organizations list |grep -v DISPLAY_NAME |awk '{print $2}'`
 
@@ -52,3 +49,7 @@ gcloud projects add-iam-policy-binding $PROJECTID --member=$svcaccount --role='r
 
 # deploy the application
 gcloud app deploy -q app.yaml cron.yaml queue.yaml
+
+# assign default iris app engine service account with role on organization level
+gcloud projects add-iam-policy-binding $PROJECTID --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" --role projects/$PROJECTIDD/roles/iris
+
