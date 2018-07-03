@@ -42,7 +42,7 @@ def create_app():
     pubsub.create_subscriptions(client, 'iris_gce',
                                 'iris_gce')
     pubsub.pull(client, 'iris_gce',
-                "https://iris-dot-{}/tag_gce".format(hostname))
+                "https://{}/tag_gce".format(hostname))
 
     for _, module, _ in pkgutil.iter_modules(["plugins"]):
         __import__('plugins' + '.' + module)
