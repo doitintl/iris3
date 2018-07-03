@@ -1,0 +1,34 @@
+title: "iris"
+description: "iris auto tagging service for google cloud"
+stage: "GA"
+includedPermissions:
+- bigquery.datasets.get
+- bigquery.datasets.update
+- bigquery.tables.get
+- bigquery.tables.list
+- bigquery.tables.update
+- bigtable.clusters.get
+- bigtable.clusters.list
+- bigtable.clusters.update
+- bigtable.instances.get
+- bigtable.instances.list
+- bigtable.instances.update
+- bigtable.tables.get
+- bigtable.tables.list
+- cloudsql.instances.get
+- cloudsql.instances.list
+- cloudsql.instances.update
+- compute.instances.get
+- compute.instances.list
+- compute.instances.setLabels
+- compute.instances.setTags
+- compute.projects.get
+- compute.regions.get
+- compute.regions.list
+- compute.zones.get
+- compute.zones.list
+- resourcemanager.projects.get
+- resourcemanager.projects.list
+- storage.buckets.get
+- storage.buckets.list
+- storage.buckets.update
