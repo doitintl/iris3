@@ -63,13 +63,13 @@ def index():
 
 @app.route('/tag_gce', methods=['POST'])
 def tag_gce():
-    logging.debug("Got a new gce instance")
     data = json.loads(base64.b64decode(request.json['message']['data']))
+    logging.debug("Got a new gce instance %s", data['jsonPayload']['resource']['name'])
     g = gce.Gce()
     g.register_signals()
     res = g.get_instance(data['resource']['labels']['project_id'],
                          data['resource']['labels']['zone'],
-                         data['protoPayload']['request']['name'])
+                         data['jsonPayload']['resource']['name'])
     if res is not None:
         g.tag_one(data['resource']['labels']['project_id'],
                   data['resource']['labels']['zone'], res)

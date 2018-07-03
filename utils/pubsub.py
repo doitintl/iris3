@@ -61,9 +61,7 @@ def create_subscriptions(client, sub, topic):
     dest_sub = project + '/subscriptions/' + sub
     dest_topic = project + '/topics/' + topic
     body = {'topic': dest_topic}
-
-    @backoff.on_exception(
-        backoff.expo, HttpError, max_tries=3, giveup=utils.fatal_code)
+    logging.info("Create topic %sub on topic %s in project %s",sub, topic, project)
     def _do_get_request():
         return client.projects().subscriptions().get(
             subscription=dest_sub).execute()
@@ -71,13 +69,15 @@ def create_subscriptions(client, sub, topic):
     @backoff.on_exception(
         backoff.expo, HttpError, max_tries=3, giveup=utils.fatal_code)
     def _do_create_request():
-        client.projects().subscriptions().create(
+        res = client.projects().subscriptions().create(
             name=dest_sub, body=body).execute()
+        logging.debug(res)
 
     try:
         _do_get_request()
-    except HttpError as e:
+    except Exception as e:
         if e.resp.status == 404:
+            logging.error(e)
             _do_create_request()
         else:
             logging.error(e)
