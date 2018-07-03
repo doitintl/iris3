@@ -52,6 +52,7 @@ class Gce(Plugin):
             try:
                 result = self.compute.instances().list(
                     project=project_id, zone=zone,
+                    filter='-labels.iris_name:*',
                     pageToken=page_token).execute()
                 if 'items' in result:
                     instances = instances + result['items']
@@ -85,12 +86,12 @@ class Gce(Plugin):
         return result
 
 
-
     def do_tag(self, project_id):
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
-                self.tag_one(project_id,zone,instance)
+                print (instance)
+                self.tag_one(project_id, zone, instance)
         return 'ok', 200
 
 
