@@ -24,22 +24,6 @@ Iris is extensible through plugins and new Google Cloud products may be supporte
 ##### Deploy
 `./deploy.sh project-id`
 
-
-#### Authentication
-In order to allow Iris to manage instances on your behalf in any project under your organization, you will need to create a new entry in your Organization IAM and assign Iris’s service account.
-
-First, navigate to https://console.cloud.google.com, then IAM from the menu and then select the name of your project that you deployed Iris in, from the dropdown at the top of the page:
-
-![](iam.png)
-
-The name of the service account you will need to assign permissions to is as following:`<YOUR_PROJECT_ID>@appspot.gserviceaccount.com` and will have been automatically created by Google App Engine. *NOTE:* this is done under *IAM*, selecting the account, choosing *Permissions* and then adding the following roles to it; not under *Service Accounts*.
-
-*  **BigQuery Admin**
-*  **Bigtable Administrator**
-*  **Cloud SQL Admin**
-*  **Compute Admin**
-*  **Storage Admin** 
-
 ### Local Development
 For local development run:
 
@@ -62,4 +46,3 @@ For local development run:
  
  
 You will need to create also a `def do_tag(self, project_id):` function that will do the actual work. The plugin manager will automatically load and run any code in the plugin directory which have this interface.
- 
