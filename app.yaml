@@ -4,7 +4,7 @@ threadsafe: true
 service: default
 
 basic_scaling:
-  max_instances: 11
+  max_instances: 20
   idle_timeout: 2m
 
 builtins:
