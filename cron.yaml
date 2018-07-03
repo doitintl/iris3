@@ -1,5 +1,5 @@
 cron:
 - description: "Assign labels"
   url: /tasks/schedule
-  schedule: every 15 minutes
+  schedule: every 4 hours
   target: iris
