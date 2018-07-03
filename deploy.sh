@@ -26,6 +26,11 @@ if [ `gcloud services list --filter pubsub.googleapis.com | wc -l` -eq 0 ]; then
   gcloud services enable pubsub.googleapis.com
 fi
 
+# enable the compute api, if not enabled already
+if [ `gcloud services list --filter compute.googleapis.com | wc -l` -eq 0 ]; then
+  gcloud services enable compute.googleapis.com
+fi
+
 # create app engine app
 gcloud app create --region=us-central
 
