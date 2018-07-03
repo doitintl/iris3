@@ -27,8 +27,12 @@ includedPermissions:
 - compute.regions.list
 - compute.zones.get
 - compute.zones.list
+- resourcemanager.folders.get
+- resourcemanager.folders.list
+- resourcemanager.organizations.get
 - resourcemanager.projects.get
 - resourcemanager.projects.list
+- serviceusage.services.list
 - storage.buckets.get
 - storage.buckets.list
 - storage.buckets.update
