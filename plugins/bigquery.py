@@ -23,6 +23,8 @@ class BigQuery(Plugin):
         logging.debug("BigQuery class created and registering signals")
 
 
+    def api_name(self):
+        return "bigquery-json.googleapis.com"
     def do_tag(self, project_id):
         """
         tag tables and data sets

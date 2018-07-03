@@ -19,6 +19,9 @@ class Gce(Plugin):
         logging.debug("GCE class created and registering signals")
 
 
+    def api_name(self):
+        return "compute.googleapis.com"
+
     def get_zones(self, projectid):
         """
         Get all available zones.

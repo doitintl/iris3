@@ -1,10 +1,15 @@
+import logging
+
 from google.auth import app_engine
 from googleapiclient import discovery
-import logging
+
 credentials = app_engine.Credentials()
 
 service = discovery.build(
     'cloudresourcemanager', 'v1', credentials=credentials)
+
+serviceusage = discovery.build(
+    'serviceusage', 'v1', credentials=credentials)
 
 
 def get_all_projetcs():
@@ -31,6 +36,18 @@ def get_zone_tag():
 
 def get_region_tag():
     return "iris_region"
+
+
+def list_services(projectid):
+    try:
+        res = serviceusage.services().list(parent="projects/" + projectid,
+                                           pageSize=200,
+                                           filter="state:ENABLED").execute()
+    except Exception as e:
+        logging.error(e)
+        return None
+
+    return res
 
 
 def get_loc_tag():

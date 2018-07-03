@@ -57,7 +57,6 @@ def index():
     Main Page
     :return:
     """
-
     return 'this aren\'t the droids you\'re looking for', 200
 
 
@@ -86,17 +85,21 @@ def schedule():
     projects = gcp.get_all_projetcs()
     for project in sorted(projects, key=lambda x: x['name']):
         project_id = str(project['projectId'])
+        service_list = gcp.list_services(project_id)
         logging.debug("Creating deferred task for   %s", project_id)
         for plugin in Plugin.plugins:
-            store(plugin.__class__.__name__, plugin)
-            task = taskqueue.add(queue_name='iris-tasks',
-                                 url="/tasks/do_tag",
-                                 method='GET',
-                                 params={
-                                     'project_id': project_id,
-                                     'plugin': plugin.__class__.__name__,
-                                 })
-            logging.debug('Task %s enqueued, ETA %s.', task.name, task.eta)
+            if utils.is_service_enbaled(service_list,plugin.api_name()):
+                store(plugin.__class__.__name__, plugin)
+                task = taskqueue.add(queue_name='iris-tasks',
+                                     url="/tasks/do_tag",
+                                     method='GET',
+                                     params={
+                                         'project_id': project_id,
+                                         'plugin': plugin.__class__.__name__,
+                                     })
+                logging.debug('Task %s enqueued, ETA %s.', task.name, task.eta)
+            else:
+                logging.debug("Service %s is not enabeld", plugin.api_name() )
     return 'ok', 200
 
 

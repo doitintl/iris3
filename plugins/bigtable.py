@@ -22,6 +22,8 @@ class BigTable(Plugin):
         logging.debug("BigTable class created and registering signals")
 
 
+    def api_name(self):
+        return "bigtableadmin.googleapis.com"
     def do_tag(self, project_id):
         page_token = None
         more_results = True
