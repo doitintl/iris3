@@ -19,6 +19,9 @@ class Gcs(Plugin):
         logging.debug("Storage class created and registering signals")
 
 
+    def api_name(self):
+        return "storage-component.googleapis.com"
+
     def do_tag(self, project_id):
         page_token = None
         more_results = True

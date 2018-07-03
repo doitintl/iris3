@@ -60,3 +60,9 @@ def fatal_code(e):
     :return:
     """
     return e.resp.status < 500
+
+def is_service_enbaled(service_list, service):
+    for srv in service_list['services']:
+        if srv['config']['name'] == service:
+            return True
+    return False

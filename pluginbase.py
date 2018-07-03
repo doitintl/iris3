@@ -44,3 +44,6 @@ class Plugin(object):
 
     def do_tag(self, project_id):
         raise NotImplementedError
+
+    def api_name(self):
+        raise NotImplementedError
