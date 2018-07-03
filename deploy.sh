@@ -31,6 +31,21 @@ if [ `gcloud services list --filter compute.googleapis.com | wc -l` -eq 0 ]; the
   gcloud services enable compute.googleapis.com
 fi
 
+# enable the bigtable api, if not enabled already
+if [ `gcloud services list --filter bigtable.googleapis.com | wc -l` -eq 0 ]; then
+  gcloud services enable bigtable.googleapis.com
+fi
+
+# enable the cloudsql api, if not enabled already
+if [ `gcloud services list --filter storage-component.googleapis.com | wc -l` -eq 0 ]; then
+  gcloud services enable storage-component.googleapis.com
+fi
+
+# enable the cloud storage api, if not enabled already
+if [ `gcloud services list --filter sql-component.googleapis.com | wc -l` -eq 0 ]; then
+  gcloud services enable sql-component.googleapis.com
+fi
+
 # create app engine app
 gcloud app create --region=us-central
 
