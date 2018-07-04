@@ -109,3 +109,4 @@ class BigQuery(Plugin):
                         'tableId']).execute()
             except Exception as e:
                 logging.error(e)
+                logging.error(table_body)
