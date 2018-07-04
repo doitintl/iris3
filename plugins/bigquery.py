@@ -3,7 +3,7 @@ import logging
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
-from ratelimit import limits
+from ratelimit import limits, sleep_and_retry
 
 from pluginbase import Plugin
 from utils import gcp
@@ -67,7 +67,7 @@ class BigQuery(Plugin):
             else:
                 more_results = False
 
-
+    @sleep_and_retry
     @limits(calls=50, period=1)
     def tag_one_dataset(self, dataset, project_id, location):
         ds_body = {
@@ -87,7 +87,7 @@ class BigQuery(Plugin):
         except errors.HttpError as e:
             logging.error(e)
 
-
+    @sleep_and_retry
     @limits(calls=50, period=1)
     def tag_one_table(self, tresponse, project_id, location, datasetId):
         for table in tresponse['tables']:
