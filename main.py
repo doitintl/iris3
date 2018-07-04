@@ -87,8 +87,6 @@ def schedule():
         project_id = str(project['projectId'])
         service_list = gcp.list_services(project_id)
         logging.debug("Creating deferred task for   %s", project_id)
-        if project_id != "aviv-playground":
-            continue
         for plugin in Plugin.plugins:
             if utils.is_service_enbaled(service_list,plugin.api_name()):
                 store(plugin.__class__.__name__, plugin)
