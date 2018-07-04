@@ -5,3 +5,4 @@ google-auth-httplib2
 oauth2client
 six
 backoff==1.4.3
+ratelimit

@@ -3,6 +3,7 @@ import logging
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
+from ratelimit import limits
 
 from pluginbase import Plugin
 from utils import gcp
@@ -44,56 +45,67 @@ class BigQuery(Plugin):
             if 'datasets' in response:
                 for dataset in response['datasets']:
                     location = dataset['location'].lower()
-                    ds_body = {
-                        "labels": {
-                            gcp.get_loc_tag(): location,
-                            gcp.get_name_tag(): dataset['datasetReference'][
-                                'datasetId'].replace(".",
-                                                     "_").lower(),
-                        }
-                    }
-                    try:
-                        self.bigquery.datasets().patch(
+                    self.tag_one_dataset(dataset, project_id, location)
+                    table_page_token = None
+                    table_more_results = True
+                    while table_more_results:
+                        tresponse = self.bigquery.tables().list(
                             projectId=project_id,
-                            body=ds_body,
-                            datasetId=dataset['datasetReference'][
-                                'datasetId']).execute()
-                    except errors.HttpError as e:
-                        logging.error(e)
+                            datasetId=dataset['datasetReference']['datasetId'],
+                            pageToken=table_page_token).execute()
+                        if 'tables' in tresponse:
+                            self.tag_one_table(tresponse, project_id, location,
+                                          dataset['datasetReference'][
+                                              'datasetId'])
+                        if 'nextPageToken' in tresponse:
+                            table_page_token = tresponse['nextPageToken']
+                            table_more_results = True
+                        else:
+                            table_more_results = False
+            if 'nextPageToken' in response:
+                page_token = response['nextPageToken']
+            else:
+                more_results = False
 
-                if 'nextPageToken' in response:
-                    page_token = response['nextPageToken']
-                else:
-                    more_results = False
-                table_page_token = None
-                table_more_results = True
-                while table_more_results:
-                    tresponse = self.bigquery.tables().list(
-                        projectId=project_id,
-                        datasetId=dataset['datasetReference']['datasetId'],
-                        pageToken=table_page_token).execute()
-                    if 'tables' in tresponse:
-                        for table in tresponse['tables']:
-                            table_body = {
-                                "labels": {
-                                    gcp.get_name_tag():
-                                        table['tableReference'][
-                                            'tableId'].replace(
-                                            ".", "_").lower(),
-                                    gcp.get_loc_tag(): location,
-                                }
-                            }
-                            try:
-                                self.bigquery.tables().patch(
-                                    projectId=project_id,
-                                    body=table_body,
-                                    datasetId=dataset['datasetReference'][
-                                        'datasetId'],
-                                    tableId=table['tableReference'][
-                                        'tableId']).execute()
-                            except errors.HttpError as e:
-                                logging.error(e)
-                            if 'nextPageToken' in tresponse:
-                                table_page_token = tresponse['nextPageToken']
-                            else:
-                                table_more_results = False
+
+    @limits(calls=50, period=1)
+    def tag_one_dataset(self, dataset, project_id, location):
+        ds_body = {
+            "labels": {
+                gcp.get_loc_tag(): location,
+                gcp.get_name_tag(): dataset['datasetReference'][
+                    'datasetId'].replace(".",
+                                         "_").lower(),
+            }
+        }
+        try:
+            self.bigquery.datasets().patch(
+                projectId=project_id,
+                body=ds_body,
+                datasetId=dataset['datasetReference'][
+                    'datasetId']).execute()
+        except errors.HttpError as e:
+            logging.error(e)
+
+
+    @limits(calls=50, period=1)
+    def tag_one_table(self, tresponse, project_id, location, datasetId):
+        for table in tresponse['tables']:
+            table_body = {
+                "labels": {
+                    gcp.get_name_tag():
+                        table['tableReference'][
+                            'tableId'].replace(
+                            ".", "_").lower(),
+                    gcp.get_loc_tag(): location,
+                }
+            }
+            try:
+                self.bigquery.tables().patch(
+                    projectId=project_id,
+                    body=table_body,
+                    datasetId=datasetId,
+                    tableId=table['tableReference'][
+                        'tableId']).execute()
+            except errors.HttpError as e:
+                logging.error(e)
