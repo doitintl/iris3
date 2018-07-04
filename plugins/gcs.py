@@ -22,12 +22,17 @@ class Gcs(Plugin):
     def api_name(self):
         return "storage-component.googleapis.com"
 
+
     def do_tag(self, project_id):
         page_token = None
         more_results = True
         while more_results:
-            response = self.storage.buckets().list(
-                project=project_id, pageToken=page_token).execute()
+            try:
+                response = self.storage.buckets().list(
+                    project=project_id, pageToken=page_token).execute()
+            except errors.HttpError as e:
+                logging.error(e)
+                return 
             if 'items' in response:
                 for bucket in response['items']:
                     gcs_body = {

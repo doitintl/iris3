@@ -24,13 +24,19 @@ class BigTable(Plugin):
 
     def api_name(self):
         return "bigtableadmin.googleapis.com"
+
+
     def do_tag(self, project_id):
         page_token = None
         more_results = True
         while more_results:
-            result = self.bigtable.projects().instances().list(
-                parent="projects/" + project_id,
-                pageToken=page_token).execute()
+            try:
+                result = self.bigtable.projects().instances().list(
+                    parent="projects/" + project_id,
+                    pageToken=page_token).execute()
+            except errors.HttpError as e:
+                logging.error(e)
+                return
             if 'instances' in result:
                 for inst in result['instances']:
                     if 'labels' in inst:
