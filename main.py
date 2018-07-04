@@ -38,7 +38,7 @@ def create_app():
     hostname = utils.get_host_name()
     logging.info("Starting Iris on %s", hostname)
     client = pubsub.get_pubsub_client()
-    pubsub.create_topic(client,'iris_gce')
+    pubsub.create_topic(client, 'iris_gce')
     pubsub.create_subscriptions(client, 'iris_gce',
                                 'iris_gce')
     pubsub.pull(client, 'iris_gce',
@@ -63,7 +63,8 @@ def index():
 @app.route('/tag_gce', methods=['POST'])
 def tag_gce():
     data = json.loads(base64.b64decode(request.json['message']['data']))
-    logging.debug("Got a new gce instance %s", data['jsonPayload']['resource']['name'])
+    logging.debug("Got a new gce instance %s",
+                  data['jsonPayload']['resource']['name'])
     g = gce.Gce()
     g.register_signals()
     res = g.get_instance(data['resource']['labels']['project_id'],
@@ -86,9 +87,9 @@ def schedule():
     for project in sorted(projects, key=lambda x: x['name']):
         project_id = str(project['projectId'])
         service_list = gcp.list_services(project_id)
-        logging.debug("Creating deferred task for   %s", project_id)
+        logging.debug("Creating deferred task for %s", project_id)
         for plugin in Plugin.plugins:
-            if utils.is_service_enbaled(service_list,plugin.api_name()):
+            if utils.is_service_enbaled(service_list, plugin.api_name()):
                 store(plugin.__class__.__name__, plugin)
                 task = taskqueue.add(queue_name='iris-tasks',
                                      url="/tasks/do_tag",
@@ -97,9 +98,10 @@ def schedule():
                                          'project_id': project_id,
                                          'plugin': plugin.__class__.__name__,
                                      })
-                logging.debug('Task %s enqueued, ETA %s.', task.name, task.eta)
+                logging.debug('Task %s for %s enqueued, ETA %s.', task.name,
+                              plugin.__class__.__name__, task.eta)
             else:
-                logging.debug("Service %s is not enabeld", plugin.api_name() )
+                logging.debug("Service %s is not enabled", plugin.api_name())
     return 'ok', 200
 
 

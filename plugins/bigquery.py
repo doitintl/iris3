@@ -84,7 +84,7 @@ class BigQuery(Plugin):
                 body=ds_body,
                 datasetId=dataset['datasetReference'][
                     'datasetId']).execute()
-        except errors.HttpError as e:
+        except Exception as e:
             logging.error(e)
 
     @sleep_and_retry
@@ -107,5 +107,5 @@ class BigQuery(Plugin):
                     datasetId=datasetId,
                     tableId=table['tableReference'][
                         'tableId']).execute()
-            except errors.HttpError as e:
+            except Exception as e:
                 logging.error(e)

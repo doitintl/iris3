@@ -61,8 +61,11 @@ def fatal_code(e):
     """
     return e.resp.status < 500
 
+
 def is_service_enbaled(service_list, service):
     for srv in service_list['services']:
         if srv['config']['name'].lower() == service.lower():
+            logging.debug("Service %s was found as %s in the list",
+                          service.lower(), srv['config']['name'].lower())
             return True
     return False

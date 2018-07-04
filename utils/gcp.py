@@ -15,7 +15,6 @@ serviceusage = discovery.build(
 def get_all_projetcs():
     request = service.projects().list()
     projects = []
-    logging.debug(request)
     while request is not None:
         response = request.execute()
         logging.debug(response)
