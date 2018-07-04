@@ -41,7 +41,7 @@ class CloudSql(Plugin):
                         "userLabels": {
                             gcp.get_name_tag():
                                 database_instance['name'].replace(".",
-                                                                  "_").lower(),
+                                                                  "_").lower()[:62],
                             gcp.get_zone_tag(): database_instance[
                                 "gceZones"].lower(),
                             gcp.get_region_tag(): gcp.region_from_zone(

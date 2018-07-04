@@ -41,11 +41,12 @@ class BigTable(Plugin):
                 for inst in result['instances']:
                     if 'labels' in inst:
                         inst['labels'].update(
-                            {gcp.get_name_tag(): inst['displayName'].lower()})
+                            {gcp.get_name_tag(): inst['displayName'].lower()[
+                                                 :62]})
                     else:
                         inst['labels'] = {
                             gcp.get_name_tag(): inst['displayName'].replace(
-                                ".", "_").lower()
+                                ".", "_").lower()[:62]
                         }
                     try:
                         self.bigtable.projects().instances(

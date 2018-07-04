@@ -75,7 +75,7 @@ class BigQuery(Plugin):
                 gcp.get_loc_tag(): location,
                 gcp.get_name_tag(): dataset['datasetReference'][
                     'datasetId'].replace(".",
-                                         "_").lower(),
+                                         "_").lower()[:62],
             }
         }
         try:
@@ -96,7 +96,7 @@ class BigQuery(Plugin):
                     gcp.get_name_tag():
                         table['tableReference'][
                             'tableId'].replace(
-                            ".", "_").lower(),
+                            ".", "_").lower()[:62],
                     gcp.get_loc_tag(): location,
                 }
             }

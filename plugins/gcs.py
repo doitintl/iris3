@@ -32,13 +32,14 @@ class Gcs(Plugin):
                     project=project_id, pageToken=page_token).execute()
             except errors.HttpError as e:
                 logging.error(e)
-                return 
+                return
             if 'items' in response:
                 for bucket in response['items']:
                     gcs_body = {
                         "labels": {
                             gcp.get_name_tag(): bucket['name'].replace(".",
-                                                                       "_").lower(),
+                                                                       "_").lower()[
+                                                :62],
                             gcp.get_loc_tag(): bucket['location'].lower(),
                         }
                     }

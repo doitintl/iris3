@@ -109,7 +109,7 @@ class Gce(Plugin):
         labels['labels'] = {}
         labels['labels'][gcp.get_name_tag()] = instance[
             'name'].replace(".",
-                            "_").lower()
+                            "_").lower()[:62]
         labels['labels'][gcp.get_zone_tag()] = zone.lower()
         labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
             zone).lower()
