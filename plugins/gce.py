@@ -93,7 +93,6 @@ class Gce(Plugin):
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
-                print (instance)
                 self.tag_one(project_id, zone, instance)
         return 'ok', 200
 

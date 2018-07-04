@@ -27,8 +27,12 @@ class CloudSql(Plugin):
         page_token = None
         more_results = True
         while more_results:
-            response = self.sqladmin.instances().list(
-                project=project_id, pageToken=page_token).execute()
+            try:
+                response = self.sqladmin.instances().list(
+                    project=project_id, pageToken=page_token).execute()
+            except errors.HttpError as e:
+                logging.error(e)
+                return
             if 'items' not in response:
                 return
             for database_instance in response['items']:

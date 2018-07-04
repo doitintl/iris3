@@ -25,6 +25,8 @@ class BigQuery(Plugin):
 
     def api_name(self):
         return "bigquery-json.googleapis.com"
+
+
     def do_tag(self, project_id):
         """
         tag tables and data sets
@@ -33,8 +35,12 @@ class BigQuery(Plugin):
         page_token = None
         more_results = True
         while more_results:
-            response = self.bigquery.datasets().list(
-                projectId=project_id, pageToken=page_token).execute()
+            try:
+                response = self.bigquery.datasets().list(
+                    projectId=project_id, pageToken=page_token).execute()
+            except errors.HttpError as e:
+                logging.error(e)
+                return
             if 'datasets' in response:
                 for dataset in response['datasets']:
                     location = dataset['location'].lower()
@@ -71,7 +77,8 @@ class BigQuery(Plugin):
                             table_body = {
                                 "labels": {
                                     gcp.get_name_tag():
-                                        table['tableReference']['tableId'].replace(
+                                        table['tableReference'][
+                                            'tableId'].replace(
                                             ".", "_").lower(),
                                     gcp.get_loc_tag(): location,
                                 }
