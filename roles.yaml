@@ -28,6 +28,12 @@ includedPermissions:
 - compute.regions.list
 - compute.zones.get
 - compute.zones.list
+- compute.disks.list
+- compute.disks.get
+- compute.disks.setLabels
+- compute.snapshots.list
+- compute.snapshots.get
+- compute.snapshots.setLabels
 - resourcemanager.folders.get
 - resourcemanager.folders.list
 - resourcemanager.organizations.get
