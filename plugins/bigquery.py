@@ -55,8 +55,8 @@ class BigQuery(Plugin):
                             pageToken=table_page_token).execute()
                         if 'tables' in tresponse:
                             self.tag_one_table(tresponse, project_id, location,
-                                          dataset['datasetReference'][
-                                              'datasetId'])
+                                               dataset['datasetReference'][
+                                                   'datasetId'])
                         if 'nextPageToken' in tresponse:
                             table_page_token = tresponse['nextPageToken']
                             table_more_results = True
@@ -67,6 +67,7 @@ class BigQuery(Plugin):
             else:
                 more_results = False
 
+
     @sleep_and_retry
     @limits(calls=50, period=1)
     def tag_one_dataset(self, dataset, project_id, location):
@@ -74,8 +75,8 @@ class BigQuery(Plugin):
             "labels": {
                 gcp.get_loc_tag(): location,
                 gcp.get_name_tag(): dataset['datasetReference'][
-                    'datasetId'].replace(".",
-                                         "_").lower()[:62],
+                                        'datasetId'].replace(".",
+                                                             "_").lower()[:62],
             }
         }
         try:
@@ -87,9 +88,19 @@ class BigQuery(Plugin):
         except Exception as e:
             logging.error(e)
 
+
     @sleep_and_retry
     @limits(calls=50, period=1)
-    def tag_one_table(self, tresponse, project_id, location, datasetId):
+    def tag_one_table(self, tresponse, project_id, location, dataset_id):
+        def batch_callback(request_id, response, exception):
+            if exception is not None:
+                logging.error(
+                    'Error patching table %s: %s'.format(request_id,
+                                                         exception))
+
+
+        batch = self.bigquery.new_batch_http_request(callback=batch_callback)
+        counter = 0
         for table in tresponse['tables']:
             table_body = {
                 "labels": {
@@ -101,12 +112,20 @@ class BigQuery(Plugin):
                 }
             }
             try:
-                self.bigquery.tables().patch(
+                batch.add(self.bigquery.tables().patch(
                     projectId=project_id,
                     body=table_body,
-                    datasetId=datasetId,
+                    datasetId=dataset_id,
                     tableId=table['tableReference'][
-                        'tableId']).execute()
+                        'tableId']), request_id=table['tableReference'][
+                                                    'tableId'].replace(
+                    ".", "_").lower()[:62])
+                counter = counter + 1
+                if counter == 1000:
+                    batch.execute()
+                    counter = 0
             except Exception as e:
                 logging.error(e)
                 logging.error(table_body)
+        if counter > 0:
+            batch.execute()
