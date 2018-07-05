@@ -95,8 +95,8 @@ class BigQuery(Plugin):
         def batch_callback(request_id, response, exception):
             if exception is not None:
                 logging.error(
-                    'Error patching table %s: %s'.format(request_id,
-                                                         exception))
+                    'Error patching table {0}: {1}'.format(request_id,
+                                                           exception))
 
 
         batch = self.bigquery.new_batch_http_request(callback=batch_callback)
