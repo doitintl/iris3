@@ -73,6 +73,7 @@ def tag_gce():
     if res is not None:
         g.tag_one(data['resource']['labels']['project_id'],
                   data['resource']['labels']['zone'], res)
+        g.do_batch()
     return 'ok', 200
 
 

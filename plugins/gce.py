@@ -143,3 +143,6 @@ class Gce(Plugin):
         except errors.HttpError as e:
             logging.error(e)
         return 'ok', 200
+
+    def do_batch(self):
+        self.batch.execute()
