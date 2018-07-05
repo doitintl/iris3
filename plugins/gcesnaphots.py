@@ -11,7 +11,7 @@ SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
 
-class GceDisks(Plugin):
+class GceSnapshots(Plugin):
 
     def register_signals(self):
         self.compute = discovery.build(
@@ -22,24 +22,8 @@ class GceDisks(Plugin):
     def api_name(self):
         return "compute.googleapis.com"
 
-    def get_zones(self, projectid):
-        """
-        Get all available zones.
-        Args:
-            project_id: project id
-        :return: all regions
-        """
 
-        request = self.compute.zones().list(project=projectid)
-
-        response = request.execute()
-        zones = []
-        for zone in response['items']:
-            zones.append(zone['description'])
-        return zones
-
-
-    def list_disks(self, project_id, zone):
+    def list_snapshots(self, project_id):
         """
         List all instances in zone with the requested tags
         Args:
@@ -48,17 +32,17 @@ class GceDisks(Plugin):
         Returns:
         """
 
-        disks = []
+        snapshots = []
         page_token = None
         more_results = True
         while more_results:
             try:
-                result = self.compute.disks().list(
-                    project=project_id, zone=zone,
+                result = self.compute.snapshots().list(
+                    project=project_id,
                     filter='-labels.iris_name:*',
                     pageToken=page_token).execute()
                 if 'items' in result:
-                    disks = disks + result['items']
+                    snapshots = snapshots + result['items']
                 if 'nextPageToken' in result:
                     page_token = result['nextPageToken']
                 else:
@@ -66,10 +50,10 @@ class GceDisks(Plugin):
             except errors.HttpError as e:
                 logging.error(e)
 
-        return disks
+        return snapshots
 
 
-    def get_disk(self, project_id, zone, name):
+    def get_snapshot(self, project_id, name):
         """
        get an instance
         Args:
@@ -80,8 +64,8 @@ class GceDisks(Plugin):
         """
 
         try:
-            result = self.compute.disks().get(
-                project=project_id, zone=zone,
+            result = self.compute.snapshots().get(
+                project=project_id,
                 resource=name).execute()
         except errors.HttpError as e:
             logging.error(e)
@@ -90,36 +74,32 @@ class GceDisks(Plugin):
 
 
     def do_tag(self, project_id):
-        for zone in self.get_zones(project_id):
-            disks = self.list_disks(project_id, zone)
-            for disk in disks:
-                self.tag_one(project_id, zone, disk)
+        snapshots = self.list_snapshots(project_id)
+        for snapshot in snapshots:
+            self.tag_one(project_id, snapshot)
         return 'ok', 200
 
 
-    def tag_one(self, project_id, zone, disk):
+    def tag_one(self, project_id, snapshot):
         try:
             org_labels = {}
-            org_labels = disk['labels']
+            org_labels = snapshot['labels']
         except KeyError:
             pass
         labels = {
-            'labelFingerprint': disk.get('labelFingerprint', '')
+            'labelFingerprint': snapshot.get('labelFingerprint', '')
         }
         labels['labels'] = {}
-        labels['labels'][gcp.get_name_tag()] = disk[
-            'name'].replace(".",
-                            "_").lower()[:62]
-        labels['labels'][gcp.get_zone_tag()] = zone.lower()
-        labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
-            zone).lower()
+        labels['labels'][gcp.get_name_tag()] = snapshot[
+                                                   'name'].replace(".",
+                                                                   "_").lower()[
+                                               :62]
         for k, v in org_labels.items():
             labels['labels'][k] = v
         try:
-            request = self.compute.disks().setLabels(
+            request = self.compute.snapshots().setLabels(
                 project=project_id,
-                zone=zone,
-                resource=disk['name'],
+                resource=snapshot['name'],
                 body=labels)
             request.execute()
         except Exception as e:
