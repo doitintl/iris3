@@ -119,7 +119,7 @@ class BigQuery(Plugin):
                     tableId=table['tableReference'][
                         'tableId']), request_id=table['tableReference'][
                                                     'tableId'].replace(
-                    ".", "_").lower()[:62])
+                    ".", "_").lower())
                 counter = counter + 1
                 if counter == 1000:
                     batch.execute()
