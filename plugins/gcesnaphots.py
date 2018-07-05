@@ -11,12 +11,22 @@ SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
 
+def batch_callback(request_id, response, exception):
+    if exception is not None:
+        logging.error(
+            'Error patching snapshot {0}: {1}'.format(request_id,
+                                                      exception))
+
+
 class GceSnapshots(Plugin):
 
     def register_signals(self):
         self.compute = discovery.build(
             'compute', 'v1', credentials=CREDENTIALS)
         logging.debug("GCE class created and registering signals")
+        self.batch = self.compute.new_batch_http_request(
+            callback=batch_callback)
+        self.counter = 0
 
 
     def api_name(self):
@@ -77,6 +87,8 @@ class GceSnapshots(Plugin):
         snapshots = self.list_snapshots(project_id)
         for snapshot in snapshots:
             self.tag_one(project_id, snapshot)
+        if self.counter > 0:
+            self.batch.execute()
         return 'ok', 200
 
 
@@ -97,11 +109,15 @@ class GceSnapshots(Plugin):
         for k, v in org_labels.items():
             labels['labels'][k] = v
         try:
-            request = self.compute.snapshots().setLabels(
+            self.batch.add(self.compute.snapshots().setLabels(
                 project=project_id,
                 resource=snapshot['name'],
-                body=labels)
-            request.execute()
+                body=labels), request_id=snapshot[
+                'name'])
+            self.counter = self.counter + 1
+            if self.counter == 1000:
+                self.batch.execute()
+                counter = 0
         except Exception as e:
             logging.error(e)
         return 'ok', 200

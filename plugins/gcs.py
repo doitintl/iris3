@@ -24,8 +24,18 @@ class Gcs(Plugin):
 
 
     def do_tag(self, project_id):
+        def batch_callback(request_id, response, exception):
+            if exception is not None:
+                logging.error(
+                    'Error patching bucket {0}: {1}'.format(request_id,
+                                                            exception))
+
+
         page_token = None
         more_results = True
+        batch = self.storage.new_batch_http_request(callback=batch_callback)
+        counter = 0
+
         while more_results:
             try:
                 response = self.storage.buckets().list(
@@ -44,8 +54,9 @@ class Gcs(Plugin):
                         }
                     }
                     try:
-                        self.storage.buckets().patch(
-                            bucket=bucket['name'], body=gcs_body).execute()
+                        batch.add(self.storage.buckets().patch(
+                            bucket=bucket['name'], body=gcs_body),
+                            request_id=bucket['name'])
                     except errors.HttpError as e:
                         logging.error(e)
 
@@ -53,3 +64,5 @@ class Gcs(Plugin):
                 page_token = response['nextPageToken']
             else:
                 more_results = False
+        if counter > 0:
+            batch.execute()

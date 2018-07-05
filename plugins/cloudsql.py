@@ -26,6 +26,13 @@ class CloudSql(Plugin):
     def do_tag(self, project_id):
         page_token = None
         more_results = True
+        def batch_callback(request_id, response, exception):
+            if exception is not None:
+                logging.error(
+                    'Error patching instance {0}: {1}'.format(request_id,
+                                                           exception))
+        counter = 0
+        batch = self.sqladmin.new_batch_http_request(callback=batch_callback)
         while more_results:
             try:
                 response = self.sqladmin.instances().list(
@@ -50,13 +57,19 @@ class CloudSql(Plugin):
                     }
                 }
                 try:
-                    self.sqladmin.instances().patch(
+                    batch.add(self.sqladmin.instances().patch(
                         project=project_id,
                         instance=database_instance['name'],
-                        body=database_instance_body).execute()
+                        body=database_instance_body),request_id=database_instance['name'])
+                    counter = counter + 1
+                    if counter == 1000:
+                        batch.execute()
+                        counter = 0
                 except errors.HttpError as e:
                     logging.error(e)
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']
             else:
                 more_results = False
+            if counter > 0:
+                batch.execute()
