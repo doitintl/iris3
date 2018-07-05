@@ -6,6 +6,8 @@ In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification 
 
 Iris helps to automatically assign labels to Google Cloud resources for better manageability and billing reporting. Each resource in Google Cloud will get an automatically generated label in a form of [iris_name:name], [iris_region:region] and finally [iris_zone:zone]. For example if you have a Google Compute Engine instance named `webserver`, Iris will automatically label this instance with [iris_name:webserver], [iris_region:uscentral1] and [iris_zone:1f].
 
+Iris will also label short lived Google Compute Engine instances such as preemtible instances or instances managed by Instance Group Manager by listening to Stackdriver Logs and putting required labels on-demand. 
+
 **Supported Google Cloud Products**
 
 Iris is extensible through plugins and new Google Cloud products may be supported via simply adding a plugin. Right now, there are plugins for the following products:
@@ -28,10 +30,9 @@ For local development run:
 
  `dev_appserver.py --log_level=debug app.yaml`
  
- Iris is easly extendable to support tagging of other GCP services.
- You will need to create a Python file in the /plugin directory with
- `register_signals` function as following:
- 
+Iris is easly extendable to support tagging of other GCP services. You will need to create a Python file in the /plugin directory with `register_signals` and `def api_name` functions as following:
+
+```
      def register_signals(self):
  
         """ 
@@ -42,6 +43,11 @@ For local development run:
             'bigquery', 'v2', credentials=CREDENTIALS)
         
         logging.debug("BigQuery class created and registering signals")
- 
- 
+```
+
+```
+ def api_name(self):
+        return "compute.googleapis.com"
+```
+
 You will need to create also a `def do_tag(self, project_id):` function that will do the actual work. The plugin manager will automatically load and run any code in the plugin directory which have this interface.
