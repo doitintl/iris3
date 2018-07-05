@@ -11,16 +11,27 @@ SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
 
+def batch_callback(request_id, response, exception):
+    if exception is not None:
+        logging.error(
+            'Error instance table {0}: {1}'.format(request_id,
+                                                   exception))
+
+
 class Gce(Plugin):
 
     def register_signals(self):
         self.compute = discovery.build(
             'compute', 'v1', credentials=CREDENTIALS)
         logging.debug("GCE class created and registering signals")
+        self.batch = self.compute.new_batch_http_request(
+            callback=batch_callback)
+        self.counter = 0
 
 
     def api_name(self):
         return "compute.googleapis.com"
+
 
     def get_zones(self, projectid):
         """
@@ -94,6 +105,8 @@ class Gce(Plugin):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
                 self.tag_one(project_id, zone, instance)
+        if self.counter > 0:
+            self.batch.execute()
         return 'ok', 200
 
 
@@ -108,20 +121,25 @@ class Gce(Plugin):
         }
         labels['labels'] = {}
         labels['labels'][gcp.get_name_tag()] = instance[
-            'name'].replace(".",
-                            "_").lower()[:62]
+                                                   'name'].replace(".",
+                                                                   "_").lower()[
+                                               :62]
         labels['labels'][gcp.get_zone_tag()] = zone.lower()
         labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
             zone).lower()
         for k, v in org_labels.items():
             labels['labels'][k] = v
         try:
-            request = self.compute.instances().setLabels(
+            self.batch.add(self.compute.instances().setLabels(
                 project=project_id,
                 zone=zone,
                 instance=instance['name'],
-                body=labels)
-            request.execute()
+                body=labels), request_id=zone + instance[
+                'name'])
+            self.counter = self.counter + 1
+            if self.counter == 1000:
+                self.batch.execute()
+                self.counter = 0
         except errors.HttpError as e:
             logging.error(e)
         return 'ok', 200

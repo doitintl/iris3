@@ -29,6 +29,14 @@ class BigTable(Plugin):
     def do_tag(self, project_id):
         page_token = None
         more_results = True
+        def batch_callback(request_id, response, exception):
+            if exception is not None:
+                logging.error(
+                    'Error patching instance {0}: {1}'.format(request_id,
+                                                           exception))
+
+        batch = self.bigtable.new_batch_http_request(callback=batch_callback)
+        counter = 0
         while more_results:
             try:
                 result = self.bigtable.projects().instances().list(
@@ -49,13 +57,19 @@ class BigTable(Plugin):
                                 ".", "_").lower()[:62]
                         }
                     try:
-                        self.bigtable.projects().instances(
+                        batch.add(self.bigtable.projects().instances(
                         ).partialUpdateInstance(
                             name=inst['name'], body=inst,
-                            updateMask='labels').execute()
-                    except errors.HttpError as e:
+                            updateMask='labels'), request_id=inst['displayName'])
+                        counter = counter + 1
+                        if counter == 1000:
+                            batch.execute()
+                            counter = 0
+                    except Exception as e:
                         logging.error(e)
             if 'nextPageToken' in result:
                 page_token = result['nextPageToken']
             else:
                 more_results = False
+            if counter > 0:
+                batch.execute()
