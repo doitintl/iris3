@@ -83,7 +83,8 @@ class BigQuery(Plugin):
             self.bigquery.datasets().patch(
                 projectId=project_id,
                 body=ds_body,
-                datasetId=utils.get_uuid()).execute()
+                datasetId=dataset['datasetReference'][
+                    'datasetId']).execute()
         except Exception as e:
             logging.error(e)
 
