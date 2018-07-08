@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import uuid
 
 from google.appengine.api import app_identity
 
@@ -69,3 +70,8 @@ def is_service_enbaled(service_list, service):
                           service.lower(), srv['config']['name'].lower())
             return True
     return False
+
+
+
+def get_uuid():
+    uuid.uuid4()
