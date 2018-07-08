@@ -43,19 +43,23 @@ class CloudSql(Plugin):
             if 'items' not in response:
                 return
             for database_instance in response['items']:
-                database_instance_body = {
-                    "settings": {
-                        "userLabels": {
-                            gcp.get_name_tag():
-                                database_instance['name'].replace(".",
-                                                                  "_").lower()[:62],
-                            gcp.get_zone_tag(): database_instance[
-                                "gceZones"].lower(),
-                            gcp.get_region_tag(): gcp.region_from_zone(
-                                database_instance["gceZones"]).lower(),
+                try:
+                    database_instance_body = {
+                        "settings": {
+                            "userLabels": {
+                                gcp.get_name_tag():
+                                    database_instance['name'].replace(".",
+                                                                      "_").lower()[:62],
+                                gcp.get_zone_tag(): database_instance[
+                                    "gceZones"].lower(),
+                                gcp.get_region_tag(): gcp.region_from_zone(
+                                    database_instance["gceZones"]).lower(),
+                            }
                         }
                     }
-                }
+                except Exception as e:
+                    logging.error(e)
+                    continue
                 try:
                     batch.add(self.sqladmin.instances().patch(
                         project=project_id,
