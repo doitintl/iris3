@@ -6,7 +6,7 @@ from googleapiclient import discovery, errors
 from ratelimit import limits, sleep_and_retry
 
 from pluginbase import Plugin
-from utils import gcp
+from utils import gcp, utils
 
 SCOPES = ['https://www.googleapis.com/auth/bigquery']
 
@@ -83,8 +83,7 @@ class BigQuery(Plugin):
             self.bigquery.datasets().patch(
                 projectId=project_id,
                 body=ds_body,
-                datasetId=dataset['datasetReference'][
-                    'datasetId']).execute()
+                datasetId=utils.get_uuid()).execute()
         except Exception as e:
             logging.error(e)
 
@@ -117,9 +116,7 @@ class BigQuery(Plugin):
                     body=table_body,
                     datasetId=dataset_id,
                     tableId=table['tableReference'][
-                        'tableId']), request_id=table['tableReference'][
-                                                    'tableId'].replace(
-                    ".", "_").lower())
+                        'tableId']), request_id=utils.get_uuid())
                 counter = counter + 1
                 if counter == 1000:
                     batch.execute()

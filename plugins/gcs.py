@@ -4,7 +4,7 @@ from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
-from utils import gcp
+from utils import gcp, utils
 
 SCOPES = ['https://www.googleapis.com/auth/devstorage.full_control']
 
@@ -56,7 +56,7 @@ class Gcs(Plugin):
                     try:
                         batch.add(self.storage.buckets().patch(
                             bucket=bucket['name'], body=gcs_body),
-                            request_id=bucket['name'])
+                            request_id=utils.get_uuid())
                     except errors.HttpError as e:
                         logging.error(e)
 

@@ -4,7 +4,7 @@ from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
-from utils import gcp
+from utils import gcp, utils
 
 SCOPES = ['https://www.googleapis.com/auth/bigtable.admin']
 
@@ -60,7 +60,7 @@ class BigTable(Plugin):
                         batch.add(self.bigtable.projects().instances(
                         ).partialUpdateInstance(
                             name=inst['name'], body=inst,
-                            updateMask='labels'), request_id=inst['displayName'])
+                            updateMask='labels'), request_id=utils.get_uuid())
                         counter = counter + 1
                         if counter == 1000:
                             batch.execute()

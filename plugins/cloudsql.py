@@ -4,7 +4,7 @@ from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
-from utils import gcp
+from utils import gcp, utils
 
 SCOPES = ['https://www.googleapis.com/auth/sqlservice.admin']
 
@@ -60,7 +60,7 @@ class CloudSql(Plugin):
                     batch.add(self.sqladmin.instances().patch(
                         project=project_id,
                         instance=database_instance['name'],
-                        body=database_instance_body),request_id=database_instance['name'])
+                        body=database_instance_body),request_id=utils.get_uuid())
                     counter = counter + 1
                     if counter == 1000:
                         batch.execute()

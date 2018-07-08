@@ -4,7 +4,7 @@ from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
-from utils import gcp
+from utils import gcp, utils
 
 SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 
@@ -134,8 +134,7 @@ class Gce(Plugin):
                 project=project_id,
                 zone=zone,
                 instance=instance['name'],
-                body=labels), request_id=zone + instance[
-                'name'])
+                body=labels), request_id=utils.get_uuid())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.batch.execute()
