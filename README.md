@@ -18,6 +18,14 @@ Iris is extensible through plugins and new Google Cloud products may be supporte
 * Google BigQuery
 * Google Bigtable
 
+**Installation**
+
+We recommend to deploy Iris in a [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project) within your Google Cloud organization. You will need the following IAM permissions on your Google Cloud organization to complete the deployment: 
+
+ * App Engine Admin
+ * Logs Configuration Writer
+ * Pub/Sub Admin
+
 ##### Install dependencies
 
 `pip install -r requirements.txt -t lib`
