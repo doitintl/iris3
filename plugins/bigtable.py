@@ -26,14 +26,25 @@ class BigTable(Plugin):
         return "bigtableadmin.googleapis.com"
 
 
+    def get_location(self, instance, project_id):
+        result = self.bigtable.projects().instances().clusters.list(
+            parent="projects/" + project_id + "/" + instance)
+        loc = result['clusters'][0]['location']
+        ind = loc.rfind('/')
+        return loc[ind + 1:]
+
+
     def do_tag(self, project_id):
         page_token = None
         more_results = True
+
+
         def batch_callback(request_id, response, exception):
             if exception is not None:
                 logging.error(
                     'Error patching instance {0}: {1}'.format(request_id,
-                                                           exception))
+                                                              exception))
+
 
         batch = self.bigtable.new_batch_http_request(callback=batch_callback)
         counter = 0
@@ -47,14 +58,20 @@ class BigTable(Plugin):
                 return
             if 'instances' in result:
                 for inst in result['instances']:
+                    loc = self.get_location(project_id, inst['displayName'])
                     if 'labels' in inst:
                         inst['labels'].update(
                             {gcp.get_name_tag(): inst['displayName'].lower()[
-                                                 :62]})
+                                                 :62],
+                             gcp.get_loc_tag(): loc,
+                             }),
+
                     else:
                         inst['labels'] = {
                             gcp.get_name_tag(): inst['displayName'].replace(
-                                ".", "_").lower()[:62]
+                                ".", "_").lower()[:62],
+                            gcp.get_loc_tag(): loc,
+
                         }
                     try:
                         batch.add(self.bigtable.projects().instances(
