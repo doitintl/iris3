@@ -63,14 +63,16 @@ class BigTable(Plugin):
                         inst['labels'].update(
                             {gcp.get_name_tag(): inst['displayName'].lower()[
                                                  :62],
-                             gcp.get_loc_tag(): loc,
+                             gcp.get_zone_tag(): loc,
+                             gcp.get_region_tag(): gcp.region_from_zone(loc),
                              }),
 
                     else:
                         inst['labels'] = {
                             gcp.get_name_tag(): inst['displayName'].replace(
                                 ".", "_").lower()[:62],
-                            gcp.get_loc_tag(): loc,
+                            gcp.get_zone_tag(): loc,
+                            gcp.get_region_tag(): gcp.region_from_zone(loc),
 
                         }
                     try:
