@@ -33,12 +33,39 @@ We recommend to deploy Iris in a [new project](https://cloud.google.com/resource
 ##### Deploy
 `./deploy.sh project-id`
 
+##### Configuration
+
+Configuration is stored in the config.json file. The file contais two arrays.
+
+1. tags - A list of tgas that will be applide to the resources (if the plugin implimented a function by the name _get_TAGNAME)
+2. on_demand - A List of plugins that will tag whenever there is a new object of their type (No support for CloudSQL for now)
+
+```{
+  "tags": [
+    "name",
+    "zone",
+    "region",
+    "location",
+    "instance_type"
+  ],
+  "on_demand": [
+    "Gce",
+    "BigQuery",
+    "Gcs",
+    "BigTable",
+    "GceDisks",
+    "GceSnapshots"
+
+  ]
+}
+```
+
 ### Local Development
 For local development run:
 
  `dev_appserver.py --log_level=debug app.yaml`
  
-Iris is easly extendable to support tagging of other GCP services. You will need to create a Python file in the /plugin directory with `register_signals` and `def api_name` functions as following:
+Iris is easly extendable to support tagging of other GCP services. You will need to create a Python file in the /plugin directory with `register_signals`,   `def api_name`  and `methodsNames` functions as following:
 
 ```
      def register_signals(self):
@@ -46,10 +73,7 @@ Iris is easly extendable to support tagging of other GCP services. You will need
         """ 
           Register with the plugin manager.
         """
-        
-        self.bigquery = discovery.build(
-            'bigquery', 'v2', credentials=CREDENTIALS)
-        
+         
         logging.debug("BigQuery class created and registering signals")
 ```
 
@@ -58,4 +82,20 @@ Iris is easly extendable to support tagging of other GCP services. You will need
         return "compute.googleapis.com"
 ```
 
-You will need to create also a `def do_tag(self, project_id):` function that will do the actual work. The plugin manager will automatically load and run any code in the plugin directory which have this interface.
+
+```
+	// a list of log methods to listen on 
+    def methodsNames(self):
+        return ["storage.buckets.create"]
+```
+
+All plugins are derived form `Plugin` class and needs to implement the following functions:
+
+1. `do_tag(self, project_id)`
+1. `get_gcp_object(self, data)`
+1. `tag_one(self, gcp_object, project_id)`
+1. `api_name(self)`
+1. `methodsNames(self)`
+
+ 
+Each plugin will execute `gen_labels` which will loop over all the tags that are defined in the config file and will execute _get_TAGNAME function

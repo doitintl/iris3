@@ -2,6 +2,7 @@
 import base64
 import json
 import logging
+import cloudpickle
 import pickle
 import pkgutil
 
@@ -9,7 +10,6 @@ from flask import Flask, request
 from google.appengine.api import memcache, taskqueue
 
 from pluginbase import Plugin
-from plugins import gce
 from utils import gcp, pubsub, utils
 
 app = Flask(__name__)
@@ -17,7 +17,7 @@ plugins = []
 
 
 def store(key, value, chunksize=950000):
-    serialized = pickle.dumps(value, 2)
+    serialized = cloudpickle.dumps(value, 2)
     values = {}
     for i in xrange(0, len(serialized), chunksize):
         values['%s.%s' % (key, i // chunksize)] = serialized[i:i + chunksize]
@@ -42,10 +42,14 @@ def create_app():
     pubsub.create_subscriptions(client, 'iris_gce',
                                 'iris_gce')
     pubsub.pull(client, 'iris_gce',
-                "https://{}/tag_gce".format(hostname))
-
+                "https://{}/tag_one".format(hostname))
+    tags = utils.get_tags()
+    on_demand = utils.get_ondemand()
     for _, module, _ in pkgutil.iter_modules(["plugins"]):
         __import__('plugins' + '.' + module)
+    for plugin in Plugin.plugins:
+        plugin.set_on_demand(on_demand)
+        plugin.set_tags(tags)
 
 
 create_app()
@@ -60,20 +64,25 @@ def index():
     return 'this aren\'t the droids you\'re looking for', 200
 
 
-@app.route('/tag_gce', methods=['POST'])
-def tag_gce():
+@app.route('/tag_one', methods=['POST'])
+def tag_one():
     data = json.loads(base64.b64decode(request.json['message']['data']))
-    logging.debug("Got a new gce instance %s",
-                  data['jsonPayload']['resource']['name'])
-    g = gce.Gce()
-    g.register_signals()
-    res = g.get_instance(data['resource']['labels']['project_id'],
-                         data['resource']['labels']['zone'],
-                         data['jsonPayload']['resource']['name'])
-    if res is not None:
-        g.tag_one(data['resource']['labels']['project_id'],
-                  data['resource']['labels']['zone'], res)
-        g.do_batch()
+    logging.info(data)
+    try:
+        method_name = data['protoPayload']['methodName']
+        for plugin in Plugin.plugins:
+            if plugin.is_on_demand():
+                for method in plugin.methodsNames():
+                    if method.lower() in method_name.lower():
+                        gcp_object = plugin.get_gcp_object(data)
+                        if gcp_object is not None:
+                            project_id = data['resource']['labels'][
+                                'project_id']
+                            logging.info("Calling tag one for %s", plugin.__class__.__name__)
+                            plugin.tag_one(gcp_object, project_id)
+                            plugin.do_batch()
+    except Exception as e:
+        logging.error(e)
     return 'ok', 200
 
 
@@ -83,7 +92,7 @@ def schedule():
     Checks if it's time to run a schedule.
     Returns:
     """
-    logging.debug("From Cron start /tasks/schedule")
+    logging.info("Nothing here")
     projects = gcp.get_all_projetcs()
     for project in sorted(projects, key=lambda x: x['name']):
         project_id = str(project['projectId'])
@@ -115,4 +124,5 @@ def do_tag():
 
 
 if __name__ == "__main__":
+    # TODO debug = False
     app.run(debug=True)

@@ -1,3 +1,18 @@
 {
-  "project": "aviv-playground"
+  "tags": [
+    "name",
+    "zone",
+    "region",
+    "location",
+    "instance_type"
+  ],
+  "on_demand": [
+    "Gce",
+    "BigQuery",
+    "Gcs",
+    "BigTable",
+    "GceDisks",
+    "GceSnapshots"
+
+  ]
 }

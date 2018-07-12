@@ -4,40 +4,49 @@ from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
-from utils import gcp, utils
+from utils import utils
 
 SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 
 CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
 
-def batch_callback(request_id, response, exception):
-    if exception is not None:
-        logging.error(
-            'Error patching snapshot {0}: {1}'.format(request_id,
-                                                      exception))
-
-
 class GceSnapshots(Plugin):
 
-    def register_signals(self):
+    def __init__(self):
+        Plugin.__init__(self)
         self.compute = discovery.build(
             'compute', 'v1', credentials=CREDENTIALS)
-        logging.debug("GCE class created and registering signals")
         self.batch = self.compute.new_batch_http_request(
-            callback=batch_callback)
-        self.counter = 0
+            callback=self.batch_callback)
+
+
+    def register_signals(self):
+        logging.debug("GCE Snapshots class created and registering signals")
+
+
+    def _get_name(self, gcp_object):
+        try:
+            name = gcp_object['name']
+            name = name.replace(".", "_").lower()[:62]
+        except KeyError as e:
+            logging.error(e)
+            return None
+        return name
 
 
     def api_name(self):
         return "compute.googleapis.com"
 
 
+    def methodsNames(self):
+        return ["v1.compute.disks.createSnapshot"]
+
+
     def list_snapshots(self, project_id):
         """
         List all instances in zone with the requested tags
         Args:
-            zone: zone
             project_id: project id
         Returns:
         """
@@ -67,7 +76,6 @@ class GceSnapshots(Plugin):
         """
        get an instance
         Args:
-            zone: zone
             project_id: project id
             name: instance name
         Returns:
@@ -76,7 +84,7 @@ class GceSnapshots(Plugin):
         try:
             result = self.compute.snapshots().get(
                 project=project_id,
-                resource=name).execute()
+                snapshot=name).execute()
         except errors.HttpError as e:
             logging.error(e)
             return None
@@ -86,37 +94,45 @@ class GceSnapshots(Plugin):
     def do_tag(self, project_id):
         snapshots = self.list_snapshots(project_id)
         for snapshot in snapshots:
-            self.tag_one(project_id, snapshot)
+            self.tag_one(snapshot, project_id)
         if self.counter > 0:
-            self.batch.execute()
+            self.do_batch()
         return 'ok', 200
 
 
-    def tag_one(self, project_id, snapshot):
+    def get_gcp_object(self, data):
+        try:
+            if 'response' not in data['protoPayload']:
+                return None
+            snap_name = data['protoPayload']['request']['name']
+            snapshot = self.get_snapshot(
+                data['resource']['labels']['project_id'], snap_name)
+            return snapshot
+        except Exception as e:
+            logging.error(e)
+            return None
+
+
+    def tag_one(self, gcp_object, project_id):
         try:
             org_labels = {}
-            org_labels = snapshot['labels']
+            org_labels = gcp_object['labels']
         except KeyError:
             pass
-        labels = {
-            'labelFingerprint': snapshot.get('labelFingerprint', '')
-        }
-        labels['labels'] = {}
-        labels['labels'][gcp.get_name_tag()] = snapshot[
-                                                   'name'].replace(".",
-                                                                   "_").lower()[
-                                               :62]
+
+        labels = dict(
+            [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
+        labels['labels'] = self.gen_labels(gcp_object)
         for k, v in org_labels.items():
             labels['labels'][k] = v
         try:
             self.batch.add(self.compute.snapshots().setLabels(
                 project=project_id,
-                resource=snapshot['name'],
+                resource=gcp_object['name'],
                 body=labels), request_id=utils.get_uuid())
             self.counter = self.counter + 1
             if self.counter == 1000:
-                self.batch.execute()
-                counter = 0
+                self.do_batch()
         except Exception as e:
             logging.error(e)
         return 'ok', 200
