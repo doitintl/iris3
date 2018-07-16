@@ -22,7 +22,7 @@ def detect_gae():
 
 def _get_project_id():
     logging.info("-------------------Running Localy--------------------")
-    with open('config.json', 'r') as config_file:
+    with open('dev_config.json', 'r') as config_file:
         config = json.load(config_file)
     return config['project']
 
@@ -71,7 +71,21 @@ def is_service_enbaled(service_list, service):
             return True
     return False
 
-
-
 def get_uuid():
     uuid.uuid4()
+
+
+def get_tags():
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+    return config['tags']
+
+
+def get_ondemand():
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+    return config['on_demand']
+
+
+def get_prfeix():
+    return 'iris'

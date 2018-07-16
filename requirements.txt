@@ -6,3 +6,4 @@ oauth2client
 six
 backoff==1.4.3
 ratelimit
+cloudpickle

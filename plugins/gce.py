@@ -11,26 +11,69 @@ SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
 
-def batch_callback(request_id, response, exception):
-    if exception is not None:
-        logging.error(
-            'Error instance table {0}: {1}'.format(request_id,
-                                                   exception))
-
-
 class Gce(Plugin):
 
-    def register_signals(self):
+    def __init__(self):
+        Plugin.__init__(self)
         self.compute = discovery.build(
             'compute', 'v1', credentials=CREDENTIALS)
-        logging.debug("GCE class created and registering signals")
         self.batch = self.compute.new_batch_http_request(
-            callback=batch_callback)
-        self.counter = 0
+            callback=self.batch_callback)
 
+
+    def register_signals(self):
+        logging.debug("GCE class created and registering signals")
+
+
+    def _get_name(self, gcp_object):
+        try:
+            name = gcp_object['name']
+            name = name.replace(".", "_").lower()[:62]
+        except KeyError as e:
+            logging.error(e)
+            return None
+        return name
+
+
+    def _get_zone(self, gcp_object):
+        try:
+            zone = gcp_object['zone']
+            ind = zone.rfind('/')
+            zone = zone[ind + 1:]
+            zone = zone.lower()
+        except KeyError as e:
+            logging.error(e)
+            return None
+        return zone
+
+
+    def _get_region(self, gcp_object):
+        try:
+            zone = gcp_object['zone']
+            ind = zone.rfind('/')
+            zone = zone[ind + 1:]
+            region = gcp.region_from_zone(zone).lower()
+        except KeyError as e:
+            logging.error(e)
+            return None
+        return region
+
+    def _get_instance_type(self, gcp_object):
+        try:
+            machineType = gcp_object['machineType']
+            ind = machineType.rfind('/')
+            machineType = machineType[ind + 1:]
+        except KeyError as e:
+            logging.error(e)
+            return None
+        return machineType
 
     def api_name(self):
         return "compute.googleapis.com"
+
+
+    def methodsNames(self):
+        return ["compute.instances.insert"]
 
 
     def get_zones(self, projectid):
@@ -104,44 +147,50 @@ class Gce(Plugin):
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
-                self.tag_one(project_id, zone, instance)
+                self.tag_one(instance, project_id)
         if self.counter > 0:
-            self.batch.execute()
+            self.do_batch()
         return 'ok', 200
 
 
-    def tag_one(self, project_id, zone, instance):
+    def get_gcp_object(self, data):
+        try:
+            inst = data['protoPayload']['resourceName']
+            ind = inst.rfind('/')
+            inst = inst[ind + 1:]
+            instance = self.get_instance(
+                data['resource']['labels']['project_id'],
+                data['resource']['labels']['zone'],
+                inst)
+            return instance
+        except Exception as e:
+            logging.error(e)
+            return None
+
+
+    def tag_one(self, gcp_object, project_id):
         try:
             org_labels = {}
-            org_labels = instance['labels']
+            org_labels = gcp_object['labels']
         except KeyError:
             pass
-        labels = {
-            'labelFingerprint': instance.get('labelFingerprint', '')
-        }
-        labels['labels'] = {}
-        labels['labels'][gcp.get_name_tag()] = instance[
-                                                   'name'].replace(".",
-                                                                   "_").lower()[
-                                               :62]
-        labels['labels'][gcp.get_zone_tag()] = zone.lower()
-        labels['labels'][gcp.get_region_tag()] = gcp.region_from_zone(
-            zone).lower()
+        labels = dict(
+            [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
+        labels['labels'] = self.gen_labels(gcp_object)
         for k, v in org_labels.items():
             labels['labels'][k] = v
         try:
+            zone = gcp_object['zone']
+            ind = zone.rfind('/')
+            zone = zone[ind + 1:]
             self.batch.add(self.compute.instances().setLabels(
                 project=project_id,
                 zone=zone,
-                instance=instance['name'],
+                instance=gcp_object['name'],
                 body=labels), request_id=utils.get_uuid())
             self.counter = self.counter + 1
             if self.counter == 1000:
-                self.batch.execute()
-                self.counter = 0
+                self.do_batch()
         except errors.HttpError as e:
             logging.error(e)
         return 'ok', 200
-
-    def do_batch(self):
-        self.batch.execute()

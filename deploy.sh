@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+function error_exit
+{
+    echo "$1" 1>&2
+    exit 1
+}
+
 if [[ $# -eq 0 ]] ; then
  echo Missing project id argument
  exit
@@ -61,11 +67,21 @@ ORGID=`gcloud organizations list |grep -v DISPLAY_NAME |awk '{print $2}'`
 #create pub/sub topic
 gcloud pubsub topics create iris_gce --project=$PROJECTID --quiet >/dev/null || error_exit "error creating pub/sub topic"
 
-# create a sink at org level
+
+# create or update a sink at org level
+gcloud logging sinks list|grep iris_gce
+RESULT=$?
+if [ $RESULT -eq 1 ]; then
 gcloud logging sinks create iris_gce  \
 pubsub.googleapis.com/projects/$PROJECTID/topics/iris_gce --include-children \
 --organization=$ORGID \
---log-filter="resource.type="gce_instance" protoPayload.methodName="v1.compute.instances.insert"" --quiet >/dev/null || error_exit "error creating log sink"
+--log-filter="protoPayload.methodName:("storage.buckets.create"  OR "compute.instances.insert" OR "datasetservice.insert" OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance" OR "cloudsql.instances.create" OR "v1.compute.disks.insert" OR "v1.compute.disks.createSnapshot")" --quiet >/dev/null || error_exit "error creating log sink"
+else
+logging sinks update iris_gce  \
+pubsub.googleapis.com/projects/$PROJECTID/topics/iris_gce \
+--organization=$ORGID \
+--log-filter="protoPayload.methodName:("storage.buckets.create"  OR "compute.instances.insert" OR "datasetservice.insert" OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance" OR "cloudsql.instances.create" OR "v1.compute.disks.insert" OR "v1.compute.disks.createSnapshot")" --quiet >/dev/null || error_exit "error creating log sink"
+fi
 
 # extract service account from sink configuration
 svcaccount=`gcloud logging sinks describe iris_gce|grep writerIdentity|awk '{print $2}'`
