@@ -191,7 +191,8 @@ class BigQuery(Plugin):
         if self.counter > 0:
             self.do_batch()
 
-
+    @sleep_and_retry
+    @limits(calls=50, period=1)
     def tag_one(self, gcp_object, project_id):
         try:
             if gcp_object['kind'] == "bigquery#dataset":
