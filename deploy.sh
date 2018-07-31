@@ -69,7 +69,7 @@ gcloud pubsub topics create iris_gce --project=$PROJECTID --quiet >/dev/null || 
 
 
 # create or update a sink at org level
-gcloud logging sinks list|grep iris_gce
+gcloud logging sinks list --organization=$ORGID|grep iris_gce
 RESULT=$?
 if [ $RESULT -eq 1 ]; then
 gcloud logging sinks create iris_gce  \
