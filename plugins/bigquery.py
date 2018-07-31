@@ -157,7 +157,7 @@ class BigQuery(Plugin):
 
 
     @sleep_and_retry
-    @limits(calls=50, period=1)
+    @limits(calls=50, period=60)
     def tag_one_dataset(self, gcp_object):
         labels = dict()
         labels['labels'] = self.gen_labels(gcp_object)
@@ -172,7 +172,7 @@ class BigQuery(Plugin):
 
 
     @sleep_and_retry
-    @limits(calls=50, period=1)
+    @limits(calls=50, period=60)
     def tag_one_table(self, gcp_object):
         labels = dict()
         labels['labels'] = self.gen_labels(gcp_object)
@@ -191,8 +191,6 @@ class BigQuery(Plugin):
         if self.counter > 0:
             self.do_batch()
 
-    @sleep_and_retry
-    @limits(calls=50, period=1)
     def tag_one(self, gcp_object, project_id):
         try:
             if gcp_object['kind'] == "bigquery#dataset":
