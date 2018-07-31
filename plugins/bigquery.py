@@ -157,7 +157,7 @@ class BigQuery(Plugin):
 
 
     @sleep_and_retry
-    @limits(calls=50, period=60)
+    @limits(calls=35, period=60)
     def tag_one_dataset(self, gcp_object):
         labels = dict()
         labels['labels'] = self.gen_labels(gcp_object)
@@ -172,7 +172,7 @@ class BigQuery(Plugin):
 
 
     @sleep_and_retry
-    @limits(calls=50, period=60)
+    @limits(calls=35, period=60)
     def tag_one_table(self, gcp_object):
         labels = dict()
         labels['labels'] = self.gen_labels(gcp_object)
