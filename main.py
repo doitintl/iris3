@@ -28,7 +28,11 @@ def retrieve(key):
     result = memcache.get_multi(['%s.%s' % (key, i) for i in xrange(32)])
     serialized = ''.join(
         [v for k, v in sorted(result.items()) if v is not None])
-    return pickle.loads(serialized)
+    try:
+        return pickle.loads(serialized)
+    except EOFError as e:
+        logging.info(e)
+        return None
 
 
 def create_app():
@@ -118,8 +122,9 @@ def schedule():
 @app.route('/tasks/do_tag', methods=['GET'])
 def do_tag():
     f = retrieve(request.args['plugin'])
-    project_id = request.args['project_id']
-    f.do_tag(project_id)
+    if f is not None:
+        project_id = request.args['project_id']
+        f.do_tag(project_id)
     return 'ok', 200
 
 
