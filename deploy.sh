@@ -52,21 +52,20 @@ if [ `gcloud services list --filter sql-component.googleapis.com | wc -l` -eq 0 
   gcloud services enable sql-component.googleapis.com
 fi
 
+# get organization id
+ORGID=`gcloud organizations list |grep -v DISPLAY_NAME |awk '{print $2}'`
+
 # create app engine app
 gcloud app create --region=us-central
 
 # create custom role to run iris
-gcloud iam roles create iris --project $PROJECTID --file roles.yaml
+gcloud iam roles create iris --organization $ORGID --file roles.yaml
 
 # assign default iris app engine service account with role on organization level
-gcloud organizations add-iam-policy-binding $ORGID --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" --role projects/$PROJECTIDD/roles/iris
-
-# get organization id
-ORGID=`gcloud organizations list |grep -v DISPLAY_NAME |awk '{print $2}'`
+gcloud organizations add-iam-policy-binding $ORGID --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" --role organizations/$ORGID/roles/iris
 
 #create pub/sub topic
 gcloud pubsub topics create iris_gce --project=$PROJECTID --quiet >/dev/null || error_exit "error creating pub/sub topic"
-
 
 # create or update a sink at org level
 gcloud logging sinks list --organization=$ORGID|grep iris_gce
