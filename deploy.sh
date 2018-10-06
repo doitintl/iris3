@@ -76,14 +76,14 @@ pubsub.googleapis.com/projects/$PROJECTID/topics/iris_gce --include-children \
 --organization=$ORGID \
 --log-filter="protoPayload.methodName:("storage.buckets.create"  OR "compute.instances.insert" OR "datasetservice.insert" OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance" OR "cloudsql.instances.create" OR "v1.compute.disks.insert" OR "v1.compute.disks.createSnapshot")" --quiet >/dev/null || error_exit "error creating log sink"
 else
-logging sinks update iris_gce  \
+gcloud logging sinks update iris_gce  \
 pubsub.googleapis.com/projects/$PROJECTID/topics/iris_gce \
 --organization=$ORGID \
 --log-filter="protoPayload.methodName:("storage.buckets.create"  OR "compute.instances.insert" OR "datasetservice.insert" OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance" OR "cloudsql.instances.create" OR "v1.compute.disks.insert" OR "v1.compute.disks.createSnapshot")" --quiet >/dev/null || error_exit "error creating log sink"
 fi
 
 # extract service account from sink configuration
-svcaccount=`gcloud logging sinks describe iris_gce|grep writerIdentity|awk '{print $2}'`
+svcaccount=`gcloud logging sinks describe --organization=$ORGID iris_gce|grep writerIdentity|awk '{print $2}'`
 
 # assign extracted service account to a topic with a publisher role
 gcloud projects add-iam-policy-binding $PROJECTID --member=$svcaccount --role='roles/pubsub.publisher' --quiet >/dev/null || error_exit "Error creating log sink"
