@@ -53,7 +53,10 @@ if [ `gcloud services list --filter sql-component.googleapis.com | wc -l` -eq 0 
 fi
 
 # get organization id
-ORGID=`gcloud organizations list |grep -v DISPLAY_NAME |awk '{print $2}'`
+ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-token)\"" \
+   -H "Content-Type: application/json; charset=utf-8"  \
+   https://cloudresourcemanager.googleapis.com/v1/projects/${PROJECTID}:getAncestry |  grep -A 1 organization \
+    | tail -n 1 | tr -d ' ' | cut -d'"' -f4)
 
 # create app engine app
 gcloud app create --region=us-central
