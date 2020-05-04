@@ -26,7 +26,7 @@ To deploy, you will need to have *Owner* role on Iris project and the following 
 
  * _Organization Role Administrator_ - to create a custom IAM role for Iris that allows setting labels on the services
    (note this is different from _Organization Administrator_, which is in turn not related to Organization-level _Owner_)
- * _Security Admin* OR *Organization Administrator* - to allow Iris app engine service account to use the above role
+ * _Security Admin_ OR _Organization Administrator_ - to allow Iris app engine service account to use the above role
  * _Logs Configuration Writer_ OR _Logs Configuration Writer_ - to configure log events stream on Organization level to watch for new instances, databases, etc.
 
 ### Install dependencies
