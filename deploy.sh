@@ -34,6 +34,7 @@ required_svcs=(
 	bigtable.googleapis.com
 	storage-component.googleapis.com
 	sql-component.googleapis.com
+	sqladmin.googleapis.com
 )
 
 # Enable services if they are not
