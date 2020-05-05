@@ -6,41 +6,52 @@ In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification 
 
 Iris helps to automatically assign labels to Google Cloud resources for better manageability and billing reporting. Each resource in Google Cloud will get an automatically generated label in a form of [iris_name:name], [iris_region:region] and finally [iris_zone:zone]. For example if you have a Google Compute Engine instance named `nginx`, Iris will automatically label this instance with [iris_name:nginx], [iris_region:us-central1] and [iris_zone:us-central1-a].
 
-Iris will also label short lived Google Compute Engine instances such as preemtible instances or instances managed by Instance Group Manager by listening to Stackdriver Logs and putting required labels on-demand. 
+Iris will also label short lived Google Compute Engine instances such as preemtible instances or instances managed by Instance Group Manager by listening to Stackdriver Logs and putting required labels on-demand.
 
-**Supported Google Cloud Products**
+**NOTE**: Iris will try tagging resources in _all_ project across your GCP organization. Not just the project it will be deployed into.
+
+## Supported Google Cloud Products
 
 Iris is extensible through plugins and new Google Cloud products may be supported via simply adding a plugin. Right now, there are plugins for the following products:
 
 * Google Compute Engine (including disks and snapshots)
 * Google Cloud Storage
-* Google CloudSQL
 * Google BigQuery
 * Google Bigtable
 
-**Installation**
+## Installation
 
-We recommend to deploy Iris in a [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project) within your Google Cloud organization. You will need the following IAM permissions on your Google Cloud organization to complete the deployment: 
+We recommend to deploy Iris in a [separate](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project) project within your Google Cloud organization.
+To deploy, you will need to have *Owner* role on Iris project and the following roles in your *GCP Organization*:
 
- * App Engine Admin
- * Logs Configuration Writer
- * Pub/Sub Admin
+ * _Organization Role Administrator_ - to create a custom IAM role for Iris that allows setting labels on the services
+   (note this is different from _Organization Administrator_, which is in turn not related to Organization-level _Owner_)
+ * _Security Admin_ OR _Organization Administrator_ - to allow Iris app engine service account to use the above role
+ * _Logs Configuration Writer_ OR _Logs Configuration Writer_ - to configure log events stream on Organization level to watch for new instances, databases, etc.
 
-##### Install dependencies
+### Install dependencies
 
-`pip install -r requirements.txt -t lib`
+```
+pip2.7 install -r requirements.txt -t lib
+```
 
-##### Deploy
-`./deploy.sh project-id`
+Yes, we still use Python2.7. Yes, [we know](https://pythonclock.org/).
 
-##### Configuration
+#### Deploy
 
-Configuration is stored in the config.json file. The file contais two arrays.
+```
+./deploy.sh <project-id>
+```
 
-1. tags - A list of tgas that will be applide to the resources (if the plugin implimented a function by the name _get_TAGNAME)
-2. on_demand - A List of plugins that will tag whenever there is a new object of their type (No support for CloudSQL for now)
+#### Configuration
 
-```{
+Configuration is stored in the config.json file. The file contains two arrays.
+
+1. tags - A list of tags that will be applied to the resources (if the corresponding plugin implemented a function `_get_<TAGNAME>()`)
+2. on_demand - A List of plugins that will tag whenever a new object of their type is created
+
+```json
+{
   "tags": [
     "name",
     "zone",
@@ -55,7 +66,6 @@ Configuration is stored in the config.json file. The file contais two arrays.
     "BigTable",
     "GceDisks",
     "GceSnapshots"
-
   ]
 }
 ```
@@ -64,27 +74,26 @@ Configuration is stored in the config.json file. The file contais two arrays.
 For local development run:
 
  `dev_appserver.py --log_level=debug app.yaml`
- 
-Iris is easly extendable to support tagging of other GCP services. You will need to create a Python file in the /plugin directory with `register_signals`,   `def api_name`  and `methodsNames` functions as following:
 
-```
+Iris is easily extendable to support tagging of other GCP services. You will need to create a Python file in the /plugin directory with `register_signals`,   `def api_name`  and `methodsNames` functions as following:
+
+```python
      def register_signals(self):
- 
-        """ 
+
+        """
           Register with the plugin manager.
         """
-         
+
         logging.debug("BigQuery class created and registering signals")
 ```
 
-```
+```python
  def api_name(self):
         return "compute.googleapis.com"
 ```
 
-
-```
-	// a list of log methods to listen on 
+```python
+	// a list of log methods to listen on
     def methodsNames(self):
         return ["storage.buckets.create"]
 ```
@@ -97,5 +106,5 @@ All plugins are derived form `Plugin` class and needs to implement the following
 1. `api_name(self)`
 1. `methodsNames(self)`
 
- 
-Each plugin will execute `gen_labels` which will loop over all the tags that are defined in the config file and will execute _get_TAGNAME function
+
+Each plugin will execute `gen_labels()` which will loop over all the tags that are defined in the config file and will execute `_get_<TAGNAME>()` function
