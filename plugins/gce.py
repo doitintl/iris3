@@ -144,6 +144,7 @@ class Gce(Plugin):
 
 
     def do_tag(self, project_id):
+        logging.info("do_tag GCE", project_id)
         for zone in self.get_zones(project_id):
             instances = self.list_instances(project_id, zone)
             for instance in instances:
@@ -169,15 +170,18 @@ class Gce(Plugin):
 
 
     def tag_one(self, gcp_object, project_id):
+        logging.info("do_tag GCE", gcp_object)
         try:
             org_labels = {}
             org_labels = gcp_object['labels']
         except KeyError:
             pass
+        logging.info('labelFingerprint'+ str(gcp_object.get('labelFingerprint', '')))
         labels = dict(
             [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
         labels['labels'] = self.gen_labels(gcp_object)
         for k, v in org_labels.items():
+            logging.info('keyvalue'+k+str(v))
             labels['labels'][k] = v
         try:
             zone = gcp_object['zone']

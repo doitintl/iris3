@@ -10,13 +10,14 @@ if [[ $# -eq 0 ]] ; then
  echo Missing project id argument
  exit
 fi
-
-PROJECTID=$(gcloud projects list | grep -iw "$1" | awk '{print $1}')
+echo xxxx $1 xxxx
+PROJECTID=$(gcloud projects list | grep -i "^$1 " | awk '{print $1}')
 
 if [ -z "$PROJECTID" ]; then
 	echo "Project $1 Not Found!"
 	exit 1
 fi
+echo "PROJECTID $PROJECTID XXX"
 
 #set the project context
 echo "Project ID $PROJECTID"

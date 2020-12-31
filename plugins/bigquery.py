@@ -1,5 +1,6 @@
 """ Taging BQ tabels and datasets."""
 import logging
+import traceback
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
@@ -113,6 +114,7 @@ class BigQuery(Plugin):
             return table
         except Exception as e:
             logging.error(e)
+            print(traceback.format_exc())
 
         return None
 

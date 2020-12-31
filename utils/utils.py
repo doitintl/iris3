@@ -64,6 +64,10 @@ def fatal_code(e):
 
 
 def is_service_enbaled(service_list, service):
+    if service_list is None:
+        print('service_list is None, service is ', service)
+        return False
+
     if 'services' in service_list:
         for srv in service_list['services']:
             if srv['config']['name'].lower() == service.lower():

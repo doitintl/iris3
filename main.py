@@ -15,11 +15,12 @@ from utils import gcp, pubsub, utils
 app = Flask(__name__)
 plugins = []
 
-
 def store(key, value, chunksize=950000):
     serialized = cloudpickle.dumps(value, 2)
     values = {}
     for i in xrange(0, len(serialized), chunksize):
+        if chunksize>10**6:
+         print('setting memcache', key,'with chunk of size', chunksize, serialized[i:i + 100] )
         values['%s.%s' % (key, i // chunksize)] = serialized[i:i + chunksize]
     return memcache.set_multi(values)
 
@@ -121,9 +122,12 @@ def schedule():
 
 @app.route('/tasks/do_tag', methods=['GET'])
 def do_tag():
+    logging.info("do_tag")
     f = retrieve(request.args['plugin'])
+    logging.info("do_tag",f )
     if f is not None:
         project_id = request.args['project_id']
+        logging.info('do_tag', project_id)
         f.do_tag(project_id)
     return 'ok', 200
 
