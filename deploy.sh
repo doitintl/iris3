@@ -3,21 +3,21 @@
 set -ex
 
 ROLEID=iris
-TOPIC=iris_gce
-SINK=iris_gce
+# TOPIC and SINK include 'gce' suffix but include more services in GCP
+TOPIC=iris_topic
+SINK=iris_sub
 
 if [[ $# -eq 0 ]] ; then
  echo Missing project id argument
  exit
 fi
-echo xxxx $1 xxxx
 PROJECTID=$(gcloud projects list | grep -i "^$1 " | awk '{print $1}')
 
 if [ -z "$PROJECTID" ]; then
 	echo "Project $1 Not Found!"
 	exit 1
 fi
-echo "PROJECTID $PROJECTID XXX"
+
 
 #set the project context
 echo "Project ID $PROJECTID"
@@ -61,14 +61,15 @@ gcloud organizations add-iam-policy-binding "$ORGID" \
 	--member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" \
 	--role "organizations/$ORGID/roles/$ROLEID"
 
-#create pub/sub topic
+#create pub/subscription topic
 gcloud pubsub topics describe "$TOPIC" || \
-	gcloud pubsub topics create iris_gce --project="$PROJECTID" --quiet >/dev/null
+	gcloud pubsub topics create $TOPIC --project="$PROJECTID" --quiet >/dev/null
 
 log_filter=('protoPayload.methodName:(')
 log_filter+=('"storage.buckets.create"' OR '"compute.instances.insert"' OR '"datasetservice.insert"')
 log_filter+=('OR "tableservice.insert"' OR '"google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
 log_filter+=('OR "cloudsql.instances.create"' OR '"v1.compute.disks.insert"' OR '"v1.compute.disks.createSnapshot"')
+log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"' )
 log_filter+=(')')
 
 # create or update a sink at org level
@@ -92,4 +93,4 @@ gcloud projects add-iam-policy-binding "$PROJECTID" \
 	--member="$svcaccount" --role=roles/pubsub.publisher --quiet
 
 # deploy the application
-gcloud app deploy -q app.yaml cron.yaml queue.yaml
+gcloud app deploy -q app.yaml  queue.yaml

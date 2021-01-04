@@ -1,10 +1,10 @@
 import logging
+import uuid
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
-from utils import utils
 
 SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 
@@ -39,13 +39,13 @@ class GceSnapshots(Plugin):
         return "compute.googleapis.com"
 
 
-    def methodsNames(self):
+    def method_names(self):
         return ["v1.compute.disks.createSnapshot"]
 
 
     def list_snapshots(self, project_id):
         """
-        List all instances in zone with the requested tags
+        List all instances in zone with the requested labels
         Args:
             project_id: project id
         Returns:
@@ -91,10 +91,10 @@ class GceSnapshots(Plugin):
         return result
 
 
-    def do_tag(self, project_id):
+    def do_label(self, project_id):
         snapshots = self.list_snapshots(project_id)
         for snapshot in snapshots:
-            self.tag_one(snapshot, project_id)
+            self.label_one(snapshot, project_id)
         if self.counter > 0:
             self.do_batch()
         return 'ok', 200
@@ -113,7 +113,7 @@ class GceSnapshots(Plugin):
             return None
 
 
-    def tag_one(self, gcp_object, project_id):
+    def label_one(self, gcp_object, project_id):
         try:
             org_labels = {}
             org_labels = gcp_object['labels']
@@ -122,14 +122,15 @@ class GceSnapshots(Plugin):
 
         labels = dict(
             [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
-        labels['labels'] = self.gen_labels(gcp_object)
-        for k, v in org_labels.items():
+        labels['labels'] = self._gen_labels(gcp_object)
+        for k, v in list(org_labels.items()):
             labels['labels'][k] = v
         try:
+
             self.batch.add(self.compute.snapshots().setLabels(
                 project=project_id,
                 resource=gcp_object['name'],
-                body=labels), request_id=utils.get_uuid())
+                body=labels), request_id= uuid.uuid4())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()

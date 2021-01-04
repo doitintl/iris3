@@ -1,10 +1,10 @@
 import logging
+import uuid
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
-from utils import utils
 
 SCOPES = ['https://www.googleapis.com/auth/devstorage.full_control']
 
@@ -20,9 +20,6 @@ class Gcs(Plugin):
             callback=self.batch_callback)
 
 
-    def register_signals(self):
-
-        logging.debug("Storage class created and registering signals")
 
 
     def _get_name(self, gcp_object):
@@ -49,7 +46,7 @@ class Gcs(Plugin):
         return "storage-component.googleapis.com"
 
 
-    def methodsNames(self):
+    def method_names(self):
         return ["storage.buckets.create"]
 
 
@@ -73,7 +70,7 @@ class Gcs(Plugin):
             return None
 
 
-    def do_tag(self, project_id):
+    def do_label(self, project_id):
 
         page_token = None
         more_results = True
@@ -86,7 +83,7 @@ class Gcs(Plugin):
                 return
             if 'items' in response:
                 for bucket in response['items']:
-                    self.tag_one(bucket, project_id)
+                    self.label_one(bucket, project_id)
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']
             else:
@@ -95,13 +92,14 @@ class Gcs(Plugin):
             self.do_batch()
 
 
-    def tag_one(self, gcp_object, project_id):
+    def label_one(self, gcp_object, project_id):
         labels = dict()
-        labels['labels'] = self.gen_labels(gcp_object)
+        labels['labels'] = self._gen_labels(gcp_object)
         try:
+
             self.batch.add(self.storage.buckets().patch(
                 bucket=gcp_object['name'], body=labels),
-                request_id=utils.get_uuid())
+                request_id=uuid.uuid4())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()

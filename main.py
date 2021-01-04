@@ -2,136 +2,134 @@
 import base64
 import json
 import logging
-import cloudpickle
-import pickle
+import os
 import pkgutil
 
-from flask import Flask, request
-from google.appengine.api import memcache, taskqueue
+import flask
 
 from pluginbase import Plugin
-from utils import gcp, pubsub, utils
+from utils import pubsub_utils, conf_utils, gcp_utils
 
-app = Flask(__name__)
-plugins = []
-
-def store(key, value, chunksize=950000):
-    serialized = cloudpickle.dumps(value, 2)
-    values = {}
-    for i in xrange(0, len(serialized), chunksize):
-        if chunksize>10**6:
-         print('setting memcache', key,'with chunk of size', chunksize, serialized[i:i + 100] )
-        values['%s.%s' % (key, i // chunksize)] = serialized[i:i + chunksize]
-    return memcache.set_multi(values)
+logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
+app = flask.Flask(__name__)
 
 
-def retrieve(key):
-    result = memcache.get_multi(['%s.%s' % (key, i) for i in xrange(32)])
-    serialized = ''.join(
-        [v for k, v in sorted(result.items()) if v is not None])
-    try:
-        return pickle.loads(serialized)
-    except EOFError as e:
-        logging.info(e)
-        return None
+def cls_by_name(fully_qualified_classname):
+    parts = fully_qualified_classname.split('.')
+    module = '.'.join(parts[:-1])
+    n = __import__(module)
+    for comp in parts[1:]:
+        n = getattr(n, comp)
+    return n
 
 
-def create_app():
-    """
-    Do initialization
-    """
-    hostname = utils.get_host_name()
-    logging.info("Starting Iris on %s", hostname)
-    client = pubsub.get_pubsub_client()
-    pubsub.create_topic(client, 'iris_gce')
-    pubsub.create_subscriptions(client, 'iris_gce',
-                                'iris_gce')
-    pubsub.pull(client, 'iris_gce',
-                "https://{}/tag_one".format(hostname))
-    tags = utils.get_tags()
-    on_demand = utils.get_ondemand()
-    for _, module, _ in pkgutil.iter_modules(["plugins"]):
-        __import__('plugins' + '.' + module)
-    for plugin in Plugin.plugins:
-        plugin.set_on_demand(on_demand)
-        plugin.set_tags(tags)
+def init_flaskapp():
+    logging.info('Starting Iris')
+
+    pubsub_utils.create_subscriptions('/label_one')
+
+    on_demand = conf_utils.get_ondemand()
+    for _, module, _ in pkgutil.iter_modules(['plugins']):
+        module_name = 'plugins' + '.' + module
+        __import__(module_name)
+        plugin_class = cls_by_name(module_name + '.' + module.title())
+        Plugin.plugins.append(plugin_class)
+        plugin_class.set_on_demand(on_demand)
+    # TODO label existing objects
 
 
-create_app()
+init_flaskapp()
 
 
 @app.route('/')
 def index():
-    """
-    Main Page
-    :return:
-    """
-    return 'this aren\'t the droids you\'re looking for', 200
-
-
-@app.route('/tag_one', methods=['POST'])
-def tag_one():
-    data = json.loads(base64.b64decode(request.json['message']['data']))
-    logging.info(data)
-    try:
-        method_name = data['protoPayload']['methodName']
-        for plugin in Plugin.plugins:
-            if plugin.is_on_demand():
-                for method in plugin.methodsNames():
-                    if method.lower() in method_name.lower():
-                        gcp_object = plugin.get_gcp_object(data)
-                        if gcp_object is not None:
-                            project_id = data['resource']['labels'][
-                                'project_id']
-                            logging.info("Calling tag one for %s", plugin.__class__.__name__)
-                            plugin.tag_one(gcp_object, project_id)
-                            plugin.do_batch()
-    except Exception as e:
-        logging.error(e)
-    return 'ok', 200
+    return "These aren't the droids you are looking for", 200
 
 
 @app.route('/tasks/schedule', methods=['GET'])
 def schedule():
     """
-    Checks if it's time to run a schedule.
+    Checks if it'fully_qualified_classname time to run a schedule.
+    When it is, send out a task per plugin  to tag all objects.
     Returns:
     """
     logging.info("Nothing here")
-    projects = gcp.get_all_projetcs()
-    for project in sorted(projects, key=lambda x: x['name']):
-        project_id = str(project['projectId'])
-        service_list = gcp.list_services(project_id)
-        logging.debug("Creating deferred task for %s", project_id)
+    projects = gcp_utils.get_all_projects()
+    for project in sorted(projects):
         for plugin in Plugin.plugins:
-            if utils.is_service_enbaled(service_list, plugin.api_name()):
-                store(plugin.__class__.__name__, plugin)
-                task = taskqueue.add(queue_name='iris-tasks',
-                                     url="/tasks/do_tag",
-                                     method='GET',
-                                     params={
-                                         'project_id': project_id,
-                                         'plugin': plugin.__class__.__name__,
-                                     })
-                logging.debug('Task %s for %s enqueued, ETA %s.', task.name,
-                              plugin.__class__.__name__, task.eta)
-            else:
-                logging.debug("Service %s is not enabled", plugin.api_name())
+            pass
+    #                task = taskqueue.add(queue_name='iris-tasks',
+    #                                    url="/tasks/do_tag",
+    #                                   method='GET',
+    #                                     params={
+    #                                         'project_id': project_id,
+    #                                         'plugin': plugin.__class__.__name__,
+    #                                     })
+    #                logging.debug('Task %fully_qualified_classname for %fully_qualified_classname enqueued, ETA %fully_qualified_classname.', task.name,
+    #                              plugin.__class__.__name__, task.eta)
     return 'ok', 200
 
 
-@app.route('/tasks/do_tag', methods=['GET'])
-def do_tag():
-    logging.info("do_tag")
-    f = retrieve(request.args['plugin'])
-    logging.info("do_tag",f )
-    if f is not None:
-        project_id = request.args['project_id']
-        logging.info('do_tag', project_id)
-        f.do_tag(project_id)
+# Pubsub push endpoint
+@app.route('/label_one', methods=['POST'])
+def label_one():
+    """Receive logging-object about a new GCP object (from PubSub from a logging
+    sink), and label it."""
+    envelope = flask.request.get_json()
+    if not envelope:
+        msg = 'no Pub/Sub message received'
+        logging.error(f'Error: {msg}')
+        return f'Bad Request: {msg}', 400
+
+    if not isinstance(envelope, dict) or "message" not in envelope:
+        msg = 'invalid Pub/Sub message format'
+        logging.error(f"Error: {msg}")
+        return f'Bad Request: {msg}', 400
+
+    pubsub_message = envelope["message"]
+
+    data = json.loads(base64.b64decode(pubsub_message['data']))
+    logging.info(data)
+    method_name = data['protoPayload']['methodName']
+    for plugin in Plugin.plugins:
+        if plugin.is_on_demand():
+            for method in plugin.method_names():
+                if method.lower() in method_name.lower():
+                    gcp_object = plugin.get_gcp_object(data)
+                    if gcp_object is not None:
+                        project_id = data['resource']['labels']['project_id']
+                        logging.info("Calling label_one for %fully_qualified_classname", plugin.__class__.__name__)
+                        plugin.label_one(gcp_object, project_id)
+                        plugin.do_batch()
     return 'ok', 200
 
 
-if __name__ == "__main__":
-    # TODO debug = False
-    app.run(debug=True)
+# TOD Run this off Cloud Tasks (or just pubsub)
+@app.route('/tasks/do_label', methods=['GET'])
+def do_label():
+    """
+    :param (in HTTP request) is
+    'plugin' with plugin name and
+    'project_id' with project id.
+    Test with http://127.0.0.1:5000/tasks/do_label?plugin=Gce&project_id=joshua-playground-host-vpc&zones=us-east1-b
+    """
+    plugin_name = flask.request.args['plugin']
+    logging.info("Importing %fully_qualified_classname", plugin_name)
+    cls = cls_by_name('plugins' + '.' + plugin_name.lower() + '.' + plugin_name)
+
+    project_id = flask.request.args['project_id']
+    kwargs = dict(flask.request.args)
+    del kwargs['project_id']
+    del kwargs['plugin']
+    plugin = cls()
+    plugin.do_label(project_id, **kwargs)
+    return 'ok', 200
+
+
+if __name__ in ['__main__']:
+    # This is used when running locally only. When deploying to Google App
+    # Engine, a webserver process such as Gunicorn will serve the app. This
+    # can be configured by adding an `entrypoint` to app.yaml.
+    port = os.environ.get('PORT', '8080')
+    port = int(port)
+    app.run(host="127.0.0.1", port=port, debug=True)

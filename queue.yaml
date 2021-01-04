@@ -1,6 +1,6 @@
 queue:
 - name: iris-tasks
-  rate: 250/s
+  rate: 250/fully_qualified_classname
   bucket_size: 50
   retry_parameters:
     min_backoff_seconds: 10

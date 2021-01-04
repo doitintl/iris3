@@ -1,13 +1,13 @@
 """ Taging BQ tabels and datasets."""
 import logging
 import traceback
+import uuid
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
 from ratelimit import limits, sleep_and_retry
 
 from pluginbase import Plugin
-from utils import utils
 
 SCOPES = ['https://www.googleapis.com/auth/bigquery']
 
@@ -35,7 +35,7 @@ class BigQuery(Plugin):
         return "bigquery-json.googleapis.com"
 
 
-    def methodsNames(self):
+    def method_names(self):
         return ["datasetservice.insert", "tableservice.insert"]
 
 
@@ -114,12 +114,12 @@ class BigQuery(Plugin):
             return table
         except Exception as e:
             logging.error(e)
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
 
         return None
 
 
-    def do_tag(self, project_id):
+    def do_label(self, project_id):
         """
         tag tables and data sets
         :param project_id: project id
@@ -162,7 +162,7 @@ class BigQuery(Plugin):
     @limits(calls=35, period=60)
     def tag_one_dataset(self, gcp_object):
         labels = dict()
-        labels['labels'] = self.gen_labels(gcp_object)
+        labels['labels'] = self._gen_labels(gcp_object)
         try:
             self.bigquery.datasets().patch(
                 projectId=gcp_object['datasetReference']['projectId'],
@@ -177,14 +177,15 @@ class BigQuery(Plugin):
     @limits(calls=35, period=60)
     def tag_one_table(self, gcp_object):
         labels = dict()
-        labels['labels'] = self.gen_labels(gcp_object)
+        labels['labels'] = self._gen_labels(gcp_object)
         try:
+
             self.batch.add(self.bigquery.tables().patch(
                 projectId=gcp_object['tableReference']['projectId'],
                 body=labels,
                 datasetId=gcp_object['tableReference']['datasetId'],
                 tableId=gcp_object['tableReference'][
-                    'tableId']), request_id=utils.get_uuid())
+                    'tableId']), request_id=uuid.uuid4())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()
@@ -193,7 +194,7 @@ class BigQuery(Plugin):
         if self.counter > 0:
             self.do_batch()
 
-    def tag_one(self, gcp_object, project_id):
+    def label_one(self, gcp_object, project_id):
         try:
             if gcp_object['kind'] == "bigquery#dataset":
                 self.tag_one_dataset(gcp_object)

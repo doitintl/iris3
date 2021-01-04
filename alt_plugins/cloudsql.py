@@ -4,7 +4,6 @@ from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
-from utils import utils
 
 SCOPES = ['https://www.googleapis.com/auth/sqlservice.admin']
 
@@ -49,7 +48,7 @@ class CloudSql(Plugin):
         return "sqladmin.googleapis.com"
 
 
-    def methodsNames(self):
+    def method_names(self):
         return ["cloudsql.instances.create"]
 
 
@@ -79,7 +78,7 @@ class CloudSql(Plugin):
             return None
 
 
-    def do_tag(self, project_id):
+    def do_label(self, project_id):
         page_token = None
         more_results = True
         while more_results:
@@ -92,16 +91,16 @@ class CloudSql(Plugin):
             if 'items' not in response:
                 return
             for database_instance in response['items']:
-                self.tag_one(database_instance, project_id)
+                self.label_one(database_instance, project_id)
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']
             else:
                 more_results = False
 
 
-    def tag_one(self, gcp_object, project_id):
+    def label_one(self, gcp_object, project_id):
         labels = dict()
-        labels['labels'] = self.gen_labels(gcp_object)
+        labels['labels'] = self._gen_labels(gcp_object)
         try:
             database_instance_body = dict()
             database_instance_body['settings'] = {}

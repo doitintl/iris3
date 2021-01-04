@@ -1,9 +1,7 @@
-Flask==1.0
+Flask
 google-api-python-client
-google-auth
-google-auth-httplib2
-oauth2client
-six
+google-cloud-pubsub
 backoff==1.4.3
 ratelimit
-cloudpickle
+google-cloud-resource-manager
+

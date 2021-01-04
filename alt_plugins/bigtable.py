@@ -1,10 +1,13 @@
 import logging
+import uuid
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
 
+import utils.gcp_utils
+import utils.gcp_utils
 from pluginbase import Plugin
-from utils import gcp, utils
+from utils import gcp
 
 SCOPES = ['https://www.googleapis.com/auth/bigtable.admin']
 
@@ -32,7 +35,7 @@ class BigTable(Plugin):
         return "bigtableadmin.googleapis.com"
 
 
-    def methodsNames(self):
+    def method_names(self):
         return [
             "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"]
 
@@ -61,7 +64,7 @@ class BigTable(Plugin):
     def _get_region(self, gcp_object):
         try:
             zone = self.get_location(gcp_object, gcp_object['project_id'])
-            region = gcp.region_from_zone(zone).lower()
+            region = utils.gcp_utils.region_from_zone(zone).lower()
         except KeyError as e:
             logging.error(e)
             return None
@@ -108,7 +111,7 @@ class BigTable(Plugin):
             return None
 
 
-    def do_tag(self, project_id):
+    def do_label(self, project_id):
         page_token = None
         more_results = True
         while more_results:
@@ -121,7 +124,7 @@ class BigTable(Plugin):
                 return
             if 'instances' in result:
                 for inst in result['instances']:
-                    self.tag_one(inst, project_id)
+                    self.label_one(inst, project_id)
             if 'nextPageToken' in result:
                 page_token = result['nextPageToken']
             else:
@@ -130,24 +133,25 @@ class BigTable(Plugin):
                 self.do_batch()
 
 
-    def tag_one(self, gcp_object, project_id):
+    def label_one(self, gcp_object, project_id):
         labels = dict()
         gcp_object['project_id'] = project_id
-        labels['labels'] = self.gen_labels(gcp_object)
+        labels['labels'] = self._gen_labels(gcp_object)
         gcp_object.pop('project_id', None)
         if 'labels' in gcp_object:
-            for key, val in labels['labels'].items():
+            for key, val in list(labels['labels'].items()):
                 gcp_object['labels'][key] = val
         else:
             gcp_object['labels'] = {}
-            for key, val in labels['labels'].items():
+            for key, val in list(labels['labels'].items()):
                 gcp_object['labels'][key] = val
 
         try:
-            self.batch.add(self.bigtable.projects().instances(
-            ).partialUpdateInstance(
-                name=gcp_object['name'], body=gcp_object,
-                updateMask='labels'), request_id=utils.get_uuid())
+
+            self.batch.add(
+                self.bigtable.projects().instances().partialUpdateInstance(
+                 name=gcp_object['name'], body=gcp_object,
+                 updateMask='labels'), request_id= uuid.uuid4())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()

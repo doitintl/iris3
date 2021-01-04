@@ -1,5 +1,5 @@
 {
-  "tags": [
+  "labels": [
     "name",
     "zone",
     "region",
@@ -12,6 +12,8 @@
     "Gcs",
     "BigTable",
     "GceDisks",
+    "CloudSql",
+    "CloudPubSub",
     "GceSnapshots"
 
   ]

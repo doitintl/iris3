@@ -1,5 +1,0 @@
-cron:
-- description: "Assign labels"
-  url: /tasks/schedule
-  schedule: every 12 hours
-  target: default

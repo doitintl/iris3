@@ -1,29 +1,21 @@
 import logging
+import uuid
 
-from google.auth import app_engine
 from googleapiclient import discovery, errors
 
+import utils.gcp_utils
 from pluginbase import Plugin
-from utils import gcp, utils
-
-SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
-
-CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
+from utils import gcp_utils
 
 
 class Gce(Plugin):
+    compute = discovery.build('compute', 'v1')
 
     def __init__(self):
-        Plugin.__init__(self)
-        self.compute = discovery.build(
-            'compute', 'v1', credentials=CREDENTIALS)
+        super().__init__()
+
         self.batch = self.compute.new_batch_http_request(
             callback=self.batch_callback)
-
-
-    def register_signals(self):
-        logging.debug("GCE class created and registering signals")
-
 
     def _get_name(self, gcp_object):
         try:
@@ -34,29 +26,25 @@ class Gce(Plugin):
             return None
         return name
 
-
     def _get_zone(self, gcp_object):
         try:
             zone = gcp_object['zone']
-            ind = zone.rfind('/')
-            zone = zone[ind + 1:]
+            index = zone.rfind('/')
+            zone = zone[index + 1:]
             zone = zone.lower()
+            return zone
         except KeyError as e:
             logging.error(e)
             return None
-        return zone
-
 
     def _get_region(self, gcp_object):
         try:
-            zone = gcp_object['zone']
-            ind = zone.rfind('/')
-            zone = zone[ind + 1:]
-            region = gcp.region_from_zone(zone).lower()
+            zone = self._get_zone(gcp_object)
+            region = utils.gcp_utils.region_from_zone(zone).lower()
+            return region
         except KeyError as e:
             logging.error(e)
             return None
-        return region
 
     def _get_instance_type(self, gcp_object):
         try:
@@ -71,37 +59,20 @@ class Gce(Plugin):
     def api_name(self):
         return "compute.googleapis.com"
 
-
-    def methodsNames(self):
+    def method_names(self):
         return ["compute.instances.insert"]
 
-
-    def get_zones(self, projectid):
+    def get_zones(self, project_id):
         """
         Get all available zones.
-        Args:
-            project_id: project id
-        :return: all regions
         """
 
-        request = self.compute.zones().list(project=projectid)
-
+        request = self.compute.zones().list(project=project_id)
         response = request.execute()
-        zones = []
-        for zone in response['items']:
-            zones.append(zone['description'])
+        zones = [zone['description'] for zone in response['items']]
         return zones
 
-
     def list_instances(self, project_id, zone):
-        """
-        List all instances in zone with the requested tags
-        Args:
-            zone: zone
-            project_id: project id
-        Returns:
-        """
-
         instances = []
         page_token = None
         more_results = True
@@ -122,37 +93,26 @@ class Gce(Plugin):
 
         return instances
 
-
     def get_instance(self, project_id, zone, name):
-        """
-       get an instance
-        Args:
-            zone: zone
-            project_id: project id
-            name: instance name
-        Returns:
-        """
-
         try:
             result = self.compute.instances().get(
-                project=project_id, zone=zone,
-                instance=name).execute()
+                project=project_id, zone=zone, instance=name).execute()
+            return result
         except errors.HttpError as e:
             logging.error(e)
             return None
-        return result
 
-
-    def do_tag(self, project_id):
-        logging.info("do_tag GCE", project_id)
+    def do_label(self, project_id, **kwargs):
+        filter_zones_or_regions = kwargs.get('zones', []).split(',')
         for zone in self.get_zones(project_id):
-            instances = self.list_instances(project_id, zone)
-            for instance in instances:
-                self.tag_one(instance, project_id)
+            # TODO: Spawn off processing in parallel per-zone
+            if not filter_zones_or_regions or any(z in zone for z in filter_zones_or_regions):
+                instances = self.list_instances(project_id, zone)
+                for instance in instances:
+                    self.label_one(instance, project_id)
         if self.counter > 0:
             self.do_batch()
         return 'ok', 200
-
 
     def get_gcp_object(self, data):
         try:
@@ -168,33 +128,34 @@ class Gce(Plugin):
             logging.error(e)
             return None
 
-
-    def tag_one(self, gcp_object, project_id):
-        logging.info("do_tag GCE", gcp_object)
+    def label_one(self, gcp_object, project_id):
         try:
-            org_labels = {}
-            org_labels = gcp_object['labels']
+            original_labels = gcp_object['labels']
         except KeyError:
-            pass
-        logging.info('labelFingerprint'+ str(gcp_object.get('labelFingerprint', '')))
-        labels = dict(
-            [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
-        labels['labels'] = self.gen_labels(gcp_object)
-        for k, v in org_labels.items():
-            logging.info('keyvalue'+k+str(v))
-            labels['labels'][k] = v
+            original_labels = {}
+
+        gen_labels = self._gen_labels(gcp_object)
+        all_labels= {**gen_labels, **original_labels}
+        labels = {
+            'labels': all_labels,
+            'labelFingerprint': gcp_object.get('labelFingerprint', '')
+        }
+
         try:
-            zone = gcp_object['zone']
-            ind = zone.rfind('/')
-            zone = zone[ind + 1:]
+            zone = self._get_zone(gcp_object)
+
             self.batch.add(self.compute.instances().setLabels(
                 project=project_id,
                 zone=zone,
                 instance=gcp_object['name'],
-                body=labels), request_id=utils.get_uuid())
+                body=labels),
+                request_id=gcp_utils.generate_uuid())
+
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()
+
         except errors.HttpError as e:
             logging.error(e)
         return 'ok', 200
+

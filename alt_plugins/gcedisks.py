@@ -1,10 +1,13 @@
 import logging
+import uuid
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
 
+import utils.gcp_utils
+import utils.gcp_utils
 from pluginbase import Plugin
-from utils import gcp, utils
+from utils import gcp
 
 SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 
@@ -53,7 +56,7 @@ class GceDisks(Plugin):
             ind = zone.rfind('/')
             zone = zone[ind + 1:]
             zone = zone.lower()
-            region = gcp.region_from_zone(zone).lower()
+            region = utils.gcp_utils.region_from_zone(zone).lower()
         except KeyError as e:
             logging.error(e)
             return None
@@ -64,7 +67,7 @@ class GceDisks(Plugin):
         return "compute.googleapis.com"
 
 
-    def methodsNames(self):
+    def method_names(self):
         return ["v1.compute.disks.insert"]
 
 
@@ -87,7 +90,7 @@ class GceDisks(Plugin):
 
     def list_disks(self, project_id, zone):
         """
-        List all instances in zone with the requested tags
+        List all instances in zone with the requested labels
         Args:
             zone: zone
             project_id: project id
@@ -134,11 +137,11 @@ class GceDisks(Plugin):
         return result
 
 
-    def do_tag(self, project_id):
+    def do_label(self, project_id):
         for zone in self.get_zones(project_id):
             disks = self.list_disks(project_id, zone)
             for disk in disks:
-                self.tag_one(disk, project_id)
+                self.label_one(disk, project_id)
         if self.counter > 0:
             self.do_batch()
         return 'ok', 200
@@ -157,7 +160,7 @@ class GceDisks(Plugin):
             return None
 
 
-    def tag_one(self, gcp_object, project_id):
+    def label_one(self, gcp_object, project_id):
         try:
             org_labels = {}
             org_labels = gcp_object['labels']
@@ -165,18 +168,19 @@ class GceDisks(Plugin):
             pass
         labels = dict(
             [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
-        labels['labels'] = self.gen_labels(gcp_object)
-        for k, v in org_labels.items():
+        labels['labels'] = self._gen_labels(gcp_object)
+        for k, v in list(org_labels.items()):
             labels['labels'][k] = v
         try:
             zone = gcp_object['zone']
             ind = zone.rfind('/')
             zone = zone[ind + 1:]
+
             self.batch.add(self.compute.disks().setLabels(
                 project=project_id,
                 zone=zone,
                 resource=gcp_object['name'],
-                body=labels), request_id=utils.get_uuid())
+                body=labels), request_id=  uuid.uuid4())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()
