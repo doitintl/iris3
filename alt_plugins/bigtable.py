@@ -4,10 +4,9 @@ import uuid
 from google.auth import app_engine
 from googleapiclient import discovery, errors
 
-import utils.gcp_utils
-import utils.gcp_utils
+import util.gcp_utils
+import util.gcp_utils
 from pluginbase import Plugin
-from utils import gcp
 
 SCOPES = ['https://www.googleapis.com/auth/bigtable.admin']
 
@@ -23,22 +22,18 @@ class BigTable(Plugin):
         self.batch = self.bigtable.new_batch_http_request(
             callback=self.batch_callback)
 
-
     def register_signals(self):
         """
         Register with the plugin manager.
         """
         logging.debug("BigTable class created and registering signals")
 
-
     def api_name(self):
         return "bigtableadmin.googleapis.com"
-
 
     def method_names(self):
         return [
             "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"]
-
 
     def _get_name(self, gcp_object):
         try:
@@ -51,7 +46,6 @@ class BigTable(Plugin):
             return None
         return name
 
-
     def _get_zone(self, gcp_object):
         try:
             location = self.get_location(gcp_object, gcp_object['project_id'])
@@ -60,16 +54,14 @@ class BigTable(Plugin):
             return None
         return location
 
-
     def _get_region(self, gcp_object):
         try:
             zone = self.get_location(gcp_object, gcp_object['project_id'])
-            region = utils.gcp_utils.region_from_zone(zone).lower()
+            region = util.gcp_utils.region_from_zone(zone).lower()
         except KeyError as e:
             logging.error(e)
             return None
         return region
-
 
     def get_location(self, gcp_object, project_id):
         instance = gcp_object['displayName']
@@ -77,7 +69,6 @@ class BigTable(Plugin):
         loc = result['clusters'][0]['location']
         ind = loc.rfind('/')
         return loc[ind + 1:]
-
 
     def get_instance(self, project_id, name):
         try:
@@ -87,7 +78,6 @@ class BigTable(Plugin):
             logging.error(e)
             return None
         return result
-
 
     def _get_cluster(self, project_id, name):
         try:
@@ -99,7 +89,6 @@ class BigTable(Plugin):
             return None
         return result
 
-
     def get_gcp_object(self, data):
         try:
             instance = self.get_instance(
@@ -109,7 +98,6 @@ class BigTable(Plugin):
         except Exception as e:
             logging.error(e)
             return None
-
 
     def do_label(self, project_id):
         page_token = None
@@ -132,26 +120,25 @@ class BigTable(Plugin):
             if self.counter > 0:
                 self.do_batch()
 
-
     def label_one(self, gcp_object, project_id):
         labels = dict()
         gcp_object['project_id'] = project_id
         labels['labels'] = self._gen_labels(gcp_object)
         gcp_object.pop('project_id', None)
         if 'labels' in gcp_object:
-            for key, val in list(labels['labels'].items()):
+            for key, val in labels['labels'].items():
                 gcp_object['labels'][key] = val
         else:
             gcp_object['labels'] = {}
-            for key, val in list(labels['labels'].items()):
+            for key, val in labels['labels'].items():
                 gcp_object['labels'][key] = val
 
         try:
 
             self.batch.add(
                 self.bigtable.projects().instances().partialUpdateInstance(
-                 name=gcp_object['name'], body=gcp_object,
-                 updateMask='labels'), request_id= uuid.uuid4())
+                    name=gcp_object['name'], body=gcp_object,
+                    updateMask='labels'), request_id=uuid.uuid4())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()

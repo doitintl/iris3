@@ -4,10 +4,9 @@ import uuid
 from google.auth import app_engine
 from googleapiclient import discovery, errors
 
-import utils.gcp_utils
-import utils.gcp_utils
+import util.gcp_utils
+import util.gcp_utils
 from pluginbase import Plugin
-from utils import gcp
 
 SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
 
@@ -23,10 +22,8 @@ class GceDisks(Plugin):
         self.batch = self.compute.new_batch_http_request(
             callback=self.batch_callback)
 
-
     def register_signals(self):
         logging.debug("GCE Disks class created and registering signals")
-
 
     def _get_name(self, gcp_object):
         try:
@@ -36,7 +33,6 @@ class GceDisks(Plugin):
             logging.error(e)
             return None
         return name
-
 
     def _get_zone(self, gcp_object):
         try:
@@ -49,27 +45,23 @@ class GceDisks(Plugin):
             return None
         return zone
 
-
     def _get_region(self, gcp_object):
         try:
             zone = gcp_object['zone']
             ind = zone.rfind('/')
             zone = zone[ind + 1:]
             zone = zone.lower()
-            region = utils.gcp_utils.region_from_zone(zone).lower()
+            region = util.gcp_utils.region_from_zone(zone).lower()
         except KeyError as e:
             logging.error(e)
             return None
         return region
 
-
     def api_name(self):
         return "compute.googleapis.com"
 
-
     def method_names(self):
         return ["v1.compute.disks.insert"]
-
 
     def get_zones(self, projectid):
         """
@@ -86,7 +78,6 @@ class GceDisks(Plugin):
         for zone in response['items']:
             zones.append(zone['description'])
         return zones
-
 
     def list_disks(self, project_id, zone):
         """
@@ -117,7 +108,6 @@ class GceDisks(Plugin):
 
         return disks
 
-
     def get_disk(self, project_id, zone, name):
         """
        get an instance
@@ -136,7 +126,6 @@ class GceDisks(Plugin):
             return None
         return result
 
-
     def do_label(self, project_id):
         for zone in self.get_zones(project_id):
             disks = self.list_disks(project_id, zone)
@@ -145,7 +134,6 @@ class GceDisks(Plugin):
         if self.counter > 0:
             self.do_batch()
         return 'ok', 200
-
 
     def get_gcp_object(self, data):
         try:
@@ -159,7 +147,6 @@ class GceDisks(Plugin):
             logging.error(e)
             return None
 
-
     def label_one(self, gcp_object, project_id):
         try:
             org_labels = {}
@@ -169,7 +156,7 @@ class GceDisks(Plugin):
         labels = dict(
             [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
         labels['labels'] = self._gen_labels(gcp_object)
-        for k, v in list(org_labels.items()):
+        for k, v in org_labels.items():
             labels['labels'][k] = v
         try:
             zone = gcp_object['zone']
@@ -180,7 +167,7 @@ class GceDisks(Plugin):
                 project=project_id,
                 zone=zone,
                 resource=gcp_object['name'],
-                body=labels), request_id=  uuid.uuid4())
+                body=labels), request_id=uuid.uuid4())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()

@@ -19,9 +19,6 @@ class Gcs(Plugin):
         self.batch = self.storage.new_batch_http_request(
             callback=self.batch_callback)
 
-
-
-
     def _get_name(self, gcp_object):
         try:
             name = gcp_object['name']
@@ -30,7 +27,6 @@ class Gcs(Plugin):
             logging.error(e)
             return None
         return name
-
 
     def _get_location(self, gcp_object):
         try:
@@ -41,14 +37,11 @@ class Gcs(Plugin):
             return None
         return location
 
-
     def api_name(self):
         return "storage-component.googleapis.com"
 
-
     def method_names(self):
         return ["storage.buckets.create"]
-
 
     def get_bucket(self, bucket_name):
         try:
@@ -59,7 +52,6 @@ class Gcs(Plugin):
             return None
         return result
 
-
     def get_gcp_object(self, data):
         try:
             bucket = self.get_bucket(
@@ -68,7 +60,6 @@ class Gcs(Plugin):
         except Exception as e:
             logging.error(e)
             return None
-
 
     def do_label(self, project_id):
 
@@ -90,7 +81,6 @@ class Gcs(Plugin):
                 more_results = False
         if self.counter > 0:
             self.do_batch()
-
 
     def label_one(self, gcp_object, project_id):
         labels = dict()

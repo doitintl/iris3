@@ -4,41 +4,41 @@ import json
 import logging
 import os
 import pkgutil
+import typing
 
 import flask
 
 from pluginbase import Plugin
-from utils import pubsub_utils, conf_utils, gcp_utils
+from util import pubsub_utils, conf_utils, gcp_utils, utils
+from util.utils import cls_by_name
 
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
+
 app = flask.Flask(__name__)
 
 
-def cls_by_name(fully_qualified_classname):
-    parts = fully_qualified_classname.split('.')
-    module = '.'.join(parts[:-1])
-    n = __import__(module)
-    for comp in parts[1:]:
-        n = getattr(n, comp)
-    return n
-
-
-def init_flaskapp():
+def __init_flaskapp():
     logging.info('Starting Iris')
 
-    pubsub_utils.create_subscriptions('/label_one')
+    def create_subscriptions():
+        pubsub_utils.create_subscriptions('do_label', pubsub_utils.scheduled_labeling_topic())
+        pubsub_utils.create_subscriptions('label_one', pubsub_utils.logs_topic())
 
-    on_demand = conf_utils.get_ondemand()
-    for _, module, _ in pkgutil.iter_modules(['plugins']):
-        module_name = 'plugins' + '.' + module
-        __import__(module_name)
-        plugin_class = cls_by_name(module_name + '.' + module.title())
-        Plugin.plugins.append(plugin_class)
-        plugin_class.set_on_demand(on_demand)
-    # TODO label existing objects
+    def load_plugins():
+        on_demand: typing.List[str] = conf_utils.get_ondemand()
+        for _, module, _ in pkgutil.iter_modules(['plugins']):
+            module_name = 'plugins' + '.' + module
+            __import__(module_name)
+            plugin_class = utils.cls_by_name(module_name + '.' + module.title())
+            Plugin.plugins.append(plugin_class)
+            plugin_class.set_on_demand(on_demand)
+
+    create_subscriptions()
+    load_plugins()
 
 
-init_flaskapp()
+__init_flaskapp()
 
 
 @app.route('/')
@@ -46,27 +46,24 @@ def index():
     return "These aren't the droids you are looking for", 200
 
 
-@app.route('/tasks/schedule', methods=['GET'])
+@app.route('/schedule', methods=['GET'])
 def schedule():
     """
     Checks if it'fully_qualified_classname time to run a schedule.
     When it is, send out a task per plugin  to tag all objects.
     Returns:
     """
-    logging.info("Nothing here")
+    logging.info('schedule, headers %s', sorted(dict(flask.request.headers)))
     projects = gcp_utils.get_all_projects()
-    for project in sorted(projects):
+    for project_id in sorted(projects):
         for plugin in Plugin.plugins:
-            pass
-    #                task = taskqueue.add(queue_name='iris-tasks',
-    #                                    url="/tasks/do_tag",
-    #                                   method='GET',
-    #                                     params={
-    #                                         'project_id': project_id,
-    #                                         'plugin': plugin.__class__.__name__,
-    #                                     })
-    #                logging.debug('Task %fully_qualified_classname for %fully_qualified_classname enqueued, ETA %fully_qualified_classname.', task.name,
-    #                              plugin.__class__.__name__, task.eta)
+            msg_dict = {'project_id', project_id,
+                        'plugin', plugin.__class__.__name__
+                        }
+            msg = json.dumps(msg_dict)
+            pubsub_utils.publish(project_id=project_id, msg=msg, topic_id=pubsub_utils.scheduled_labeling_topic())
+            logging.info('Task for project %s and plugin  %s enqueued',
+                         project_id, plugin.__class__.__name__)
     return 'ok', 200
 
 
@@ -89,40 +86,48 @@ def label_one():
     pubsub_message = envelope["message"]
 
     data = json.loads(base64.b64decode(pubsub_message['data']))
-    logging.info(data)
-    method_name = data['protoPayload']['methodName']
-    for plugin in Plugin.plugins:
-        if plugin.is_on_demand():
-            for method in plugin.method_names():
-                if method.lower() in method_name.lower():
-                    gcp_object = plugin.get_gcp_object(data)
-                    if gcp_object is not None:
-                        project_id = data['resource']['labels']['project_id']
-                        logging.info("Calling label_one for %fully_qualified_classname", plugin.__class__.__name__)
-                        plugin.label_one(gcp_object, project_id)
-                        plugin.do_batch()
+    __label_one_from_logline(data)
     return 'ok', 200
 
 
-# TOD Run this off Cloud Tasks (or just pubsub)
-@app.route('/tasks/do_label', methods=['GET'])
+# For testing
+@app.route('/label_one_from_logline', methods=['POST'])
+def label_one_from_logline():
+    data: str = flask.request.json
+    __label_one_from_logline(data)
+    return 'ok', 200
+
+
+def __label_one_from_logline(data):
+    supported_method = data['protoPayload']['methodName']
+    for plugin_cls in Plugin.plugins:
+        if plugin_cls.is_on_demand():
+            plugin = plugin_cls()
+            for method_from_log in plugin.method_names():
+                if method_from_log.lower() in supported_method.lower():
+                    gcp_object = plugin.get_gcp_object(data)
+                    if gcp_object is not None:
+                        project_id = data['resource']['labels']['project_id']
+                        logging.info("Calling label_one for %s ", plugin.__class__.__name__)
+                        plugin.label_one(gcp_object, project_id)
+                        plugin.do_batch()
+
+
+@app.route('/do_label', methods=['GET', 'POST'])
 def do_label():
     """
     :param (in HTTP request) is
-    'plugin' with plugin name and
+    'plugin' with plugin short-classname and
     'project_id' with project id.
-    Test with http://127.0.0.1:5000/tasks/do_label?plugin=Gce&project_id=joshua-playground-host-vpc&zones=us-east1-b
     """
-    plugin_name = flask.request.args['plugin']
-    logging.info("Importing %fully_qualified_classname", plugin_name)
+    logging.info('do_label, headers %s', sorted(dict(flask.request.headers)))
+    args = dict(flask.request.args)
+    plugin_name = args.pop('plugin')
+    logging.info("Will use plugin %s", plugin_name)
     cls = cls_by_name('plugins' + '.' + plugin_name.lower() + '.' + plugin_name)
-
-    project_id = flask.request.args['project_id']
-    kwargs = dict(flask.request.args)
-    del kwargs['project_id']
-    del kwargs['plugin']
     plugin = cls()
-    plugin.do_label(project_id, **kwargs)
+    project_id = args.pop('project_id')
+    plugin.do_label(project_id, **args)
     return 'ok', 200
 
 

@@ -23,21 +23,17 @@ class BigQuery(Plugin):
         self.batch = self.bigquery.new_batch_http_request(
             callback=self.batch_callback)
 
-
     def register_signals(self):
         """
            Register with the plugin manager.
         """
         logging.debug("BigQuery class created and registering signals")
 
-
     def api_name(self):
         return "bigquery-json.googleapis.com"
 
-
     def method_names(self):
         return ["datasetservice.insert", "tableservice.insert"]
-
 
     def _get_name(self, gcp_object):
         try:
@@ -55,7 +51,6 @@ class BigQuery(Plugin):
             return None
         return name
 
-
     def _get_location(self, gcp_object):
         try:
             location = gcp_object['location']
@@ -64,7 +59,6 @@ class BigQuery(Plugin):
             logging.error(e)
             return None
         return location
-
 
     def get_dataset(self, project_id, name):
         try:
@@ -76,7 +70,6 @@ class BigQuery(Plugin):
             return None
         return result
 
-
     def get_table(self, project_id, dataset, table):
         try:
             result = self.bigquery.tables().get(
@@ -86,7 +79,6 @@ class BigQuery(Plugin):
             logging.error(e)
             return None
         return result
-
 
     def get_gcp_object(self, data):
         try:
@@ -117,7 +109,6 @@ class BigQuery(Plugin):
             print((traceback.format_exc()))
 
         return None
-
 
     def do_label(self, project_id):
         """
@@ -157,7 +148,6 @@ class BigQuery(Plugin):
             else:
                 more_results = False
 
-
     @sleep_and_retry
     @limits(calls=35, period=60)
     def tag_one_dataset(self, gcp_object):
@@ -171,7 +161,6 @@ class BigQuery(Plugin):
                     'datasetId']).execute()
         except Exception as e:
             logging.error(e)
-
 
     @sleep_and_retry
     @limits(calls=35, period=60)

@@ -1,24 +1,22 @@
 import logging
-import random
-import uuid
 
-from google.auth import app_engine
 from google.cloud import pubsub_v1
 
 from pluginbase import Plugin
+# CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
+from util import gcp_utils
 
-#SCOPES = ['https://www.googleapis.com/auth/pubsub']
 
-#CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
-from utils import gcp_utils
-from utils.pubsub_utils import iris_topic, iris_subscription
+# from utils.pubsub_utils import logs_topic, logs_subscription
+
+
+# SCOPES = ['https://www.googleapis.com/auth/pubsub']
 
 
 class PubSub(Plugin):
 
     def __init__(self):
         Plugin.__init__(self)
-
 
     def register_signals(self):
         logging.debug("Cloud PubSub class created and registering signals")
@@ -38,7 +36,7 @@ class PubSub(Plugin):
         response = request.execute()
         logging.debug(response)
         for subscription in response['subscriptions']:
-            logging.info('one subscription %fully_qualified_classname', subscription)
+            logging.info('one subscription %s', subscription)
             self.label_one(subscription, project_id)
 
         if self.counter > 0:
@@ -57,7 +55,7 @@ class PubSub(Plugin):
         labels = dict(
             [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
         labels['labels'] = self._gen_labels(gcp_object)
-        for k, v in list(org_labels.items()):
+        for k, v in org_labels.items():
             labels['labels'][k] = v
 
         name = gcp_object['name']
@@ -79,11 +77,10 @@ class PubSub(Plugin):
             )
             print('result')
 
-
         print(f"Subscription updated: {subscription_path}")
         self.counter = self.counter + 1
         if self.counter == 1000:
-                self.do_batch()
+            self.do_batch()
         return 'ok', 200
 
     def get_gcp_object(self, data):
@@ -92,14 +89,14 @@ class PubSub(Plugin):
         instId = data['protoPayload']['request']['instanceId']
         logging.info('proj ' + proj + ' instId ' + instId)
         try:
-            instance = self._get_subscription(proj, instId)
+            ERRORnstance = self._get_subscription(proj, instId)
             return instance
         except Exception as e:
             logging.error(e)
             return None
 
     def _get_subscription(self, project_id, name):
-      pass
+        pass
 
 
 '''
@@ -133,4 +130,3 @@ class PubSub(Plugin):
             return None
         return region
 '''
-

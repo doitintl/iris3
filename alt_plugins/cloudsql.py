@@ -19,10 +19,8 @@ class CloudSql(Plugin):
         self.batch = self.sqladmin.new_batch_http_request(
             callback=self.batch_callback)
 
-
     def register_signals(self):
         logging.debug("Cloud SQL class created and registering signals")
-
 
     def _get_name(self, gcp_object):
         try:
@@ -33,7 +31,6 @@ class CloudSql(Plugin):
             return None
         return name
 
-
     def _get_region(self, gcp_object):
         try:
             region = gcp_object['region']
@@ -43,14 +40,11 @@ class CloudSql(Plugin):
             return None
         return region
 
-
     def api_name(self):
         return "sqladmin.googleapis.com"
 
-
     def method_names(self):
         return ["cloudsql.instances.create"]
-
 
     def get_instance(self, project_id, name):
         try:
@@ -61,7 +55,6 @@ class CloudSql(Plugin):
             logging.error(e)
             return None
         return result
-
 
     def get_gcp_object(self, data):
         try:
@@ -76,7 +69,6 @@ class CloudSql(Plugin):
         except Exception as e:
             logging.error(e)
             return None
-
 
     def do_label(self, project_id):
         page_token = None
@@ -96,7 +88,6 @@ class CloudSql(Plugin):
                 page_token = response['nextPageToken']
             else:
                 more_results = False
-
 
     def label_one(self, gcp_object, project_id):
         labels = dict()

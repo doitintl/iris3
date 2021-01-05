@@ -1,11 +1,10 @@
 import logging
-import uuid
 
 from googleapiclient import discovery, errors
 
-import utils.gcp_utils
+import util.gcp_utils
 from pluginbase import Plugin
-from utils import gcp_utils
+from util import gcp_utils
 
 
 class Gce(Plugin):
@@ -40,7 +39,7 @@ class Gce(Plugin):
     def _get_region(self, gcp_object):
         try:
             zone = self._get_zone(gcp_object)
-            region = utils.gcp_utils.region_from_zone(zone).lower()
+            region = util.gcp_utils.region_from_zone(zone).lower()
             return region
         except KeyError as e:
             logging.error(e)
@@ -48,13 +47,13 @@ class Gce(Plugin):
 
     def _get_instance_type(self, gcp_object):
         try:
-            machineType = gcp_object['machineType']
-            ind = machineType.rfind('/')
-            machineType = machineType[ind + 1:]
+            machine_type = gcp_object['machineType']
+            ind = machine_type.rfind('/')
+            machine_type = machine_type[ind + 1:]
         except KeyError as e:
             logging.error(e)
             return None
-        return machineType
+        return machine_type
 
     def api_name(self):
         return "compute.googleapis.com"
@@ -135,7 +134,7 @@ class Gce(Plugin):
             original_labels = {}
 
         gen_labels = self._gen_labels(gcp_object)
-        all_labels= {**gen_labels, **original_labels}
+        all_labels = {**gen_labels, **original_labels}
         labels = {
             'labels': all_labels,
             'labelFingerprint': gcp_object.get('labelFingerprint', '')
@@ -151,11 +150,10 @@ class Gce(Plugin):
                 body=labels),
                 request_id=gcp_utils.generate_uuid())
 
-            self.counter = self.counter + 1
+            self.counter += 1
             if self.counter == 1000:
                 self.do_batch()
 
         except errors.HttpError as e:
             logging.error(e)
         return 'ok', 200
-

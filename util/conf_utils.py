@@ -19,12 +19,13 @@ def __load_dev_config():
         config = json.load(config_file)
     return config
 
-#TODO: ondemand should be a boolean value per-plugin. Instead, we attach
+
+# TODO: ondemand should be a boolean value per-plugin. Instead, we attach
 # the whole list of on-demand plugins to each plugin./
-def get_ondemand()->typing.List:
+def get_ondemand() -> typing.List[str]:
     config = __load_config()
     return config['on_demand']
 
 
-def get_iris_prefix():
+def iris_prefix():
     return 'iris'

@@ -20,10 +20,8 @@ class GceSnapshots(Plugin):
         self.batch = self.compute.new_batch_http_request(
             callback=self.batch_callback)
 
-
     def register_signals(self):
         logging.debug("GCE Snapshots class created and registering signals")
-
 
     def _get_name(self, gcp_object):
         try:
@@ -34,14 +32,11 @@ class GceSnapshots(Plugin):
             return None
         return name
 
-
     def api_name(self):
         return "compute.googleapis.com"
 
-
     def method_names(self):
         return ["v1.compute.disks.createSnapshot"]
-
 
     def list_snapshots(self, project_id):
         """
@@ -71,7 +66,6 @@ class GceSnapshots(Plugin):
 
         return snapshots
 
-
     def get_snapshot(self, project_id, name):
         """
        get an instance
@@ -90,7 +84,6 @@ class GceSnapshots(Plugin):
             return None
         return result
 
-
     def do_label(self, project_id):
         snapshots = self.list_snapshots(project_id)
         for snapshot in snapshots:
@@ -98,7 +91,6 @@ class GceSnapshots(Plugin):
         if self.counter > 0:
             self.do_batch()
         return 'ok', 200
-
 
     def get_gcp_object(self, data):
         try:
@@ -112,7 +104,6 @@ class GceSnapshots(Plugin):
             logging.error(e)
             return None
 
-
     def label_one(self, gcp_object, project_id):
         try:
             org_labels = {}
@@ -123,14 +114,14 @@ class GceSnapshots(Plugin):
         labels = dict(
             [('labelFingerprint', gcp_object.get('labelFingerprint', ''))])
         labels['labels'] = self._gen_labels(gcp_object)
-        for k, v in list(org_labels.items()):
+        for k, v in org_labels.items():
             labels['labels'][k] = v
         try:
 
             self.batch.add(self.compute.snapshots().setLabels(
                 project=project_id,
                 resource=gcp_object['name'],
-                body=labels), request_id= uuid.uuid4())
+                body=labels), request_id=uuid.uuid4())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()
