@@ -1,13 +1,14 @@
 import logging
+import typing
 from abc import ABCMeta, abstractmethod
 
-import util.conf_utils
-from util import conf_utils
+import util.config_utils
+from util import config_utils
 
 
 class Plugin(object, metaclass=ABCMeta):
-    plugins = []
-    on_demand = []
+    plugin_classes = []
+    on_demand: typing.Iterable[str] = []
 
     def __init__(self):
         self.counter = 0
@@ -15,21 +16,21 @@ class Plugin(object, metaclass=ABCMeta):
 
     @classmethod
     def set_on_demand(cls, on_demand):
-        """Set from config file. Only on-demand plugins will
+        """Set from config file. Only on-demand plugin classes will
         process each new object as it arrives, based on logs.
-        As it happens, all plugins  as of 1.2021 are on-demand."""
+        As it happens, all plugin  as of 1.2021 are on-demand."""
         cls.on_demand = on_demand
 
     def _gen_labels(self, gcp_object):
         labels = {}
-        configured_labels = conf_utils.get_labels()
+        configured_labels = config_utils.get_labels()
 
         for lbl in configured_labels:  # labels from class
             f = "_get_" + lbl
             if hasattr(self, f):
                 func = getattr(self, f)
                 label_value = func(gcp_object)
-                labels[util.conf_utils.iris_prefix() + '_' + lbl] = label_value
+                labels[util.config_utils.iris_prefix() + '_' + lbl] = label_value
         return labels
 
     def batch_callback(self, request_id, response, exception):

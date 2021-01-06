@@ -1,7 +1,19 @@
+import logging
+
+
 def cls_by_name(fully_qualified_classname):
     parts = fully_qualified_classname.split('.')
-    module = '.'.join(parts[:-1])
-    n = __import__(module)
-    for comp in parts[1:]:
-        n = getattr(n, comp)
-    return n
+    fully_qualified_module_name = '.'.join(parts[:-1])
+    module = __import__(fully_qualified_module_name)
+    for subcomponent in parts[1:]:
+        try:
+           module = getattr(module, subcomponent)
+        except AttributeError:
+            logging.exception(
+                'Plugin classes must have the same name as their module '
+                '(file under the plugins directory), except that the '
+                'module name should be in lowercase and the class name in title case,'
+                'as for example gce.Gce. Tried to load %s' % fully_qualified_classname,
+                exc_info=True)
+            raise
+    return module

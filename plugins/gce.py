@@ -19,7 +19,7 @@ class Gce(Plugin):
     def _get_name(self, gcp_object):
         try:
             name = gcp_object['name']
-            name = name.replace(".", "_").lower()[:62]
+            name = name.replace('.', '_').lower()[:62]
         except KeyError as e:
             logging.error(e)
             return None
@@ -102,9 +102,12 @@ class Gce(Plugin):
             return None
 
     def do_label(self, project_id, **kwargs):
-        filter_zones_or_regions = kwargs.get('zones', []).split(',')
+        filter_zones_or_regions = kwargs.get('zones', '').split(',')
         for zone in self.get_zones(project_id):
-            # TODO: Spawn off processing in parallel per-zone
+            # TODO: Spawn off threaded processing per-zone.
+            # (We already spawn processing per-project per-plugin, so there is already
+            # a lot of parallelism. But in an IO-bound process, some multithreading
+            #seems in order.
             if not filter_zones_or_regions or any(z in zone for z in filter_zones_or_regions):
                 instances = self.list_instances(project_id, zone)
                 for instance in instances:

@@ -2,16 +2,23 @@
 
 set -ex
 
+START=$(date "+%s")
+
 ROLEID=iris
 
 LOGS_TOPIC=iris_logs_topic
-SCHEDULED_LABELING_TOPIC=iris_scheduled_labeling_topic
+REQUEST_FULL_LABELING_TOPIC=iris_request_full_labeling_topic
 LOGS_SINK_SUB=iris_logs_sub
 
 if [[ $# -eq 0 ]]; then
   echo Missing project id argument
   exit
 fi
+
+#TODO Why do we list projects and then extract project id from output?
+# This is a check that the project exists, but a check could be done with
+# gcloud projects describe; and we could use the $1 (the param) directly
+# as our PROJECTID param.
 
 PROJECTID=$(gcloud projects list | grep -i "^$1 " | awk '{print $1}')
 
@@ -71,8 +78,8 @@ gcloud pubsub topics describe "$LOGS_TOPIC" ||
   gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECTID" --quiet >/dev/null
 
 #create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
-gcloud pubsub topics describe "$SCHEDULED_LABELING_TOPIC" ||
-  gcloud pubsub topics create "$SCHEDULED_LABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
+gcloud pubsub topics describe "$REQUEST_FULL_LABELING_TOPIC" ||
+  gcloud pubsub topics create "$REQUEST_FULL_LABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
 
 log_filter=('protoPayload.methodName:(')
 log_filter+=('"storage.buckets.create"' OR '"compute.instances.insert"' OR '"datasetservice.insert"')
@@ -102,4 +109,8 @@ gcloud projects add-iam-policy-binding "$PROJECTID" \
   --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 
 # deploy the application
-gcloud app deploy -q app.yaml queue.yaml
+gcloud app deploy -q app.yaml cron.yaml
+
+FINISH=$(date "+%s")
+ELAPSED_MS=$((FINISH - START))
+echo "Elapsed time $((ELAPSED_MS / 1000)) s"

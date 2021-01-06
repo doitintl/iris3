@@ -56,7 +56,7 @@ For local development, edit `dev_config.json` and run `main.py` as an ordinary F
 Iris is easily extendable to support labeling of other GCP services. 
 You will need to create a Python file in the `/plugins` directory,
 with a subclass of `Plugin`. The Python file and class name should be the same, except 
-for case. (The filename should be lowercase.)
+for case. (The filename should be lowercase and the class name in Title case.)
  
 In addition to implementing abstract methods, you will need `_get_<LABELNAME>` methods
 This application will add labels that are defined in the `config.json` file
