@@ -37,7 +37,8 @@ You will need the following IAM permissions on your Google Cloud organization to
 `pip install -r requirements.txt -t lib`
 
 ##### Deploy
-`./deploy.sh <project-id>`
+* Edit `app.yaml`, changing the secret token for PubSub.
+* Run  `./deploy.sh <project-id>` 
 
 ##### Configuration
 
@@ -50,14 +51,19 @@ there is a new object of their type (as opposed to labeling
 at application startup or on schedule).
 
 ### Local Development
-For local development, edit `dev_config.json` and run `main.py` as an ordinary Flask application.
+For local development, rename and edit `dev_config.json.template`
+to `dev_config.json`,then run `main.py` as an ordinary Flask application.
 
 ## Extension
 Iris is easily extendable to support labeling of other GCP services. 
 You will need to create a Python file in the `/plugins` directory,
-with a subclass of `Plugin`. The Python file and class name should be the same, except 
-for case. (The filename should be lowercase and the class name in Title case.)
+with a subclass of `Plugin`. 
+
+The Python file and class name should be the same, except for case:
+The filename should be lowercase and the class name should be in Title case.
  
 In addition to implementing abstract methods, you will need `_get_<LABELNAME>` methods
-This application will add labels that are defined in the `config.json` file
-but only if `_get_<LABELNAME>` method is defined in the relevant plugin/
+
+This application will add labels that are defined in the `config.json` file,
+but only if `_get_<LABELNAME>` method is defined in the relevant plugin. 
+See existing plugins for examples.
