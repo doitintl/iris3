@@ -30,10 +30,11 @@ def set_project_env_if_needed():
         localdev_config.set_localdev_project_id_in_env()
 
 
-def gae_url(path=''):
-    assert not path or path[0] != '/'
-    ret = f'https://{gae_svc()}-dot-{project_id()}.{region()}.r.appspot.com/{path}'
-    return ret
+# def gae_url(path=''):
+#    assert not path or path[0] != '/', path
+#    gae_region_code = gae_region_abbreviation()
+#    ret = f'https://{gae_svc()}-dot-{project_id()}.{gae_region_code}.r.appspot.com/{path}'
+#    return ret
 
 
 def gae_svc():
@@ -50,11 +51,8 @@ def get_all_projects() -> typing.List[str]:
     return projects
 
 
-def region():
-    if detect_gae():
-        return os.environ.get('GAE_APPLICATION', '').split('~')[0]
-    else:
-        return localdev_config.localdev_region()
+# def gae_region_abbreviation():
+#    return 'uc'
 
 
 def region_from_zone(zone):
@@ -65,13 +63,3 @@ def generate_uuid() -> str:
     """:return a UUID as a string (and not an object or bytes; this is required
     by the http API. """
     return str(uuid.uuid4())
-
-
-def environment_suffix():
-    """
-    :return suffix for distibguishing subscription and other objects in development
-    """
-    if detect_gae():
-        return ''
-    else:
-        return localdev_config.localdev_environment_suffix()

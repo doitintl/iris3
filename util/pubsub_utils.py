@@ -1,19 +1,15 @@
 import logging
-import textwrap
 
-from google.api_core.exceptions import AlreadyExists, NotFound
 from google.cloud import pubsub_v1
 
-from util import config_utils
-from util import gcp_utils
+from util import gcp_utils, utils, config_utils
 
 __publisher = pubsub_v1.PublisherClient()
 
-
-def create_subscription(subsc, topic):
+"""def create_subscription(subsc, topic):
     subscriber = pubsub_v1.SubscriberClient()
     with subscriber:
-        path = subsc + gcp_utils.environment_suffix()
+        path = subsc 
         subscription_path = subscriber.subscription_path(gcp_utils.project_id(), path)
         try:
             subscriber.delete_subscription(request={"subscription": subscription_path})
@@ -21,7 +17,7 @@ def create_subscription(subsc, topic):
         except NotFound as e:
             logging.debug(e)  # OK, nothing to delete
 
-        endpoint = gcp_utils.gae_url(subsc)
+        endpoint = gcp_utils.gae_url(subsc)+'?token='+token
         topic_path = __publisher.topic_path(gcp_utils.project_id(), topic)
 
         push_config = pubsub_v1.types.PushConfig(push_endpoint=endpoint)
@@ -36,13 +32,15 @@ def create_subscription(subsc, topic):
         except AlreadyExists:
             logging.info('Subscription %s (%s) already exists', subscription_path, endpoint)
 
+"""
+
 
 def logs_topic() -> str:
     return f'{config_utils.iris_prefix()}_logs_topic'
 
 
-def request_full_labeling_topic() -> str:
-    return f'{config_utils.iris_prefix()}_request_full_labeling_topic'
+def requestfulllabeling_topic() -> str:
+    return f'{config_utils.iris_prefix()}_requestfulllabeling_topic'
 
 
 def publish(msg: str, topic_id: str):
@@ -61,4 +59,4 @@ def publish(msg: str, topic_id: str):
     future = __publisher.publish(topic_path, msg.encode('utf-8'))
     future.add_done_callback(on_publish)
 
-    logging.info('Published message to %s: %s', topic_path, textwrap.shorten(msg, 200))
+    logging.info('Published to %s: %s', topic_id, utils.shorten(msg, 200))

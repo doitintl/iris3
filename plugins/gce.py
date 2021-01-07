@@ -104,17 +104,13 @@ class Gce(Plugin):
     def do_label(self, project_id, **kwargs):
         filter_zones_or_regions = kwargs.get('zones', '').split(',')
         for zone in self.get_zones(project_id):
-            # TODO: Spawn off threaded processing per-zone.
-            # (We already spawn processing per-project per-plugin, so there is already
-            # a lot of parallelism. But in an IO-bound process, some multithreading
-            #seems in order.
             if not filter_zones_or_regions or any(z in zone for z in filter_zones_or_regions):
                 instances = self.list_instances(project_id, zone)
                 for instance in instances:
                     self.label_one(instance, project_id)
         if self.counter > 0:
             self.do_batch()
-        return 'ok', 200
+        return 'OK', 200
 
     def get_gcp_object(self, data):
         try:
@@ -159,4 +155,4 @@ class Gce(Plugin):
 
         except errors.HttpError as e:
             logging.error(e)
-        return 'ok', 200
+        return 'OK', 200

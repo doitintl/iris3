@@ -1,5 +1,5 @@
 cron:
-  - description: "Assign labels"
+  - description: "Send out messages to assign labels for each project/plugin"
     url: /schedule
     schedule: every 12 hours
-    target: default
+    target: iris3

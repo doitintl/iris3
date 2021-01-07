@@ -1,0 +1,7 @@
+{
+  "project": "<Dev project where PubSub run>",
+  "dev_projects": [
+    "<One dev project>",
+    "<Another dev project>"
+  ]
+}

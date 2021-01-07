@@ -1,4 +1,5 @@
 import logging
+import textwrap
 
 
 def cls_by_name(fully_qualified_classname):
@@ -7,7 +8,7 @@ def cls_by_name(fully_qualified_classname):
     module = __import__(fully_qualified_module_name)
     for subcomponent in parts[1:]:
         try:
-           module = getattr(module, subcomponent)
+            module = getattr(module, subcomponent)
         except AttributeError:
             logging.exception(
                 'Plugin classes must have the same name as their module '
@@ -17,3 +18,7 @@ def cls_by_name(fully_qualified_classname):
                 exc_info=True)
             raise
     return module
+
+
+def shorten(o, length=400) -> str:
+    return textwrap.shorten(str(o), length)

@@ -16,14 +16,6 @@ def local_gae_svc():
         return documents.get('service', 'default')
 
 
-def localdev_environment_suffix():
-    return '_dev'
-
-
-def localdev_region():
-    return 'uc'
-
-
 def localdev_project_id():
     config = __load_dev_config()
     return config['project']

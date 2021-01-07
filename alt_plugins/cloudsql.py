@@ -101,4 +101,4 @@ class CloudSql(Plugin):
                 instance=gcp_object['name']).execute()
         except Exception as e:
             logging.error(e)
-        return 'ok', 200
+        return 'OK', 200

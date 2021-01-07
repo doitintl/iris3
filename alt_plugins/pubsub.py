@@ -42,7 +42,7 @@ class PubSub(Plugin):
         if self.counter > 0:
             self.do_batch()
 
-        return 'ok', 200
+        return 'OK', 200
 
     def label_one(self, gcp_object, project_id):
 
@@ -81,7 +81,7 @@ class PubSub(Plugin):
         self.counter = self.counter + 1
         if self.counter == 1000:
             self.do_batch()
-        return 'ok', 200
+        return 'OK', 200
 
     def get_gcp_object(self, data):
         logging.info("get_gcp_object " + str(data))

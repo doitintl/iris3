@@ -1,24 +1,30 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 
-set -ex
+set -x
+set -u
+set -e
 
 START=$(date "+%s")
 
 ROLEID=iris
 
 LOGS_TOPIC=iris_logs_topic
-REQUEST_FULL_LABELING_TOPIC=iris_request_full_labeling_topic
-LOGS_SINK_SUB=iris_logs_sub
+REQUESTFULLLABELING_TOPIC=iris_requestfulllabeling_topic
+LOG_SINK=iris_log
+DO_LABEL_SUBSCRIPTION=do_label
+LABEL_ONE_SUBSCRIPTION=label_one
 
 if [[ $# -eq 0 ]]; then
   echo Missing project id argument
   exit
 fi
 
-#TODO Why do we list projects and then extract project id from output?
-# This is a check that the project exists, but a check could be done with
-# gcloud projects describe; and we could use the $1 (the param) directly
-# as our PROJECTID param.
+#TODO We list projects and then extract project id from output? This serves
+# to check that the project exists and allows us to get projects by name, not just ID,
+# but that is error-prone, particularly as one project id can be a substring of another,
+# or an id could be a substring of a name.
+# Better: Do an existence  check with gcloud projects describe;and only support id, not name;
+# then use the $1 (command-line arg directly as our PROJECTID.
 
 PROJECTID=$(gcloud projects list | grep -i "^$1 " | awk '{print $1}')
 
@@ -29,6 +35,11 @@ fi
 
 echo "Project ID $PROJECTID"
 gcloud config set project "$PROJECTID"
+
+GAE_SVC=$(cat app.yaml | grep "service:" | awk '{print $2}')
+PUBSUB_VERIFICATION_TOKEN=$(cat app.yaml | grep " PUBSUB_VERIFICATION_TOKEN:" | awk '{print $2}')
+LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.uc.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
+DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.uc.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
 declare -A enabled_services
 while read -r svc _; do
@@ -63,23 +74,30 @@ gcloud app describe >&/dev/null || gcloud app create --region=us-central
 gcloud iam roles describe "$ROLEID" --organization "$ORGID" ||
   gcloud iam roles create "$ROLEID" --organization "$ORGID" --file roles.yaml
 
-# assign default iris app engine service account with role on organization level
+# Assign default iris app engine service account with role on organization level
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" \
   --role "organizations/$ORGID/roles/$ROLEID"
 
-# TODO REMOVE
-# create Cloud Task Queue. Routing is to default service
-# (to change this, add  --routing-override=service:[SERVICE] )
-#gcloud tasks queues describe "$QUEUE_ID" || gcloud tasks queues create "$QUEUE_ID" --log-sampling-ratio=1.0
-
-#create PubSub topic
+# Create PubSub topic for receiving logs about new GCP objects
 gcloud pubsub topics describe "$LOGS_TOPIC" ||
   gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECTID" --quiet >/dev/null
 
-#create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
-gcloud pubsub topics describe "$REQUEST_FULL_LABELING_TOPIC" ||
-  gcloud pubsub topics create "$REQUEST_FULL_LABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
+# Create PubSub subscription for receiving log about new GCP objects
+gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" ||
+  gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
+    --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
+    --quiet >/dev/null
+
+# Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
+gcloud pubsub topics describe "$REQUESTFULLLABELING_TOPIC" --project="$PROJECTID" ||
+  gcloud pubsub topics create "$REQUESTFULLLABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
+
+# Create PubSub subscription for receiving log about new GCP objects
+gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECTID" ||
+  gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$REQUESTFULLLABELING_TOPIC" --project="$PROJECTID" \
+    --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
+    --quiet >/dev/null
 
 log_filter=('protoPayload.methodName:(')
 log_filter+=('"storage.buckets.create"' OR '"compute.instances.insert"' OR '"datasetservice.insert"')
@@ -88,29 +106,29 @@ log_filter+=('OR "cloudsql.instances.create"' OR '"v1.compute.disks.insert"' OR 
 log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')
 log_filter+=(')')
 
-# create or update a sink at org level
-if ! gcloud logging sinks describe --organization="$ORGID" "$LOGS_SINK_SUB" >&/dev/null; then
-  gcloud logging sinks create "$LOGS_SINK_SUB" \
+# Create or update a sink at org level
+if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
+  gcloud logging sinks create "$LOG_SINK" \
     pubsub.googleapis.com/projects/"$PROJECTID"/topics/"$LOGS_TOPIC" \
     --organization="$ORGID" --include-children \
     --log-filter="${log_filter[*]}" --quiet
 else
-  gcloud logging sinks update "$LOGS_SINK_SUB" \
+  gcloud logging sinks update "$LOG_SINK" \
     pubsub.googleapis.com/projects/"$PROJECTID"/topics/"$LOGS_TOPIC" \
     --organization="$ORGID" \
     --log-filter="${log_filter[*]}" --quiet
 fi
 
-# extract service account from sink configuration
-svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOGS_SINK_SUB" | grep writerIdentity | awk '{print $2}')
+# Extract service account from sink configuration
+svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" | grep writerIdentity | awk '{print $2}')
 
-# assign extracted service account to a topic with a publisher role
+# Assign extracted service account to a topic with a publisher role
 gcloud projects add-iam-policy-binding "$PROJECTID" \
   --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 
-# deploy the application
+# Deploy the application
 gcloud app deploy -q app.yaml cron.yaml
 
 FINISH=$(date "+%s")
-ELAPSED_MS=$((FINISH - START))
-echo "Elapsed time $((ELAPSED_MS / 1000)) s"
+ELAPSED_SEC=$((FINISH - START))
+echo "Elapsed time $ELAPSED_SEC s"

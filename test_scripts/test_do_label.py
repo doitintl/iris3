@@ -1,9 +1,9 @@
 import json
-from urllib import request
 
+from test_scripts.test_utils import do_local_http
 
-req = request.Request(
-        'http://localhost:5000/do_label?project_id=joshua-playground-host-vpc&plugin=Gce',
-        method='POST')
-resp = request.urlopen(req)
-print(resp.status)
+contents = {'project_id': 'joshua-playground-host-vpc', 'plugin': 'Gce'}
+contents_s = json.dumps(contents)
+
+with open('../sample_data/sample_insert_instance_log_message.json') as f:
+    do_local_http(contents_s, 'do_label')

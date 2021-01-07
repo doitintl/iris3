@@ -8,8 +8,8 @@ def get_labels():
     return config['labels']
 
 
-# TODO: ondemand should be a boolean value per-plugin.
-#  This code attaches the whole list of on-demand plugin_classes to *each* plugin class. Fix that
+# TODO: ondemand should be a boolean value per-plugin. This code instead attaches the
+# whole list of on-demand plugin_classes to *each* plugin class.
 def get_ondemand() -> typing.List[str]:
     config = __load_config()
     return config['on_demand']

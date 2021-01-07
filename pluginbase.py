@@ -70,7 +70,6 @@ class Plugin(object, metaclass=ABCMeta):
         """Tag a single new object based on its description that comes from alog-line"""
         pass
 
-    # TODO Needed?
     @abstractmethod
     def api_name(self):
         pass

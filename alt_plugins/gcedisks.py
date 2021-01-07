@@ -133,7 +133,7 @@ class GceDisks(Plugin):
                 self.label_one(disk, project_id)
         if self.counter > 0:
             self.do_batch()
-        return 'ok', 200
+        return 'OK', 200
 
     def get_gcp_object(self, data):
         try:
@@ -174,4 +174,4 @@ class GceDisks(Plugin):
 
         except Exception as e:
             logging.error(e)
-        return 'ok', 200
+        return 'OK', 200
