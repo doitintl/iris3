@@ -13,6 +13,8 @@ REQUESTFULLLABELING_TOPIC=iris_requestfulllabeling_topic
 LOG_SINK=iris_log
 DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
+REGION=us-central
+REGION_ABBREV=uc
 
 if [[ $# -eq 0 ]]; then
   echo Missing project id argument
@@ -38,8 +40,8 @@ gcloud config set project "$PROJECTID"
 
 GAE_SVC=$(cat app.yaml | grep "service:" | awk '{print $2}')
 PUBSUB_VERIFICATION_TOKEN=$(cat app.yaml | grep " PUBSUB_VERIFICATION_TOKEN:" | awk '{print $2}')
-LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.uc.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
-DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.uc.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
+LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
+DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
 declare -A enabled_services
 while read -r svc _; do
@@ -68,7 +70,7 @@ ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-toke
   tail -n 1 | tr -d ' ' | cut -d'"' -f4)
 
 # Create App Engine app
-gcloud app describe >&/dev/null || gcloud app create --region=us-central
+gcloud app describe >&/dev/null || gcloud app create --region=$REGION
 
 # Create custom role to run iris
 gcloud iam roles describe "$ROLEID" --organization "$ORGID" ||
@@ -100,7 +102,7 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --quiet >/dev/null
 
 log_filter=('protoPayload.methodName:(')
-log_filter+=('"storage.buckets.create"' OR '"compute.instances.insert"' OR '"datasetservice.insert"')
+log_filter+=('"storage.buckets.create"' OR '"compute.instances.insert"' OR '"compute.instances.start"' OR '"datasetservice.insert"')
 log_filter+=('OR "tableservice.insert"' OR '"google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
 log_filter+=('OR "cloudsql.instances.create"' OR '"v1.compute.disks.insert"' OR '"v1.compute.disks.createSnapshot"')
 log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')

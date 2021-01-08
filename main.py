@@ -64,67 +64,87 @@ def schedule():
     return 'OK', 200
 
 
-@app.route('/label_one')
+@app.route('/label_one', methods=['POST'])
 def label_one():
     """Pubsub push endpoint for messages from the Log Sink"""
-    __check_pubsub_verification_token()
+    data = __get_pubsub_content()
 
-    envelope = flask.request.get_json()
-    if not envelope:
-        raise ValueError('Expect JSON')
-    b64encoded_json: str = envelope['message']['data']
-    data: typing.Dict = json.loads(base64.b64decode(b64encoded_json))
-    __label_one_from_logline(data)
-    return 'OK', 200
-
-
-def __label_one_from_logline(data: typing.Dict):
-    method_from_logline = data['protoPayload']['methodName']
+    method_from_log = data['protoPayload']['methodName']
     for plugin_cls in Plugin.plugin_classes:
         if plugin_cls.is_on_demand():
             plugin = plugin_cls()
             for supported_method in plugin.method_names():
-                if supported_method.lower() in method_from_logline.lower():
+                if supported_method.lower() in method_from_log.lower():
                     gcp_object = plugin.get_gcp_object(data)
                     if gcp_object is not None:
                         project_id = data['resource']['labels']['project_id']
-                        logging.info("Calling label_one() for %s in %s ", plugin.__class__.__name__, project_id)
+                        logging.info("Calling %s.label_one() in %s ", plugin.__class__.__name__, project_id)
                         plugin.label_one(gcp_object, project_id)
                         plugin.do_batch()
                     else:
-                        logging.info('Cannot find %s to label', utils.shorten(str(data), 300))
+                        logging.info('Cannot find gcp_object from %s to label', utils.shorten(str(data), 300))
+
+    return 'OK', 200
 
 
-@app.route('/do_label', methods=[ 'POST'])
+def __get_pubsub_content() -> typing.Dict:
+    __check_pubsub_verification_token()
+
+    envelope = flask.request.get_json()
+    if not envelope:
+        raise FlaskException('Expect JSON')
+
+    data = json.loads(base64.b64decode(envelope['message']['data']))
+    return data
+
+
+@app.route('/do_label', methods=['POST'])
 def do_label():
-    """ Receive a push message from PubSub, sent fromschedule() above,
+    """ Receive a push message from PubSub, sent from schedule() above,
      with instructions to label all objects of a given plugin and project_id.
     """
-    try:
-     __check_pubsub_verification_token()
-    except ValueError as ve:
-        return str(ve), 403
-
-    envelope: typing.Dict = flask.request.get_json()
-    if not envelope:
-        raise ValueError('Expect JSON,  %s', envelope)
-    data: typing.Dict = json.loads(base64.b64decode(envelope['message']['data']))
+    data = __get_pubsub_content()
 
     plugin_name = data['plugin']
     cls = cls_by_name(PLUGINS_MODULE + '.' + plugin_name.lower() + '.' + plugin_name)
     project_id = data['project_id']
     logging.info("do_label() for %s in %s", cls.__name__, project_id)
     plugin = cls()
-    plugin.do_label(project_id, **flask.request.args)
+    plugin.do_label(project_id)
     return 'OK', 200
 
 
+# TODO Secure Push endpoints with JWT tokens
 def __check_pubsub_verification_token():
     token = os.environ.get('PUBSUB_VERIFICATION_TOKEN', '')
     if not token:
-        raise ValueError('Should define token in env %s',os.environ)
+        raise FlaskException(f'Should define token in env {os.environ}', 400)
+
     if token != flask.request.args.get('token', ''):
-        raise ValueError(f'Invalid PubSub token "{token}"')
+        raise FlaskException(f'Invalid PubSub token "{token}"', 403)
+
+
+class FlaskException(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
+
+@app.errorhandler(FlaskException)
+def handle_invalid_usage(error):
+    response = flask.jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
 
 
 if __name__ in ['__main__']:

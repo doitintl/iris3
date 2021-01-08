@@ -1,10 +1,10 @@
 import base64
 import json
 import logging
+import typing
 from urllib import request
 
-import typing
-import yaml
+from util.config_utils import pubsub_token
 
 
 def __datastruct_for_pubsub_message(contents: str) -> bytes:
@@ -15,16 +15,10 @@ def __datastruct_for_pubsub_message(contents: str) -> bytes:
     return data_str.encode('utf-8')
 
 
-def __token():
-    with open('app.yaml') as file:
-        documents = yaml.full_load(file)
-        return documents['env_variables']['PUBSUB_VERIFICATION_TOKEN']
-
-
-def do_local_http(contents:typing.Optional[ str], path: str, method='POST'):
+def do_local_http(path: str, contents: typing.Optional[str], method='POST'):
     data_bytes = __datastruct_for_pubsub_message(contents)
     host_and_port = 'localhost:5000'
-    req = request.Request(f'http://{host_and_port}/{path}?{__token()}', data=data_bytes,
+    req = request.Request(f'http://{host_and_port}/{path}?{pubsub_token()}', data=data_bytes,
                           method=method)
     req.add_header('Content-Type', 'application/json')
     resp = request.urlopen(req)

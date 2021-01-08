@@ -20,10 +20,10 @@ class Gce(Plugin):
         try:
             name = gcp_object['name']
             name = name.replace('.', '_').lower()[:62]
+            return name
         except KeyError as e:
             logging.error(e)
             return None
-        return name
 
     def _get_zone(self, gcp_object):
         try:
@@ -50,16 +50,16 @@ class Gce(Plugin):
             machine_type = gcp_object['machineType']
             ind = machine_type.rfind('/')
             machine_type = machine_type[ind + 1:]
+            return machine_type
         except KeyError as e:
             logging.error(e)
             return None
-        return machine_type
 
     def api_name(self):
         return "compute.googleapis.com"
 
     def method_names(self):
-        return ["compute.instances.insert"]
+        return ['compute.instances.insert', 'compute.instances.start']
 
     def get_zones(self, project_id):
         """
@@ -101,10 +101,8 @@ class Gce(Plugin):
             logging.error(e)
             return None
 
-    def do_label(self, project_id, **kwargs):
-        filter_zones_or_regions = kwargs.get('zones', '').split(',')
+    def do_label(self, project_id):
         for zone in self.get_zones(project_id):
-            if not filter_zones_or_regions or any(z in zone for z in filter_zones_or_regions):
                 instances = self.list_instances(project_id, zone)
                 for instance in instances:
                     self.label_one(instance, project_id)
@@ -155,4 +153,6 @@ class Gce(Plugin):
 
         except errors.HttpError as e:
             logging.error(e)
+            return 'Error', 500
+
         return 'OK', 200

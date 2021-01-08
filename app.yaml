@@ -2,7 +2,7 @@ runtime: python39
 service: iris3
 
 env_variables:
-  PUBSUB_VERIFICATION_TOKEN: this_is_a_secret_token2a343f4c1b76512039fe763412756c4fbb30c
+  PUBSUB_VERIFICATION_TOKEN: 2a343f4c1b76512039fe763412756c4fbb30c
 
 
 

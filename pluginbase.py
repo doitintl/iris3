@@ -56,8 +56,8 @@ class Plugin(object, metaclass=ABCMeta):
         self.counter = 0
 
     @abstractmethod
-    def do_label(self, project_id, **kwargs):
-        """Label  all objects of a type"""
+    def do_label(self, project_id):
+        """Label all objects of a type in a given project"""
         pass
 
     @abstractmethod
@@ -65,6 +65,7 @@ class Plugin(object, metaclass=ABCMeta):
         """Parse logging data to get a GCP object"""
         pass
 
+    #TODO copy the labels of a project to the objects in the project. See git branch with the start of this code.
     @abstractmethod
     def label_one(self, gcp_object, project_id):
         """Tag a single new object based on its description that comes from alog-line"""
