@@ -8,6 +8,7 @@ import typing
 
 import flask
 
+import util.gcp_utils
 from pluginbase import Plugin
 from util import pubsub_utils, config_utils, gcp_utils, utils
 from util.utils import cls_by_name
@@ -15,7 +16,7 @@ from util.utils import cls_by_name
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
 
-gcp_utils.set_project_env_if_needed()
+gcp_utils.set_env()
 
 app = flask.Flask(__name__)
 
@@ -25,14 +26,14 @@ PLUGINS_MODULE = 'plugins'
 def __init_flaskapp():
     logging.info('Starting Iris in process %s', os.getpid())
 
-    on_demand: typing.List[str] = config_utils.get_ondemand()
+    on_demand_plugins: typing.List[str] = config_utils.on_demand_plugins()
     for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
         module_name = PLUGINS_MODULE + '.' + module
         __import__(module_name)
         plugin_class = utils.cls_by_name(module_name + '.' + module.title())
-        Plugin.plugin_classes.append(plugin_class)
-        plugin_class.set_on_demand(on_demand)
-    assert Plugin.plugin_classes, 'No plugins defined'
+        Plugin.subclasses.append(plugin_class)
+        plugin_class.set_on_demand(plugin_class.__name__ in on_demand_plugins)
+    assert Plugin.subclasses, 'No plugins defined'
 
 
 __init_flaskapp()
@@ -40,22 +41,22 @@ __init_flaskapp()
 
 @app.route('/')
 def index():
-    return "These aren't the droids you are looking for", 200
+    logging.info('environ', os.environ)
+    return 'I don\'t think you meant to be here...', 200
 
 
-# TORO return info on the number of tasks that were published
 @app.route('/schedule', methods=['GET'])
 def schedule():
     """
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
-    # logging.info('In schedule(), headers are %s', dict(flask.request.headers))
     is_cron = flask.request.headers.get('X-Appengine-Cron')
     if not is_cron:
-        return 'Access Denied: No Cron header found', 403
+            return 'Access Denied: No token or Cron header found', 403
+
     projects = gcp_utils.get_all_projects()
     for project_id in projects:
-        for plugin_cls in Plugin.plugin_classes:
+        for plugin_cls in Plugin.subclasses:
             msg_dict = {'project_id': project_id,
                         'plugin': plugin_cls.__name__}
             msg = json.dumps(msg_dict)
@@ -67,11 +68,11 @@ def schedule():
 @app.route('/label_one', methods=['POST'])
 def label_one():
     """Pubsub push endpoint for messages from the Log Sink"""
-    data = __get_pubsub_content()
+    data = __extract_pubsub_content()
 
     method_from_log = data['protoPayload']['methodName']
-    for plugin_cls in Plugin.plugin_classes:
-        if plugin_cls.is_on_demand():
+    for plugin_cls in Plugin.subclasses:
+        if plugin_cls.on_demand:
             plugin = plugin_cls()
             for supported_method in plugin.method_names():
                 if supported_method.lower() in method_from_log.lower():
@@ -83,11 +84,15 @@ def label_one():
                         plugin.do_batch()
                     else:
                         logging.info('Cannot find gcp_object from %s to label', utils.shorten(str(data), 300))
+        else:
+            assert False, 'For now, all plugins are "on-demand" and so we have not tested flows' \
+                          ' where on-demand is False. When a non-on-demand plugin is developed, remove' \
+                          'this assertion. Found %s' % plugin_cls.__name__
 
     return 'OK', 200
 
 
-def __get_pubsub_content() -> typing.Dict:
+def __extract_pubsub_content() -> typing.Dict:
     __check_pubsub_verification_token()
 
     envelope = flask.request.get_json()
@@ -103,7 +108,7 @@ def do_label():
     """ Receive a push message from PubSub, sent from schedule() above,
      with instructions to label all objects of a given plugin and project_id.
     """
-    data = __get_pubsub_content()
+    data = __extract_pubsub_content()
 
     plugin_name = data['plugin']
     cls = cls_by_name(PLUGINS_MODULE + '.' + plugin_name.lower() + '.' + plugin_name)
@@ -114,14 +119,16 @@ def do_label():
     return 'OK', 200
 
 
-# TODO Secure Push endpoints with JWT tokens
 def __check_pubsub_verification_token():
-    token = os.environ.get('PUBSUB_VERIFICATION_TOKEN', '')
-    if not token:
+    """ Token verifying that only PubSub accesses PubSub push endpoints"""
+    # TODO return info on the number of tasks that were published
+    known_token = util.gcp_utils.pubsub_token()
+    if not known_token:
         raise FlaskException(f'Should define token in env {os.environ}', 400)
 
-    if token != flask.request.args.get('token', ''):
-        raise FlaskException(f'Invalid PubSub token "{token}"', 403)
+    token_from_args = flask.request.args.get('token', '')
+    if known_token != token_from_args:
+        raise FlaskException(f'Access denied: Invalid token "{known_token}"', 403)
 
 
 class FlaskException(Exception):
@@ -142,6 +149,7 @@ class FlaskException(Exception):
 
 @app.errorhandler(FlaskException)
 def handle_invalid_usage(error):
+    logging.exception(error)
     response = flask.jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
@@ -151,7 +159,6 @@ if __name__ in ['__main__']:
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app. This
     # can be configured by adding an `entrypoint` to app.yaml.
-    port = os.environ.get('PORT', '8000')
+    port = os.environ.get('PORT', 8000)
     logging.info('Running __main__ for main.py, port %s', port)
-    port = int(port)
     app.run(host="127.0.0.1", port=port, debug=True)

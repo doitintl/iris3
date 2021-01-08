@@ -1,6 +1,6 @@
 import json
 
-from test_scripts.test_utils import do_local_http
+from test_scripts.utils_for_tests import do_local_http
 
 contents = json.dumps( {
         'project_id': 'joshua-playground-host-vpc',

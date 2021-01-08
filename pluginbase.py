@@ -7,19 +7,21 @@ from util import config_utils
 
 
 class Plugin(object, metaclass=ABCMeta):
-    plugin_classes = []
-    on_demand: typing.Iterable[str] = []
+    subclasses = []
+    on_demand: bool=False
 
     def __init__(self):
         self.counter = 0
         self.batch = None
 
     @classmethod
-    def set_on_demand(cls, on_demand):
+    def set_on_demand(cls, on_demand:bool):
         """Set from config file. Only on-demand plugin classes will
-        process each new object as it arrives, based on logs.
-        As it happens, all plugin  as of 1.2021 are on-demand."""
+        process each new object as it arrives, based on logs, using label_one().
+        Otherwise, the plugin will only process objects based on cron (schedule() and do_label())
+        """
         cls.on_demand = on_demand
+
 
     def _gen_labels(self, gcp_object):
         labels = {}
@@ -40,10 +42,6 @@ class Plugin(object, metaclass=ABCMeta):
                     response, request_id,
                     exception))
 
-    @classmethod
-    def is_on_demand(cls):
-        on_demand = [c.lower() for c in cls.on_demand]
-        return cls.__name__.lower() in on_demand
 
     def do_batch(self):
         """In do_label, we loop over all objects. But for efficienccy, we do not process
@@ -65,7 +63,7 @@ class Plugin(object, metaclass=ABCMeta):
         """Parse logging data to get a GCP object"""
         pass
 
-    #TODO copy the labels of a project to the objects in the project. See git branch with the start of this code.
+    #TODO  Project labels: Copy the labels of a project to the objects in the project. See git branch with the start of this code.
     @abstractmethod
     def label_one(self, gcp_object, project_id):
         """Tag a single new object based on its description that comes from alog-line"""

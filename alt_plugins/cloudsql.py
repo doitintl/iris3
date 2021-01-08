@@ -89,6 +89,8 @@ class CloudSql(Plugin):
             else:
                 more_results = False
 
+    # #TODO check if this needs to be non-on-demand since, perhaps,
+    # labels cannot be applied to CloudSQL after it is started but before it is done initializing
     def label_one(self, gcp_object, project_id):
         labels = dict()
         labels['labels'] = self._gen_labels(gcp_object)

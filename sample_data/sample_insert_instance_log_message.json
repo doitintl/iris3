@@ -1,15 +1,15 @@
 {
-  "insertId": "-lwj75bddzgo",
-  "logName": "projects/joshua-playground-host-vpc/logs/cloudaudit.googleapis.com%2Factivity",
+  "insertId": "-lzj75bdezgo",
+  "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
   "operation": {
-    "id": "operation-1609755888488-5b8107fe8905b-6e52cf22-dab7c72e",
+    "id": "operation-1607755888489-5b8117fe8905b-6f52ca22-dab7c72e",
     "last": true,
     "producer": "compute.googleapis.com"
   },
   "protoPayload": {
     "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
     "authenticationInfo": {
-      "principalEmail": "joshua@doit-intl.com"
+      "principalEmail": "example@example.com"
     },
     "methodName": "beta.compute.instances.insert",
     "request": {
@@ -19,18 +19,18 @@
       "callerIp": "185.3.145.123",
       "callerSuppliedUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36,gzip(gfe),gzip(gfe)"
     },
-    "resourceName": "projects/joshua-playground-host-vpc/zones/us-central1-a/instances/instance-small",
+    "resourceName": "projects/${project}/zones/us-central1-a/instances/${instance}",
     "serviceName": "compute.googleapis.com"
   },
-  "receiveTimestamp": "2021-01-04T10:24:55.384078132Z",
+  "receiveTimestamp": "2021-01-02T10:24:54.384071132Z",
   "resource": {
     "labels": {
-      "instance_id": "2637665007782810143",
-      "project_id": "joshua-playground-host-vpc",
+      "instance_id": "2631665008782811143",
+      "project_id": "${project}",
       "zone": "us-central1-a"
     },
     "type": "gce_instance"
   },
   "severity": "NOTICE",
-  "timestamp": "2021-01-04T10:24:54.544768Z"
+  "timestamp": "2021-01-02T10:24:54.384071132Z"
 }

@@ -101,12 +101,17 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --quiet >/dev/null
 
+# Shell note: the single-quotes allow the double-quotes  to appear in the output. The single-quotes do not appear in output.
+# For the ORs, it makes no difference whether these are or are not inside the single-quotes
 log_filter=('protoPayload.methodName:(')
-log_filter+=('"storage.buckets.create"' OR '"compute.instances.insert"' OR '"compute.instances.start"' OR '"datasetservice.insert"')
+log_filter+=('"storage.buckets.create"')
+log_filter+=('OR "compute.instances.insert"' OR '"compute.instances.start"' OR '"datasetservice.insert"')
 log_filter+=('OR "tableservice.insert"' OR '"google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
 log_filter+=('OR "cloudsql.instances.create"' OR '"v1.compute.disks.insert"' OR '"v1.compute.disks.createSnapshot"')
 log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')
 log_filter+=(')')
+
+
 
 # Create or update a sink at org level
 if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
@@ -121,14 +126,16 @@ else
     --log-filter="${log_filter[*]}" --quiet
 fi
 
-# Extract service account from sink configuration
-svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" | grep writerIdentity | awk '{print $2}')
+# Extract service account from sink configuration.
+# This is the service account that publishes to PubSub
+svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" | \
+        grep writerIdentity | awk '{print $2}')
 
-# Assign extracted service account to a topic with a publisher role
+# Assign a publisher role to the extracted service account
 gcloud projects add-iam-policy-binding "$PROJECTID" \
   --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 
-# Deploy the application
+# Deploy to App Engine
 gcloud app deploy -q app.yaml cron.yaml
 
 FINISH=$(date "+%s")

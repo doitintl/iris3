@@ -6,6 +6,7 @@ import uuid
 from google.cloud import resource_manager
 
 from util import localdev_config
+from util.localdev_config import localdev_pubsub_token
 
 resource_manager_client = resource_manager.Client()
 
@@ -25,16 +26,9 @@ def project_id():
         return localdev_config.localdev_project_id()
 
 
-def set_project_env_if_needed():
+def set_env():
     if not detect_gae():
         localdev_config.set_localdev_project_id_in_env()
-
-
-# def gae_url(path=''):
-#    assert not path or path[0] != '/', path
-#    gae_region_code = gae_region_abbreviation()
-#    ret = f'https://{gae_svc()}-dot-{project_id()}.{gae_region_code}.r.appspot.com/{path}'
-#    return ret
 
 
 def gae_svc():
@@ -50,11 +44,6 @@ def get_all_projects() -> typing.List[str]:
     logging.info('%s projects: %s ', len(projects), projects[:100])
     return projects
 
-
-# def gae_region_abbreviation():
-#    return 'uc'
-
-
 def region_from_zone(zone):
     return zone[:len(zone) - 2]
 
@@ -63,3 +52,13 @@ def generate_uuid() -> str:
     """:return a UUID as a string (and not an object or bytes; this is required
     by the http API. """
     return str(uuid.uuid4())
+
+
+def pubsub_token():
+    from_env=os.environ.get('PUBSUB_VERIFICATION_TOKEN')
+    if from_env:
+        return from_env
+    else:
+        return localdev_pubsub_token()
+
+
