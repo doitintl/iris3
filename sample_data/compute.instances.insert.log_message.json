@@ -19,7 +19,7 @@
       "callerIp": "185.3.145.123",
       "callerSuppliedUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36,gzip(gfe),gzip(gfe)"
     },
-    "resourceName": "projects/${project}/zones/us-central1-a/instances/${instance}",
+    "resourceName": "projects/${project}/zones/us-central1-a/instances/${name}",
     "serviceName": "compute.googleapis.com"
   },
   "receiveTimestamp": "2021-01-02T10:24:54.384071132Z",

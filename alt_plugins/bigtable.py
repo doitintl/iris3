@@ -1,5 +1,4 @@
 import logging
-import uuid
 
 from google.auth import app_engine
 from googleapiclient import discovery, errors
@@ -13,7 +12,7 @@ SCOPES = ['https://www.googleapis.com/auth/bigtable.admin']
 CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
 
-class BigTable(Plugin):
+class Bigtable(Plugin):
 
     def __init__(self):
         Plugin.__init__(self)
@@ -138,7 +137,7 @@ class BigTable(Plugin):
             self.batch.add(
                 self.bigtable.projects().instances().partialUpdateInstance(
                     name=gcp_object['name'], body=gcp_object,
-                    updateMask='labels'), request_id=uuid.uuid4())
+                    updateMask='labels'), request_id=gcp_utils.generate_uuid())
             self.counter = self.counter + 1
             if self.counter == 1000:
                 self.do_batch()

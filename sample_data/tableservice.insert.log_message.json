@@ -1,0 +1,66 @@
+{
+  "protoPayload": {
+    "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+    "status": {},
+    "authenticationInfo": {
+      "principalEmail": "xyz@example.com"
+    },
+    "requestMetadata": {
+      "callerIp": "185.3.145.123",
+      "callerSuppliedUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36,gzip(gfe)",
+      "requestAttributes": {},
+      "destinationAttributes": {}
+    },
+    "serviceName": "bigquery.googleapis.com",
+    "methodName": "tableservice.insert",
+    "authorizationInfo": [
+      {
+        "resource": "projects/${project}/datasets/${parent_name}",
+        "permission": "bigquery.tables.create",
+        "granted": true,
+        "resourceAttributes": {}
+      }
+    ],
+    "resourceName": "projects/${project}/datasets/${parent_name}/tables",
+    "serviceData": {
+      "@type": "type.googleapis.com/google.cloud.bigquery.logging.v1.AuditData",
+      "tableInsertRequest": {
+        "resource": {
+          "tableName": {
+            "projectId": "${project}",
+            "datasetId": "${parent_name}",
+            "tableId": "${name}"
+          },
+          "info": {},
+          "view": {},
+          "schemaJson": "{\n}"
+        }
+      },
+      "tableInsertResponse": {
+        "resource": {
+          "tableName": {
+            "projectId": "${project}",
+            "datasetId": "${parent_name}",
+            "tableId": "${name}"
+          },
+          "info": {},
+          "view": {},
+          "createTime": "2021-01-10T13:47:41.223Z",
+          "schemaJson": "{\n}",
+          "updateTime": "2021-01-10T13:47:41.330Z"
+        }
+      }
+    }
+  },
+  "insertId": "-kj2l39d9dhm",
+  "resource": {
+    "type": "bigquery_resource",
+    "labels": {
+      "project_id": "${project}"
+    }
+  },
+  "timestamp": "2021-01-10T13:47:41.354927Z",
+  "severity": "NOTICE",
+  "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
+  "receiveTimestamp": "2021-01-10T13:47:41.518465443Z"
+}

@@ -1,41 +1,40 @@
 import logging
-import uuid
 
-from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
+from util import gcp_utils
 
-SCOPES = ['https://www.googleapis.com/auth/devstorage.full_control']
-
-CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
+google_client = discovery.build('storage', 'v1')
 
 
 class Gcs(Plugin):
+    # TODO: Test label_one with sample log json; test in cloud
     def __init__(self):
-        Plugin.__init__(self)
-        self.storage = discovery.build(
-            'storage', 'v1', credentials=CREDENTIALS)
-        self.batch = self.storage.new_batch_http_request(
+        super().__init__()
+
+        self.batch = google_client.new_batch_http_request(
             callback=self.batch_callback)
 
     def _get_name(self, gcp_object):
+        """Method dynamically called in _gen_labels, so don't change name"""
         try:
             name = gcp_object['name']
             name = name.replace(".", "_").lower()[:62]
+            return name
         except KeyError as e:
             logging.error(e)
             return None
-        return name
 
     def _get_location(self, gcp_object):
+        """Method dynamically called in _gen_labels, so don't change name"""
         try:
             location = gcp_object['location']
             location = location.replace(".", "_").lower()
+            return location
         except KeyError as e:
             logging.error(e)
             return None
-        return location
 
     def api_name(self):
         return "storage-component.googleapis.com"
@@ -43,18 +42,18 @@ class Gcs(Plugin):
     def method_names(self):
         return ["storage.buckets.create"]
 
-    def get_bucket(self, bucket_name):
+    def __get_bucket(self, bucket_name):
         try:
-            result = self.storage.buckets().get(
+            result = google_client.buckets().get(
                 bucket=bucket_name).execute()
+            return result
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
-        return result
 
     def get_gcp_object(self, data):
         try:
-            bucket = self.get_bucket(
+            bucket = self.__get_bucket(
                 data['resource']['labels']['bucket_name'])
             return bucket
         except Exception as e:
@@ -67,7 +66,7 @@ class Gcs(Plugin):
         more_results = True
         while more_results:
             try:
-                response = self.storage.buckets().list(
+                response = google_client.buckets().list(
                     project=project_id, pageToken=page_token).execute()
             except errors.HttpError as e:
                 logging.error(e)
@@ -83,14 +82,12 @@ class Gcs(Plugin):
             self.do_batch()
 
     def label_one(self, gcp_object, project_id):
-        labels = dict()
-        labels['labels'] = self._gen_labels(gcp_object)
+        labels = {'labels': self._gen_labels(gcp_object)}
         try:
-
-            self.batch.add(self.storage.buckets().patch(
+            self.batch.add(google_client.buckets().patch(
                 bucket=gcp_object['name'], body=labels),
-                request_id=uuid.uuid4())
-            self.counter = self.counter + 1
+                request_id=gcp_utils.generate_uuid())
+            self.counter += 1
             if self.counter == 1000:
                 self.do_batch()
         except Exception as e:

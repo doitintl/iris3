@@ -84,7 +84,8 @@ class PubSub(Plugin):
         return 'OK', 200
 
     def get_gcp_object(self, data):
-        logging.info("get_gcp_object " + str(data))
+        # TODO remove excess logs
+        logging.info('get_gcp_object ' + str(data))
         proj = data['resource']['labels']['project_id']
         instId = data['protoPayload']['request']['instanceId']
         logging.info('proj ' + proj + ' instId ' + instId)

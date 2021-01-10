@@ -11,10 +11,11 @@ def cls_by_name(fully_qualified_classname):
             module = getattr(module, subcomponent)
         except AttributeError:
             logging.exception(
+                f'Cannot load {fully_qualified_classname}. '
                 'Plugin classes must have the same name as their module '
                 '(file under the plugins directory), except that the '
-                'module name should be in lowercase and the class name in title case,'
-                'as for example gce.Gce. Tried to load %s' % fully_qualified_classname,
+                'module name should be in lowercase and the class name in Titlecase,'
+                'as for example bigquery.Bigquery or gce.Gce.',
                 exc_info=True)
             raise
     return module

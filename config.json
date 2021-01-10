@@ -7,13 +7,13 @@
     "instance_type"
   ],
   "on_demand": [
-    "Gce",
-    "BigQuery",
+    "Bigquery",
+    "Bigtable",
+    "Cloudsql",
+    "Cloudpubsub",
     "Gcs",
-    "BigTable",
-    "GceDisks",
-    "CloudSql",
-    "CloudPubSub",
-    "GceSnapshots"
+    "Instances",
+    "Disks",
+    "Snapshots"
   ]
 }

@@ -1,0 +1,91 @@
+{
+  "protoPayload": {
+    "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+    "status": {},
+    "authenticationInfo": {
+      "principalEmail": "xyz@example.com"
+    },
+    "requestMetadata": {
+      "callerIp": "185.3.145.123",
+      "callerSuppliedUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36,gzip(gfe)",
+      "requestAttributes": {},
+      "destinationAttributes": {}
+    },
+    "serviceName": "bigquery.googleapis.com",
+    "methodName": "datasetservice.insert",
+    "authorizationInfo": [
+      {
+        "resource": "projects/${project}",
+        "permission": "bigquery.datasets.create",
+        "granted": true,
+        "resourceAttributes": {}
+      }
+    ],
+    "resourceName": "projects/${project}/datasets",
+    "serviceData": {
+      "@type": "type.googleapis.com/google.cloud.bigquery.logging.v1.AuditData",
+      "datasetInsertRequest": {
+        "resource": {
+          "datasetName": {
+            "projectId": "${project}",
+            "datasetId": "${name}"
+          },
+          "info": {},
+          "acl": {}
+        }
+      },
+      "datasetInsertResponse": {
+        "resource": {
+          "datasetName": {
+            "projectId": "${project}",
+            "datasetId": "${name}"
+          },
+          "info": {},
+          "createTime": "2021-01-10T11:19:45.367Z",
+          "updateTime": "2021-01-10T11:19:45.367Z",
+          "acl": {
+            "entries": [
+              {
+                "role": "WRITER",
+                "specialGroup": "PROJECT_WRITERS",
+                "viewName": {}
+              },
+              {
+                "role": "OWNER",
+                "specialGroup": "PROJECT_OWNERS",
+                "viewName": {}
+              },
+              {
+                "role": "OWNER",
+                "userEmail": "xyz@example.com",
+                "specialGroup": "PROJECT_OWNERS",
+                "viewName": {}
+              },
+              {
+                "role": "READER",
+                "specialGroup": "PROJECT_READERS",
+                "viewName": {}
+              }
+            ]
+          }
+        }
+      }
+    },
+    "resourceLocation": {
+      "currentLocations": [
+        "US"
+      ]
+    }
+  },
+  "insertId": "f9zrfwd8vx8",
+  "resource": {
+    "type": "bigquery_resource",
+    "labels": {
+      "project_id": "${project}"
+    }
+  },
+  "timestamp": "2021-01-10T11:19:45.427075Z",
+  "severity": "NOTICE",
+  "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
+  "receiveTimestamp": "2021-01-10T11:19:46.364361807Z"
+}

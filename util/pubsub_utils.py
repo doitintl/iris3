@@ -51,7 +51,7 @@ def publish(msg: str, topic_id: str):
             result = f.result()
             try:
                 int(result)  # Int results indicate success, no need to log
-            except ValueError as e:  # not an int, failed
+            except ValueError:  # not an int, failed
                 logging.info('PubSub publishing result %s', result)
         except Exception as e:
             logging.exception(e)

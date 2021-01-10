@@ -16,4 +16,12 @@
 # Python pycache:
 __pycache__/
 # Ignored by the build system
-/setup.cfg
+setup.cfg/
+test_scripts/
+sample_data/
+README.md
+dev*
+*.sh
+*.template
+dev_config.json
+*.png

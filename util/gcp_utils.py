@@ -44,6 +44,7 @@ def get_all_projects() -> typing.List[str]:
     logging.info('%s projects: %s ', len(projects), projects[:100])
     return projects
 
+
 def region_from_zone(zone):
     return zone[:len(zone) - 2]
 
@@ -55,10 +56,8 @@ def generate_uuid() -> str:
 
 
 def pubsub_token():
-    from_env=os.environ.get('PUBSUB_VERIFICATION_TOKEN')
+    from_env = os.environ.get('PUBSUB_VERIFICATION_TOKEN')
     if from_env:
         return from_env
     else:
         return localdev_pubsub_token()
-
-

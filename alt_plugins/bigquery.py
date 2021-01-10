@@ -1,33 +1,24 @@
-""" Taging BQ tabels and datasets."""
+"""
+Labeling BQ tables and datasets.
+"""
 import logging
-import traceback
-import uuid
 
-from google.auth import app_engine
 from googleapiclient import discovery, errors
 from ratelimit import limits, sleep_and_retry
 
 from pluginbase import Plugin
-
-SCOPES = ['https://www.googleapis.com/auth/bigquery']
-
-CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
+from util import gcp_utils
 
 
-class BigQuery(Plugin):
+# TODO Test this plugin in the Cloud
+class Bigquery(Plugin):
+    google_client = discovery.build('bigquery', 'v2')
 
     def __init__(self):
-        Plugin.__init__(self)
-        self.bigquery = discovery.build(
-            'bigquery', 'v2', credentials=CREDENTIALS)
-        self.batch = self.bigquery.new_batch_http_request(
-            callback=self.batch_callback)
+        super().__init__()
 
-    def register_signals(self):
-        """
-           Register with the plugin manager.
-        """
-        logging.debug("BigQuery class created and registering signals")
+        self.batch = self.google_client.new_batch_http_request(
+            callback=self.batch_callback)
 
     def api_name(self):
         return "bigquery-json.googleapis.com"
@@ -36,6 +27,7 @@ class BigQuery(Plugin):
         return ["datasetservice.insert", "tableservice.insert"]
 
     def _get_name(self, gcp_object):
+        """Method dynamically called in _gen_labels, so don't change name"""
         try:
             if gcp_object['kind'] == "bigquery#dataset":
                 name = gcp_object['datasetReference']['datasetId']
@@ -46,148 +38,140 @@ class BigQuery(Plugin):
                 ind = name.rfind(':')
                 name = name[ind + 1:]
             name = name.replace(".", "_").lower()[:62]
+            return name
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
-        return name
 
     def _get_location(self, gcp_object):
+        """Method dynamically called in _gen_labels, so don't change name"""
         try:
             location = gcp_object['location']
             location = location.lower()
+            return location
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
-        return location
 
-    def get_dataset(self, project_id, name):
+    def __get_dataset(self, project_id, name):
         try:
-            result = self.bigquery.datasets().get(
+            result = self.google_client.datasets().get(
                 projectId=project_id,
                 datasetId=name).execute()
+            return result
         except errors.HttpError as e:
             logging.error(e)
             return None
-        return result
 
-    def get_table(self, project_id, dataset, table):
+    def __get_table(self, project_id, dataset, table):
         try:
-            result = self.bigquery.tables().get(
+            result = self.google_client.tables().get(
                 projectId=project_id,
                 datasetId=dataset, tableId=table).execute()
+            return result
         except errors.HttpError as e:
             logging.error(e)
             return None
-        return result
 
     def get_gcp_object(self, data):
         try:
-            datasetid = \
-                data['protoPayload']['serviceData']['datasetInsertRequest'][
-                    'resource']['datasetName']['datasetId']
-            projectid = \
-                data['protoPayload']['serviceData']['datasetInsertRequest'][
-                    'resource']['datasetName']['projectId']
-            dataset = self.get_dataset(projectid, datasetid)
+            dataset_name = data['protoPayload']['serviceData']['datasetInsertRequest']['resource']['datasetName']
+            datasetid = dataset_name['datasetId']
+            projectid = dataset_name['projectId']
+            dataset = self.__get_dataset(projectid, datasetid)
             return dataset
         except Exception:
+            # No such dataset; hoping for table
             pass
         try:
-            tableid = \
-                data['protoPayload']['serviceData']['tableInsertRequest'][
-                    'resource']['tableName']['tableId']
-            projectid = \
-                data['protoPayload']['serviceData']['tableInsertRequest'][
-                    'resource']['tableName']['projectId']
-            datasetid = \
-                data['protoPayload']['serviceData']['tableInsertRequest'][
-                    'resource']['tableName']['datasetId']
-            table = self.get_table(projectid, datasetid, tableid)
+            table_name = data['protoPayload']['serviceData']['tableInsertRequest']['resource']['tableName']
+            tableid = table_name['tableId']
+            projectid = table_name['projectId']
+            datasetid = table_name['datasetId']
+            table = self.__get_table(projectid, datasetid, tableid)
             return table
         except Exception as e:
-            logging.error(e)
-            print((traceback.format_exc()))
-
-        return None
+            logging.exception(e)
+            return None
 
     def do_label(self, project_id):
         """
-        tag tables and data sets
-        :param project_id: project id
+        Label both tables and data sets
         """
         page_token = None
         more_results = True
         while more_results:
             try:
-                response = self.bigquery.datasets().list(
+                response = self.google_client.datasets().list(
                     projectId=project_id, pageToken=page_token).execute()
             except errors.HttpError as e:
-                logging.error(e)
+                logging.exception(e)
                 return
             if 'datasets' in response:
                 for dataset in response['datasets']:
-                    self.tag_one_dataset(dataset)
-                    table_page_token = None
-                    table_more_results = True
-                    while table_more_results:
-                        tresponse = self.bigquery.tables().list(
-                            projectId=project_id,
-                            datasetId=dataset['datasetReference']['datasetId'],
-                            pageToken=table_page_token).execute()
-                        if 'tables' in tresponse:
-                            for t in tresponse['tables']:
-                                t['location'] = dataset['location']
-                                self.tag_one_table(t)
-                        if 'nextPageToken' in tresponse:
-                            table_page_token = tresponse['nextPageToken']
-                            table_more_results = True
-                        else:
-                            table_more_results = False
+                    self.__label_tables_in_dataset(project_id, dataset)
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']
             else:
                 more_results = False
 
+    def __label_tables_in_dataset(self, project_id, dataset):
+        self.__label_one_dataset(dataset)
+        page_token = None
+        more_results = True
+        while more_results:
+            response = self.google_client.tables().list(
+                projectId=project_id,
+                datasetId=dataset['datasetReference']['datasetId'],
+                pageToken=page_token).execute()
+            if 'tables' in response:
+                for t in response['tables']:
+                    t['location'] = dataset['location']
+                    self.__label_one_table(t)
+            if 'nextPageToken' in response:
+                page_token = response['nextPageToken']
+                more_results = True
+            else:
+                more_results = False
+
     @sleep_and_retry
     @limits(calls=35, period=60)
-    def tag_one_dataset(self, gcp_object):
-        labels = dict()
-        labels['labels'] = self._gen_labels(gcp_object)
+    def __label_one_dataset(self, gcp_object):
+        labels = {'labels': self._gen_labels(gcp_object)}
         try:
-            self.bigquery.datasets().patch(
+            self.google_client.datasets().patch(
                 projectId=gcp_object['datasetReference']['projectId'],
                 body=labels,
                 datasetId=gcp_object['datasetReference'][
                     'datasetId']).execute()
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
 
     @sleep_and_retry
     @limits(calls=35, period=60)
-    def tag_one_table(self, gcp_object):
-        labels = dict()
-        labels['labels'] = self._gen_labels(gcp_object)
+    def __label_one_table(self, gcp_object):
+        labels = {'labels': self._gen_labels(gcp_object)}
         try:
 
-            self.batch.add(self.bigquery.tables().patch(
-                projectId=gcp_object['tableReference']['projectId'],
+            table_reference = gcp_object['tableReference']
+            self.batch.add(self.google_client.tables().patch(
+                projectId=table_reference['projectId'],
                 body=labels,
-                datasetId=gcp_object['tableReference']['datasetId'],
-                tableId=gcp_object['tableReference'][
-                    'tableId']), request_id=uuid.uuid4())
-            self.counter = self.counter + 1
+                datasetId=table_reference['datasetId'],
+                tableId=table_reference['tableId']), request_id=gcp_utils.generate_uuid())
+            self.counter += 1
             if self.counter == 1000:
                 self.do_batch()
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
         if self.counter > 0:
             self.do_batch()
 
     def label_one(self, gcp_object, project_id):
         try:
-            if gcp_object['kind'] == "bigquery#dataset":
-                self.tag_one_dataset(gcp_object)
+            if gcp_object['kind'] == 'bigquery#dataset':
+                self.__label_one_dataset(gcp_object)
             else:
-                self.tag_one_table(gcp_object)
+                self.__label_one_table(gcp_object)
         except Exception as e:
             logging.error(e)

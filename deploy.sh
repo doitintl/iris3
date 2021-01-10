@@ -21,7 +21,7 @@ if [[ $# -eq 0 ]]; then
   exit
 fi
 
-#TODO We list projects and then extract project id from output? This serves
+#TODO Why do we list projects and then extract project id from output? This serves
 # to check that the project exists and allows us to get projects by name, not just ID,
 # but that is error-prone, particularly as one project id can be a substring of another,
 # or an id could be a substring of a name.
@@ -111,8 +111,6 @@ log_filter+=('OR "cloudsql.instances.create"' OR '"v1.compute.disks.insert"' OR 
 log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')
 log_filter+=(')')
 
-
-
 # Create or update a sink at org level
 if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
   gcloud logging sinks create "$LOG_SINK" \
@@ -128,8 +126,8 @@ fi
 
 # Extract service account from sink configuration.
 # This is the service account that publishes to PubSub
-svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" | \
-        grep writerIdentity | awk '{print $2}')
+svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |
+  grep writerIdentity | awk '{print $2}')
 
 # Assign a publisher role to the extracted service account
 gcloud projects add-iam-policy-binding "$PROJECTID" \

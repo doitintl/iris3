@@ -3,15 +3,13 @@ import base64
 import json
 import logging
 import os
-import pkgutil
 import typing
 
 import flask
 
 import util.gcp_utils
 from pluginbase import Plugin
-from util import pubsub_utils, config_utils, gcp_utils, utils
-from util.utils import cls_by_name
+from util import pubsub_utils, gcp_utils, utils
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
@@ -20,20 +18,10 @@ gcp_utils.set_env()
 
 app = flask.Flask(__name__)
 
-PLUGINS_MODULE = 'plugins'
-
 
 def __init_flaskapp():
-    logging.info('Starting Iris in process %s', os.getpid())
-
-    on_demand_plugins: typing.List[str] = config_utils.on_demand_plugins()
-    for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
-        module_name = PLUGINS_MODULE + '.' + module
-        __import__(module_name)
-        plugin_class = utils.cls_by_name(module_name + '.' + module.title())
-        Plugin.subclasses.append(plugin_class)
-        plugin_class.set_on_demand(plugin_class.__name__ in on_demand_plugins)
-    assert Plugin.subclasses, 'No plugins defined'
+    logging.info('Initializing Iris in process %s', os.getpid())
+    Plugin.init_plugins()
 
 
 __init_flaskapp()
@@ -52,7 +40,7 @@ def schedule():
     """
     is_cron = flask.request.headers.get('X-Appengine-Cron')
     if not is_cron:
-            return 'Access Denied: No token or Cron header found', 403
+        return 'Access Denied: No token or Cron header found', 403
 
     projects = gcp_utils.get_all_projects()
     for project_id in projects:
@@ -83,7 +71,8 @@ def label_one():
                         plugin.label_one(gcp_object, project_id)
                         plugin.do_batch()
                     else:
-                        logging.info('Cannot find gcp_object from %s to label', utils.shorten(str(data), 300))
+                        logging.info('Cannot find gcp_object from %s to label',
+                                     utils.shorten(str(data.get('resource'), ''), 300))
         else:
             assert False, 'For now, all plugins are "on-demand" and so we have not tested flows' \
                           ' where on-demand is False. When a non-on-demand plugin is developed, remove' \
@@ -110,18 +99,16 @@ def do_label():
     """
     data = __extract_pubsub_content()
 
-    plugin_name = data['plugin']
-    cls = cls_by_name(PLUGINS_MODULE + '.' + plugin_name.lower() + '.' + plugin_name)
+    plugin_class_localname = data['plugin']
+    plugin = Plugin.create_plugin(plugin_class_localname)
     project_id = data['project_id']
-    logging.info("do_label() for %s in %s", cls.__name__, project_id)
-    plugin = cls()
+    logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
     plugin.do_label(project_id)
     return 'OK', 200
 
 
 def __check_pubsub_verification_token():
     """ Token verifying that only PubSub accesses PubSub push endpoints"""
-    # TODO return info on the number of tasks that were published
     known_token = util.gcp_utils.pubsub_token()
     if not known_token:
         raise FlaskException(f'Should define token in env {os.environ}', 400)
