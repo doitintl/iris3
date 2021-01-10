@@ -5,26 +5,22 @@ from googleapiclient import discovery, errors
 from pluginbase import Plugin
 from util import gcp_utils
 
-google_client = discovery.build('storage', 'v1')
 
 
 class Gcs(Plugin):
+    google_client = discovery.build('storage', 'v1')
+
     # TODO: Test label_one with sample log json; test in cloud
     def __init__(self):
         super().__init__()
 
-        self.batch = google_client.new_batch_http_request(
+        self.batch = self.google_client.new_batch_http_request(
             callback=self.batch_callback)
 
     def _get_name(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
-        try:
-            name = gcp_object['name']
-            name = name.replace(".", "_").lower()[:62]
-            return name
-        except KeyError as e:
-            logging.error(e)
-            return None
+        return gcp_utils.get_name(gcp_object)
+
 
     def _get_location(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""

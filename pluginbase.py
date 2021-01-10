@@ -23,7 +23,7 @@ class Plugin(object, metaclass=ABCMeta):
     def set_on_demand(cls, on_demand: bool):
         """Set from config file. Only on-demand plugin classes will
         process each new object as it arrives, based on logs, using label_one().
-        Otherwise, the plugin will only process objects based on cron (schedule() and do_label())
+        Non-on-demand plugins will will only process objects based on cron (schedule() and do_label())
         """
         cls.on_demand = on_demand
 
@@ -45,8 +45,8 @@ class Plugin(object, metaclass=ABCMeta):
         labels = {}
         # TODO Remove excess logs
         logging.info('gcp_object %s', gcp_object)
+
         # if utils.project_inheriting():
-        #
         #    labels = gcp.get_project_labels(gcp_object)
         # These label keys are the same across all Plugins
         label_keys = config_utils.get_labels()
@@ -97,7 +97,7 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @classmethod
-    def init_plugins(cls):
+    def init(cls):
         on_demand_plugins: typing.List[str] = config_utils.on_demand_plugins()
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
             plugin_class = Plugin.__load_plugin_class(module)

@@ -11,8 +11,6 @@ class Disks(GceZonalBase):
     def method_names(self):
         return ["v1.compute.disks.insert"]
 
-
-
     def __list_disks(self, project_id, zone):
         disks = []
         page_token = None

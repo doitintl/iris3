@@ -4,6 +4,7 @@ from google.auth import app_engine
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
+from util import gcp_utils
 
 SCOPES = ['https://www.googleapis.com/auth/sqlservice.admin']
 
@@ -23,13 +24,7 @@ class CloudSql(Plugin):
         logging.debug("Cloud SQL class created and registering signals")
 
     def _get_name(self, gcp_object):
-        try:
-            name = gcp_object['name']
-            name = name.replace(".", "_").lower()[:62]
-        except KeyError as e:
-            logging.error(e)
-            return None
-        return name
+       return gcp_utils.get_name(gcp_object)
 
     def _get_region(self, gcp_object):
         try:

@@ -21,7 +21,7 @@ app = flask.Flask(__name__)
 
 def __init_flaskapp():
     logging.info('Initializing Iris in process %s', os.getpid())
-    Plugin.init_plugins()
+    Plugin.init()
 
 
 __init_flaskapp()

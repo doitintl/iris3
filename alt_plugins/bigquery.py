@@ -31,13 +31,11 @@ class Bigquery(Plugin):
         try:
             if gcp_object['kind'] == "bigquery#dataset":
                 name = gcp_object['datasetReference']['datasetId']
-                ind = name.rfind(':')
-                name = name[ind + 1:]
             else:
                 name = gcp_object['tableReference']['tableId']
-                ind = name.rfind(':')
-                name = name[ind + 1:]
-            name = name.replace(".", "_").lower()[:62]
+            index = name.rfind(':')
+            name = name[index + 1:]
+            name = name.replace('.', '_').lower()[:62]
             return name
         except KeyError as e:
             logging.exception(e)

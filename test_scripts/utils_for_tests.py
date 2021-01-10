@@ -25,10 +25,10 @@ def do_local_http(path: str, contents: typing.Optional[str], method='POST',
                   headers: typing.Optional[typing.Dict[str, str]] = None):
     headers = headers or {}
     data_bytes = __datastruct_for_pubsub_message(contents) if contents else None
-    logging.info('Will call %s for %s', path, contents['plugin'])
+    logging.info('Will call %s for %s', path, json.loads(contents)['plugin'])
     host_and_port = 'localhost:%s' % LOCAL_PORT
-    req = request.Request(f'http://{host_and_port}/{path}?token={pubsub_token()}', data=data_bytes,
-                          method=method)
+    req = request.Request(f'http://{host_and_port}/{path}?token={pubsub_token()}',
+                          data=data_bytes, method=method)
     req.add_header('Content-Type', 'application/json')
     for k, v in headers.items():
         req.add_header(k, v)
