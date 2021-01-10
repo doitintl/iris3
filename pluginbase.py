@@ -17,7 +17,9 @@ class Plugin(object, metaclass=ABCMeta):
     def __init__(self):
         # These are set in subclass; We have it here to keep IDEs happy.
         self.counter = 0
-        self.batch = None
+        #google_client must be defined as a class member on each subclass
+        self.batch = self.google_client.new_batch_http_request( callback=self.batch_callback)
+
 
     @classmethod
     def set_on_demand(cls, on_demand: bool):

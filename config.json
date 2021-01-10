@@ -9,11 +9,13 @@
   "on_demand": [
     "Bigquery",
     "Bigtable",
-    "Cloudsql",
     "Cloudpubsub",
     "Gcs",
     "Instances",
     "Disks",
     "Snapshots"
+  ],
+  "not_on_demand": [
+    "Cloudsql"
   ]
 }

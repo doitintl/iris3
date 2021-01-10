@@ -17,8 +17,7 @@ class Bigquery(Plugin):
     def __init__(self):
         super().__init__()
 
-        self.batch = self.google_client.new_batch_http_request(
-            callback=self.batch_callback)
+        self.batch = self.google_client.new_batch_http_request( callback=self.batch_callback)
 
     def api_name(self):
         return "bigquery-json.googleapis.com"

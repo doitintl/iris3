@@ -1,39 +1,33 @@
 import logging
 
-from google.auth import app_engine
+
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
 from util import gcp_utils
 
-SCOPES = ['https://www.googleapis.com/auth/sqlservice.admin']
-
-CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 
 
-class CloudSql(Plugin):
-
-    def __init__(self):
-        Plugin.__init__(self)
-        self.sqladmin = discovery.build(
-            'sqladmin', 'v1beta4', credentials=CREDENTIALS)
-        self.batch = self.sqladmin.new_batch_http_request(
-            callback=self.batch_callback)
-
-    def register_signals(self):
-        logging.debug("Cloud SQL class created and registering signals")
+class Cloudsql(Plugin):
+    '''
+    CloudSQL cannot  be on-demand-labeled since
+     labels cannot be applied to CloudSQL after it is started but before it is done initializing.
+    '''
+    google_client=discovery.build( 'sqladmin', 'v1beta4')
 
     def _get_name(self, gcp_object):
-       return gcp_utils.get_name(gcp_object)
+        """Method dynamically called in _gen_labels, so don't change name"""
+        return gcp_utils.get_name(gcp_object)
 
     def _get_region(self, gcp_object):
+        """Method dynamically called in _gen_labels, so don't change name"""
         try:
             region = gcp_object['region']
             region = region.lower()
+            return region
         except KeyError as e:
             logging.error(e)
             return None
-        return region
 
     def api_name(self):
         return "sqladmin.googleapis.com"
@@ -41,25 +35,22 @@ class CloudSql(Plugin):
     def method_names(self):
         return ["cloudsql.instances.create"]
 
-    def get_instance(self, project_id, name):
+    def __get_instance(self, project_id, name):
         try:
-            result = self.sqladmin.instances().get(
-                project=project_id,
-                instance=name).execute()
+            result = self.google_client.instances().get( project=project_id, instance=name).execute()
+            return result
         except errors.HttpError as e:
             logging.error(e)
             return None
-        return result
 
     def get_gcp_object(self, data):
         try:
             if 'response' not in data['protoPayload']:
                 return None
-            ind = data['resource']['labels']['database_id'].rfind(':')
-            instance = data['resource']['labels']['database_id'][ind + 1:]
-            instance = self.get_instance(
-                data['resource']['labels']['project_id'], instance)
-
+            labels_ = data['resource']['labels']
+            ind = labels_['database_id'].rfind(':')
+            instance = labels_['database_id'][ind + 1:]
+            instance = self.__get_instance(labels_['project_id'], instance)
             return instance
         except Exception as e:
             logging.error(e)
@@ -70,7 +61,7 @@ class CloudSql(Plugin):
         more_results = True
         while more_results:
             try:
-                response = self.sqladmin.instances().list(
+                response = self.google_client.instances().list(
                     project=project_id, pageToken=page_token).execute()
             except errors.HttpError as e:
                 logging.error(e)
@@ -84,16 +75,13 @@ class CloudSql(Plugin):
             else:
                 more_results = False
 
-    # #TODO check if CloudSQL needs to be labeled since, perhaps,
-    # labels cannot be applied to CloudSQL after it is started but before it is done initializing
+
     def label_one(self, gcp_object, project_id):
-        labels = dict()
-        labels['labels'] = self._gen_labels(gcp_object)
+        labels = {'labels': self._gen_labels(gcp_object)}
         try:
-            database_instance_body = dict()
-            database_instance_body['settings'] = {}
-            database_instance_body['settings']['userLabels'] = labels['labels']
-            self.sqladmin.instances().patch(
+            database_instance_body = {'settings': {'userLabels': labels['labels']}}
+
+            self.google_client.instances().patch(
                 project=project_id, body=database_instance_body,
                 instance=gcp_object['name']).execute()
         except Exception as e:

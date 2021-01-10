@@ -48,6 +48,7 @@ def schedule():
             msg_dict = {'project_id': project_id,
                         'plugin': plugin_cls.__name__}
             msg = json.dumps(msg_dict)
+            # TODO Use Cloud Tasks instead of Pubsub to allow delay
             pubsub_utils.publish(msg=msg, topic_id=pubsub_utils.requestfulllabeling_topic())
 
     return 'OK', 200

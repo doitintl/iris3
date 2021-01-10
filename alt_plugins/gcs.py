@@ -14,8 +14,7 @@ class Gcs(Plugin):
     def __init__(self):
         super().__init__()
 
-        self.batch = self.google_client.new_batch_http_request(
-            callback=self.batch_callback)
+        self.batch = self.google_client.new_batch_http_request( callback=self.batch_callback)
 
     def _get_name(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""

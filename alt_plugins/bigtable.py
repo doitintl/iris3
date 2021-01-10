@@ -7,14 +7,10 @@ from pluginbase import Plugin
 from util import gcp_utils
 
 
+# TODO: Test label_one with sample log json; test in cloud
 class Bigtable(Plugin):
     google_client = discovery.build('bigtableadmin', 'v2')
 
-    def __init__(self):
-        super().__init__()
-
-        self.batch = self.google_client.new_batch_http_request(
-            callback=self.batch_callback)
 
     def api_name(self):
         return 'bigtableadmin.googleapis.com'
