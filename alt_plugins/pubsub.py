@@ -1,37 +1,27 @@
 import logging
+import typing
 
 from google.cloud import pubsub_v1
 
 from pluginbase import Plugin
-# CREDENTIALS = app_engine.Credentials(scopes=SCOPES)
 from util import gcp_utils
 
 
-# from utils.pubsub_utils import logs_topic, logs_subscription
-
-
-# SCOPES = ['https://www.googleapis.com/auth/pubsub']
-
-
-class PubSub(Plugin):
-
-    def __init__(self):
-        Plugin.__init__(self)
-
-    def register_signals(self):
-        logging.debug("Cloud PubSub class created and registering signals")
+class Pubsub(Plugin):
+    @classmethod
+    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
+        return ('pubsub', 'v1')
 
     def api_name(self):
         return "pubsub.googleapis.com"
 
     def method_names(self):
-        # Actually "google.pubsub.v1.Subscriber.CreateSubscription" but a subscript is allowed
+        # Actually "google.pubsub.v1.Subscriber.CreateSubscription" but a substring is allowed
         return ["CreateSubscription"]
 
     def do_label(self, project_id):
-        logging.info('pubsub dotag')
         # TODO Add paging
-        request = self.pubsub.projects().subscriptions().list(
+        request = self._google_client.projects().subscriptions().list(
             project='projects/' + project_id)
         response = request.execute()
         logging.debug(response)
@@ -78,13 +68,13 @@ class PubSub(Plugin):
             print('result')
 
         print(f"Subscription updated: {subscription_path}")
-        self.counter = self.counter + 1
+        self.counter += 1
         if self.counter == 1000:
             self.do_batch()
         return 'OK', 200
 
     def get_gcp_object(self, data):
-        #TODO remove excess logs
+        # TODO remove excess logs
         logging.info('get_gcp_object ' + str(data))
         proj = data['resource']['labels']['project_id']
         instId = data['protoPayload']['request']['instanceId']
@@ -99,35 +89,17 @@ class PubSub(Plugin):
     def _get_subscription(self, project_id, name):
         pass
 
+    def _get_name(self, gcp_object):
+        """Method dynamically called in _gen_labels, so don't change name"""
+        return gcp_utils.get_name(gcp_object)
 
-'''
-    def get_gcp_object(self, data):
-        try:
-            instance = self._get_topic(
-                data['resource']['labels']['project_id'],
-                data['protoPayload']['request']['instanceId'])
-            return instance
-        except Exception as e:
-            logging.error(e)
-            return None
-
-    def __get_name(self, gcp_object):
-        try:
-            name = gcp_object['name']
-            name = name.replace(".", "_").lower()[:62]
-        except KeyError as e:
-            logging.error(e)
-            return None
-        logging.info('pubsub name '+name)
-        return name
-
-    #TODO This and other __get_region are probably unused
-    def __get_region(self, gcp_object):
+    def _get_region(self, gcp_object):
+        """Method dynamically called in _gen_labels, so don't change name"""
         try:
             region = gcp_object['region']
             region = region.lower()
+            return region
         except KeyError as e:
             logging.error(e)
             return None
-        return region
-'''
+    # TODO more info for pubsub subscription?

@@ -71,4 +71,3 @@ def get_name(gcp_object):
     except KeyError as e:
         logging.error(e)
         return None
-

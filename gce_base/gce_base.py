@@ -1,20 +1,15 @@
-import logging
+import typing
 from abc import ABCMeta
 
-from googleapiclient import discovery, errors
-
-import util.gcp_utils
 from pluginbase import Plugin
 from util import gcp_utils
 
 
 class GceBase(Plugin, metaclass=ABCMeta):
-    google_client = discovery.build('compute', 'v1')
 
-    def __init__(self):
-        super().__init__()
-        # TODO The following line, and google_client above, could be pulled up to the superclass.
-        self.batch = self.google_client.new_batch_http_request(callback=self.batch_callback)
+    @classmethod
+    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
+        return ('compute', 'v1')
 
     def api_name(self):
         return 'compute.googleapis.com'
@@ -31,7 +26,7 @@ class GceBase(Plugin, metaclass=ABCMeta):
         gen_labels = self._gen_labels(gcp_object)
         all_labels = {**gen_labels, **original_labels}
         labels = {
-             #TODO can or should labelFingerprint technique be applied to all other object types?
+            # TODO can or should labelFingerprint technique be applied to all other object types?
             'labels': all_labels,
             'labelFingerprint': gcp_object.get('labelFingerprint', '')
         }

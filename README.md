@@ -26,44 +26,40 @@ We recommend deploying Iris in a
 [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project)
 within your Google Cloud organization. 
 
-You will need the following IAM permissions on your Google Cloud organization to complete the deployment: 
+You will need the following IAM permissions on your Google Cloud _organization_ (not just the project) 
+to complete the deployment: 
 
  * App Engine Admin
  * Logs Configuration Writer
  * Pub/Sub Admin
 
-##### Install dependencies
-
-`pip install -r requirements.txt -t lib`
-
 ##### Deploy
-* Edit `app.yaml`, changing the secret token for PubSub.
+* Optionally edit `app.yaml`, changing the secret token for PubSub.
 * Run  `./deploy.sh <project-id>` 
 
 ##### Configuration
 
 Configuration is stored in the `config.json` file, which includes.
 
-1. `labels` - A list of labels that will be applied to the resources 
-(if the plugin implements a function by the name _get_<LABELNAME>)
-2. `on_demand` - A list of plugins that will label whenever
-there is a new object of their type (as opposed to labeling 
-at application startup or on schedule).
+`labels` - A list of labels that will be applied to the resources 
+(if the plugin implements a function by the name `_get_<LABELNAME>`).
 
 ### Local Development
 For local development, rename and edit `dev_config.json.template`
-to `dev_config.json`,then run `main.py` as an ordinary Flask application.
+to `dev_config.json`, edit it,then run `main.py` as an ordinary Flask application.
 
-## Extension
-Iris is easily extendable to support labeling of other GCP services. 
+## Extension with plugins
+Iris is easily extensible to support labeling of other GCP resources. 
 You will need to create a Python file in the `/plugins` directory,
-with a subclass of `Plugin`. 
+holding a subclass of `Plugin`. 
 
 The Python file and class name should be the same, except for case:
-The filename should be lowercase and the class name should be in Title case.
+The filename should be lowercase and the class name should be in Title case 
+(only the first character should be in upper case).
  
-In addition to implementing abstract methods, you will need `_get_<LABELNAME>` methods
+In each class, in addition to implementing abstract methods,
+you will need `_get_<LABELNAME>` methods. If the resource
+cannot receive labels on-demand (as the result of a log event
+generated when the resource is created), then also
+override `is_on_demand` and return `False`.
 
-This application will add labels that are defined in the `config.json` file,
-but only if `_get_<LABELNAME>` method is defined in the relevant plugin. 
-See existing plugins for examples.

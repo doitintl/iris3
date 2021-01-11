@@ -1,6 +1,7 @@
 import logging
+import typing
 
-from googleapiclient import discovery, errors
+from googleapiclient import errors
 
 import util.gcp_utils
 from pluginbase import Plugin
@@ -9,8 +10,10 @@ from util import gcp_utils
 
 # TODO: Test label_one with sample log json; test in cloud
 class Bigtable(Plugin):
-    google_client = discovery.build('bigtableadmin', 'v2')
 
+    @classmethod
+    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
+        return ('bigtableadmin', 'v2')
 
     def api_name(self):
         return 'bigtableadmin.googleapis.com'
@@ -52,7 +55,7 @@ class Bigtable(Plugin):
     def _get_cluster(self, project_id, name):
         """Method dynamically called in _gen_labels, so don't change name"""
         try:
-            result = self.google_client.projects().instances().clusters().list(
+            result = self._google_client.projects().instances().clusters().list(
                 parent="projects/" + project_id + "/instances/" + name).execute()
 
             return result
@@ -69,7 +72,7 @@ class Bigtable(Plugin):
 
     def __get_instance(self, project_id, name):
         try:
-            result = self.google_client.projects().instances().get(
+            result = self._google_client.projects().instances().get(
                 name="projects/" + project_id + "/instances/" + name).execute()
             return result
         except errors.HttpError as e:
@@ -91,7 +94,7 @@ class Bigtable(Plugin):
         more_results = True
         while more_results:
             try:
-                result = self.google_client.projects().instances().list(
+                result = self._google_client.projects().instances().list(
                     parent="projects/" + project_id,
                     pageToken=page_token).execute()
             except errors.HttpError as e:
@@ -120,8 +123,8 @@ class Bigtable(Plugin):
 
         try:
 
-            self.batch.add(
-                self.google_client.projects().instances().partialUpdateInstance(
+            self._batch.add(
+                self._google_client.projects().instances().partialUpdateInstance(
                     name=gcp_object['name'],
                     body=gcp_object,
                     updateMask='labels'),

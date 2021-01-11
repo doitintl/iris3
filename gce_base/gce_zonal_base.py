@@ -1,15 +1,11 @@
 import logging
 from abc import ABCMeta
 
-from googleapiclient import discovery, errors
-
 import util.gcp_utils
 from gce_base.gce_base import GceBase
 
 
 class GceZonalBase(GceBase, metaclass=ABCMeta):
-    google_client = discovery.build('compute', 'v1')
-
 
     def _get_zone(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
@@ -37,7 +33,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         """
         Get all available zones.
         """
-        request = self.google_client.zones().list(project=project_id)
+        request = self._google_client.zones().list(project=project_id)
         response = request.execute()
         zones = [zone['description'] for zone in response['items']]
         return zones

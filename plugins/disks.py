@@ -5,7 +5,8 @@ from googleapiclient import errors
 from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
 
-#TODO Test in cloud; test label_one
+
+# TODO Test in cloud; test label_one
 class Disks(GceZonalBase):
 
     def method_names(self):
@@ -17,7 +18,7 @@ class Disks(GceZonalBase):
         more_results = True
         while more_results:
             try:
-                result = self.google_client.disks().list(
+                result = self._google_client.disks().list(
                     project=project_id, zone=zone,
                     filter='-labels.iris_name:*',
                     pageToken=page_token).execute()
@@ -34,7 +35,7 @@ class Disks(GceZonalBase):
 
     def __get_disk(self, project_id, zone, name):
         try:
-            result = self.google_client.disks().get(
+            result = self._google_client.disks().get(
                 project=project_id, zone=zone,
                 disk=name).execute()
             return result
@@ -69,7 +70,7 @@ class Disks(GceZonalBase):
         try:
             zone = self._get_zone(gcp_object)
 
-            self.batch.add(self.google_client.disks().setLabels(
+            self._batch.add(self._google_client.disks().setLabels(
                 project=project_id,
                 zone=zone,
                 resource=gcp_object['name'],

@@ -1,25 +1,23 @@
 import logging
 
+import typing
 from googleapiclient import discovery, errors
 
 from pluginbase import Plugin
 from util import gcp_utils
 
 
-
 class Gcs(Plugin):
-    google_client = discovery.build('storage', 'v1')
 
     # TODO: Test label_one with sample log json; test in cloud
-    def __init__(self):
-        super().__init__()
 
-        self.batch = self.google_client.new_batch_http_request( callback=self.batch_callback)
+    @classmethod
+    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
+        return ('storage', 'v1')
 
     def _get_name(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
         return gcp_utils.get_name(gcp_object)
-
 
     def _get_location(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
@@ -39,7 +37,7 @@ class Gcs(Plugin):
 
     def __get_bucket(self, bucket_name):
         try:
-            result = google_client.buckets().get(
+            result =self. _google_client.buckets().get(
                 bucket=bucket_name).execute()
             return result
         except errors.HttpError as e:
@@ -61,7 +59,7 @@ class Gcs(Plugin):
         more_results = True
         while more_results:
             try:
-                response = google_client.buckets().list(
+                response = self._google_client.buckets().list(
                     project=project_id, pageToken=page_token).execute()
             except errors.HttpError as e:
                 logging.error(e)
@@ -79,7 +77,7 @@ class Gcs(Plugin):
     def label_one(self, gcp_object, project_id):
         labels = {'labels': self._gen_labels(gcp_object)}
         try:
-            self.batch.add(google_client.buckets().patch(
+            self._batch.add(self._google_client.buckets().patch(
                 bucket=gcp_object['name'], body=labels),
                 request_id=gcp_utils.generate_uuid())
             self.counter += 1

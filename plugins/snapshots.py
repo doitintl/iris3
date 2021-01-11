@@ -6,7 +6,7 @@ from gce_base.gce_base import GceBase
 from util import gcp_utils
 
 
-#TODO Test in cloud; test label_one
+# TODO Test in cloud; test label_one
 class Snapshots(GceBase):
     def method_names(self):
         return ["v1.compute.disks.createSnapshot"]
@@ -17,7 +17,7 @@ class Snapshots(GceBase):
         more_results = True
         while more_results:
             try:
-                result = self.google_client.snapshots().list(
+                result = self._google_client.snapshots().list(
                     project=project_id,
                     filter='-labels.iris_name:*',
                     pageToken=page_token).execute()
@@ -34,7 +34,7 @@ class Snapshots(GceBase):
 
     def __get_snapshot(self, project_id, name):
         try:
-            result = self.google_client.snapshots().get(
+            result = self._google_client.snapshots().get(
                 project=project_id,
                 snapshot=name).execute()
             return result
@@ -66,7 +66,7 @@ class Snapshots(GceBase):
     def label_one(self, gcp_object, project_id):
         labels = self.build_labels(gcp_object)
         try:
-            self.batch.add(self.google_client.snapshots().setLabels(
+            self._batch.add(self._google_client.snapshots().setLabels(
                 project=project_id,
                 resource=gcp_object['name'],
                 body=labels), request_id=gcp_utils.generate_uuid())

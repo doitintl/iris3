@@ -2,8 +2,9 @@
 Labeling BQ tables and datasets.
 """
 import logging
+import typing
 
-from googleapiclient import discovery, errors
+from googleapiclient import errors
 from ratelimit import limits, sleep_and_retry
 
 from pluginbase import Plugin
@@ -12,12 +13,9 @@ from util import gcp_utils
 
 # TODO Test this plugin in the Cloud
 class Bigquery(Plugin):
-    google_client = discovery.build('bigquery', 'v2')
-
-    def __init__(self):
-        super().__init__()
-
-        self.batch = self.google_client.new_batch_http_request( callback=self.batch_callback)
+    @classmethod
+    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
+        return ('bigquery', 'v2')
 
     def api_name(self):
         return "bigquery-json.googleapis.com"
@@ -52,7 +50,7 @@ class Bigquery(Plugin):
 
     def __get_dataset(self, project_id, name):
         try:
-            result = self.google_client.datasets().get(
+            result = self._google_client.datasets().get(
                 projectId=project_id,
                 datasetId=name).execute()
             return result
@@ -62,7 +60,7 @@ class Bigquery(Plugin):
 
     def __get_table(self, project_id, dataset, table):
         try:
-            result = self.google_client.tables().get(
+            result = self._google_client.tables().get(
                 projectId=project_id,
                 datasetId=dataset, tableId=table).execute()
             return result
@@ -99,7 +97,7 @@ class Bigquery(Plugin):
         more_results = True
         while more_results:
             try:
-                response = self.google_client.datasets().list(
+                response = self._google_client.datasets().list(
                     projectId=project_id, pageToken=page_token).execute()
             except errors.HttpError as e:
                 logging.exception(e)
@@ -117,7 +115,7 @@ class Bigquery(Plugin):
         page_token = None
         more_results = True
         while more_results:
-            response = self.google_client.tables().list(
+            response = self._google_client.tables().list(
                 projectId=project_id,
                 datasetId=dataset['datasetReference']['datasetId'],
                 pageToken=page_token).execute()
@@ -136,7 +134,7 @@ class Bigquery(Plugin):
     def __label_one_dataset(self, gcp_object):
         labels = {'labels': self._gen_labels(gcp_object)}
         try:
-            self.google_client.datasets().patch(
+            self._google_client.datasets().patch(
                 projectId=gcp_object['datasetReference']['projectId'],
                 body=labels,
                 datasetId=gcp_object['datasetReference'][
@@ -151,7 +149,7 @@ class Bigquery(Plugin):
         try:
 
             table_reference = gcp_object['tableReference']
-            self.batch.add(self.google_client.tables().patch(
+            self._batch.add(self._google_client.tables().patch(
                 projectId=table_reference['projectId'],
                 body=labels,
                 datasetId=table_reference['datasetId'],

@@ -48,7 +48,11 @@ def schedule():
             msg_dict = {'project_id': project_id,
                         'plugin': plugin_cls.__name__}
             msg = json.dumps(msg_dict)
-            # TODO Use Cloud Tasks instead of Pubsub to allow delay
+            # TODO Maybe use Cloud Tasks instead of Pubsub to allow delay, which
+            # is necessary for labeling objects that are initializing, especially CloudSQL
+            # Yet,
+            # 1. Though Iris(Py2) used TaskQueue, it did NOT use delayed delivery  though it easily could  have.
+            # 2. Apparently objects other than CloudSQL get correctly labeled 'on-demand' based on the log event.
             pubsub_utils.publish(msg=msg, topic_id=pubsub_utils.requestfulllabeling_topic())
 
     return 'OK', 200
@@ -61,7 +65,7 @@ def label_one():
 
     method_from_log = data['protoPayload']['methodName']
     for plugin_cls in Plugin.subclasses:
-        if plugin_cls.on_demand:
+        if plugin_cls.is_on_demand():
             plugin = plugin_cls()
             for supported_method in plugin.method_names():
                 if supported_method.lower() in method_from_log.lower():
@@ -75,9 +79,9 @@ def label_one():
                         logging.info('Cannot find gcp_object from %s to label',
                                      utils.shorten(str(data.get('resource'), ''), 300))
         else:
-            assert False, 'For now, all plugins are "on-demand" and so we have not tested flows' \
-                          ' where on-demand is False. When a non-on-demand plugin is developed, remove' \
-                          'this assertion. Found %s' % plugin_cls.__name__
+            assert plugin_cls.__name__ == 'Cloudsql', 'For now, most plugins are "on-demand" and so we have not tested flows' \
+                                                      ' where on-demand is False. When a non-on-demand plugin is developed, remove' \
+                                                      'this assertion. Found %s' % plugin_cls.__name__
 
     return 'OK', 200
 

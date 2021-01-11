@@ -28,7 +28,7 @@ class Instances(GceZonalBase):
         more_results = True
         while more_results:
             try:
-                result = self.google_client.instances().list(
+                result = self._google_client.instances().list(
                     project=project_id, zone=zone,
                     filter='-labels.iris_name:*',
                     pageToken=page_token).execute()
@@ -45,7 +45,7 @@ class Instances(GceZonalBase):
 
     def __get_instance(self, project_id, zone, name):
         try:
-            result = self.google_client.instances().get(
+            result = self._google_client.instances().get(
                 project=project_id, zone=zone, instance=name).execute()
             return result
         except errors.HttpError as e:
@@ -83,7 +83,7 @@ class Instances(GceZonalBase):
             zone = self._get_zone(gcp_object)
             # TODO unite this with Gcedisks and Gcesnapshots. The
             # onhly difference is the method on google_client
-            self.batch.add(self.google_client.instances().setLabels(
+            self._batch.add(self._google_client.instances().setLabels(
                 project=project_id,
                 zone=zone,
                 instance=gcp_object['name'],
