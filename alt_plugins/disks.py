@@ -6,7 +6,6 @@ from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
 
 
-# TODO Test in cloud; test label_one
 class Disks(GceZonalBase):
 
     def method_names(self):
@@ -29,7 +28,7 @@ class Disks(GceZonalBase):
                 else:
                     more_results = False
             except errors.HttpError as e:
-                logging.error(e)
+                logging.exception(e)
 
         return disks
 
@@ -62,11 +61,11 @@ class Disks(GceZonalBase):
                                    labels['zone'], disk_name)
             return disk
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def label_one(self, gcp_object, project_id):
-        labels = self.build_labels(gcp_object)
+        labels = self._build_labels(gcp_object)
         try:
             zone = self._get_zone(gcp_object)
 

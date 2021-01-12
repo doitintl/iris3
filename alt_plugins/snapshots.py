@@ -6,7 +6,6 @@ from gce_base.gce_base import GceBase
 from util import gcp_utils
 
 
-# TODO Test in cloud; test label_one
 class Snapshots(GceBase):
     def method_names(self):
         return ["v1.compute.disks.createSnapshot"]
@@ -28,7 +27,7 @@ class Snapshots(GceBase):
                 else:
                     more_results = False
             except errors.HttpError as e:
-                logging.error(e)
+                logging.exception(e)
 
         return snapshots
 
@@ -39,7 +38,7 @@ class Snapshots(GceBase):
                 snapshot=name).execute()
             return result
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def do_label(self, project_id):
@@ -64,7 +63,7 @@ class Snapshots(GceBase):
             return None
 
     def label_one(self, gcp_object, project_id):
-        labels = self.build_labels(gcp_object)
+        labels = self._build_labels(gcp_object)
         try:
             self._batch.add(self._google_client.snapshots().setLabels(
                 project=project_id,

@@ -16,7 +16,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             zone = zone.lower()
             return zone
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def _get_region(self, gcp_object):
@@ -26,7 +26,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             region = util.gcp_utils.region_from_zone(zone).lower()
             return region
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def get_zones(self, project_id):

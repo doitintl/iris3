@@ -79,9 +79,9 @@ def label_one():
                         logging.info('Cannot find gcp_object from %s to label',
                                      utils.shorten(str(data.get('resource'), ''), 300))
         else:
-            assert plugin_cls.__name__ == 'Cloudsql', 'For now, most plugins are "on-demand" and so we have not tested flows' \
-                                                      ' where on-demand is False. When a non-on-demand plugin is developed, remove' \
-                                                      'this assertion. Found %s' % plugin_cls.__name__
+            assert plugin_cls.__name__ == 'Cloudsql',\
+                'For now, there is only one non-on-demand plugin. Change this assertion as needed. ' \
+                'Found %s' % plugin_cls.__name__
 
     return 'OK', 200
 

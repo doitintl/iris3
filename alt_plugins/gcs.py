@@ -9,15 +9,14 @@ from util import gcp_utils
 
 class Gcs(Plugin):
 
-    # TODO: Test label_one with sample log json; test in cloud
 
     @classmethod
-    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
-        return ('storage', 'v1')
+    def discovery_api(cls) -> typing.Tuple[str, str]:
+        return 'storage', 'v1'
 
     def _get_name(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
-        return gcp_utils.get_name(gcp_object)
+        return self.name_no_separator(gcp_object)
 
     def _get_location(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
@@ -26,7 +25,7 @@ class Gcs(Plugin):
             location = location.replace(".", "_").lower()
             return location
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def api_name(self):
@@ -50,7 +49,7 @@ class Gcs(Plugin):
                 data['resource']['labels']['bucket_name'])
             return bucket
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def do_label(self, project_id):
@@ -62,7 +61,7 @@ class Gcs(Plugin):
                 response = self._google_client.buckets().list(
                     project=project_id, pageToken=page_token).execute()
             except errors.HttpError as e:
-                logging.error(e)
+                logging.exception(e)
                 return
             if 'items' in response:
                 for bucket in response['items']:
@@ -84,5 +83,5 @@ class Gcs(Plugin):
             if self.counter == 1000:
                 self.do_batch()
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
         return 'OK', 200

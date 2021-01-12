@@ -17,12 +17,12 @@ class Plugin(object, metaclass=ABCMeta):
 
     def __init__(self):
         self.counter = 0
-        self._google_client = discovery.build(*self.googleapiclient_discovery())
+        self._google_client = discovery.build(*self.discovery_api())
         self._batch = self._google_client.new_batch_http_request(callback=self.__batch_callback)
 
     @classmethod
     @abstractmethod
-    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
+    def discovery_api(cls) -> typing.Tuple[str, str]:
         pass
 
     @classmethod
@@ -48,7 +48,6 @@ class Plugin(object, metaclass=ABCMeta):
 
     def _gen_labels(self, gcp_object):
         labels = {}
-        # TODO Remove excess logs
         logging.info('gcp_object %s', gcp_object)
 
         # if utils.project_inheriting():
@@ -123,3 +122,39 @@ class Plugin(object, metaclass=ABCMeta):
         cls = cls_by_name(PLUGINS_MODULE + '.' + plugin_name.lower() + '.' + plugin_name)
         plugin = cls()
         return plugin
+
+    #TODO use this in all subclasses; but check into whteher we should nest the labels as below.
+    def _build_labels(self, gcp_object):
+        try:
+            original_labels = gcp_object['labels']
+        except KeyError:
+            original_labels = {}
+        gen_labels = self._gen_labels(gcp_object)
+        all_labels = {**gen_labels, **original_labels}
+        fingerprint = gcp_object.get('labelFingerprint', '')
+        # TODO  labelFingerprint exists in GCE instances. In what other objects does it exist?
+        logging.info('For %s fingerprint was "%s"', self.__class__.__name__, fingerprint)
+        labels = {
+            'labels': all_labels,
+            'labelFingerprint': fingerprint
+        }
+        return labels
+
+    def name_after_slash(self, gcp_object):
+        return self.__name(gcp_object, separator='/')
+
+
+    def name_no_separator(self, gcp_object):
+        return self.__name(gcp_object, separator='')
+
+    def __name(self, gcp_object, separator=''):
+        try:
+            name = gcp_object['name']
+            if separator:
+             index = name.rfind(separator)
+             name = name[index + 1:]
+             name = name.replace('.', '_').lower()[:62]
+             return name
+        except KeyError as e:
+            logging.exception(e)
+            return None

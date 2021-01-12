@@ -16,7 +16,7 @@ class Instances(GceZonalBase):
             machine_type = machine_type[ind + 1:]
             return machine_type
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def method_names(self):
@@ -39,7 +39,7 @@ class Instances(GceZonalBase):
                 else:
                     more_results = False
             except errors.HttpError as e:
-                logging.error(e)
+                logging.exception(e)
 
         return instances
 
@@ -49,7 +49,7 @@ class Instances(GceZonalBase):
                 project=project_id, zone=zone, instance=name).execute()
             return result
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def do_label(self, project_id):
@@ -73,16 +73,14 @@ class Instances(GceZonalBase):
                 inst)
             return instance
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def label_one(self, gcp_object, project_id):
-        labels = self.build_labels(gcp_object)
+        labels = self._build_labels(gcp_object)
 
         try:
             zone = self._get_zone(gcp_object)
-            # TODO unite this with Gcedisks and Gcesnapshots. The
-            # onhly difference is the method on google_client
             self._batch.add(self._google_client.instances().setLabels(
                 project=project_id,
                 zone=zone,
@@ -95,7 +93,7 @@ class Instances(GceZonalBase):
                 self.do_batch()
 
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return 'Error', 500
 
         return 'OK', 200

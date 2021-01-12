@@ -8,12 +8,12 @@ from pluginbase import Plugin
 from util import gcp_utils
 
 
-# TODO: Test label_one with sample log json; test in cloud
+
 class Bigtable(Plugin):
 
     @classmethod
-    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
-        return ('bigtableadmin', 'v2')
+    def discovery_api(cls) -> typing.Tuple[str, str]:
+        return 'bigtableadmin', 'v2'
 
     def api_name(self):
         return 'bigtableadmin.googleapis.com'
@@ -23,15 +23,7 @@ class Bigtable(Plugin):
 
     def _get_name(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
-        try:
-            name = gcp_object['name']
-            index = name.rfind('/')
-            name = name[index + 1:]
-            name = name.replace('.', '_').lower()[:62]
-            return name
-        except KeyError as e:
-            logging.exception(e)
-            return None
+        return self.name_after_slash(gcp_object)
 
     def _get_zone(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
@@ -39,7 +31,7 @@ class Bigtable(Plugin):
             location = self.__get_location(gcp_object, gcp_object['project_id'])
             return location
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def _get_region(self, gcp_object):
@@ -49,7 +41,7 @@ class Bigtable(Plugin):
             region = util.gcp_utils.region_from_zone(zone).lower()
             return region
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def _get_cluster(self, project_id, name):
@@ -60,7 +52,7 @@ class Bigtable(Plugin):
 
             return result
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def __get_location(self, gcp_object, project_id):
@@ -76,7 +68,7 @@ class Bigtable(Plugin):
                 name="projects/" + project_id + "/instances/" + name).execute()
             return result
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def get_gcp_object(self, data):
@@ -86,7 +78,7 @@ class Bigtable(Plugin):
                 data['protoPayload']['request']['instanceId'])
             return instance
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def do_label(self, project_id):
@@ -98,7 +90,7 @@ class Bigtable(Plugin):
                     parent="projects/" + project_id,
                     pageToken=page_token).execute()
             except errors.HttpError as e:
-                logging.error(e)
+                logging.exception(e)
                 return
             if 'instances' in result:
                 for inst in result['instances']:
@@ -112,7 +104,8 @@ class Bigtable(Plugin):
 
     def label_one(self, gcp_object, project_id):
         labels = dict()
-        gcp_object['project_id'] = project_id  # TODO Why was this line here? Can I remove it (and 2 lines down?)
+        gcp_object['project_id'] = project_id  # TODO Why was this line here? Can I remove it (and also the pop, 2 lines down?)
+        #TODO use _build_labels for the following line
         labels['labels'] = self._gen_labels(gcp_object)
         gcp_object.pop('project_id', None)
         if 'labels' not in gcp_object:
@@ -135,3 +128,5 @@ class Bigtable(Plugin):
         except Exception as e:
             logging.exception(e)
         return 'OK', 200
+
+

@@ -1,0 +1,56 @@
+{
+  "protoPayload": {
+    "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+    "authenticationInfo": {
+      "principalEmail": "xxx@example.com",
+      "principalSubject": "user:xxx@example.com"
+    },
+    "requestMetadata": {
+      "callerIp": "185.3.145.123",
+      "callerSuppliedUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36,gzip(gfe)",
+      "requestAttributes": {
+        "time": "2021-01-12T18:36:34.250959528Z",
+        "auth": {}
+      },
+      "destinationAttributes": {}
+    },
+    "serviceName": "pubsub.googleapis.com",
+    "methodName": "google.pubsub.v1.Subscriber.CreateSubscription",
+    "authorizationInfo": [
+      {
+        "resource": "projects/${project}/topics/${parent_name}",
+        "permission": "pubsub.topics.attachSubscription",
+        "granted": true,
+        "resourceAttributes": {}
+      }
+    ],
+    "resourceName": "projects/${project}/topics/${parent_name}",
+    "request": {
+      "name": "projects/${project}/subscriptions/${name}",
+      "messageRetentionDuration": "604800s",
+      "topic": "projects/${project}/topics/${parent_name}",
+      "ackDeadlineSeconds": 10,
+      "@type": "type.googleapis.com/google.pubsub.v1.Subscription"
+    },
+    "response": {
+      "name": "projects/${project}/subscriptions/${name}",
+      "topic": "projects/${project}/topics/${parent_name}",
+      "ackDeadlineSeconds": 10,
+      "@type": "type.googleapis.com/google.pubsub.v1.Subscription",
+      "pushConfig": {},
+      "messageRetentionDuration": "604800s"
+    }
+  },
+  "insertId": "hre128ccds",
+  "resource": {
+    "type": "pubsub_topic",
+    "labels": {
+      "topic_id": "projects/${project}/topics/${parent_name}",
+      "project_id": "${project}"
+    }
+  },
+  "timestamp": "2021-01-12T18:36:34.244650205Z",
+  "severity": "NOTICE",
+  "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
+  "receiveTimestamp": "2021-01-12T18:36:38.190215738Z"
+}

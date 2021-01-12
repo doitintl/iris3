@@ -8,8 +8,8 @@ from util import gcp_utils
 
 class Cloudsql(Plugin):
     @classmethod
-    def googleapiclient_discovery(cls):
-        return ('sqladmin', 'v1beta4')
+    def discovery_api(cls):
+        return 'sqladmin', 'v1beta4'
 
     @classmethod
     def is_on_demand(cls) -> bool:
@@ -21,7 +21,7 @@ class Cloudsql(Plugin):
 
     def _get_name(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
-        return gcp_utils.get_name(gcp_object)
+        return self.name_no_separator(gcp_object)
 
     def _get_region(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
@@ -30,7 +30,7 @@ class Cloudsql(Plugin):
             region = region.lower()
             return region
         except KeyError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def api_name(self):
@@ -44,7 +44,7 @@ class Cloudsql(Plugin):
             result = self._google_client.instances().get(project=project_id, instance=name).execute()
             return result
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def get_gcp_object(self, data):
@@ -57,7 +57,7 @@ class Cloudsql(Plugin):
             instance = self.__get_instance(labels_['project_id'], instance)
             return instance
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def do_label(self, project_id):
@@ -68,7 +68,7 @@ class Cloudsql(Plugin):
                 response = self._google_client.instances().list(
                     project=project_id, pageToken=page_token).execute()
             except errors.HttpError as e:
-                logging.error(e)
+                logging.exception(e)
                 return
             if 'items' not in response:
                 return
@@ -80,6 +80,7 @@ class Cloudsql(Plugin):
                 more_results = False
 
     def label_one(self, gcp_object, project_id):
+        #TODO use _build_labels for the following line
         labels = {'labels': self._gen_labels(gcp_object)}
         try:
             database_instance_body = {'settings': {'userLabels': labels['labels']}}
@@ -88,5 +89,5 @@ class Cloudsql(Plugin):
                 project=project_id, body=database_instance_body,
                 instance=gcp_object['name']).execute()
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
         return 'OK', 200

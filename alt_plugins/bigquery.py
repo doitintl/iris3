@@ -11,11 +11,10 @@ from pluginbase import Plugin
 from util import gcp_utils
 
 
-# TODO Test this plugin in the Cloud
 class Bigquery(Plugin):
     @classmethod
-    def googleapiclient_discovery(cls) -> typing.Tuple[str, str]:
-        return ('bigquery', 'v2')
+    def discovery_api(cls) -> typing.Tuple[str, str]:
+        return 'bigquery', 'v2'
 
     def api_name(self):
         return "bigquery-json.googleapis.com"
@@ -55,7 +54,7 @@ class Bigquery(Plugin):
                 datasetId=name).execute()
             return result
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def __get_table(self, project_id, dataset, table):
@@ -65,7 +64,7 @@ class Bigquery(Plugin):
                 datasetId=dataset, tableId=table).execute()
             return result
         except errors.HttpError as e:
-            logging.error(e)
+            logging.exception(e)
             return None
 
     def get_gcp_object(self, data):
@@ -79,10 +78,10 @@ class Bigquery(Plugin):
             # No such dataset; hoping for table
             pass
         try:
-            table_name = data['protoPayload']['serviceData']['tableInsertRequest']['resource']['tableName']
-            tableid = table_name['tableId']
-            projectid = table_name['projectId']
-            datasetid = table_name['datasetId']
+            table = data['protoPayload']['serviceData']['tableInsertRequest']['resource']['tableName']
+            tableid = table['tableId']
+            projectid = table['projectId']
+            datasetid = table['datasetId']
             table = self.__get_table(projectid, datasetid, tableid)
             return table
         except Exception as e:
@@ -102,15 +101,16 @@ class Bigquery(Plugin):
             except errors.HttpError as e:
                 logging.exception(e)
                 return
+
             if 'datasets' in response:
                 for dataset in response['datasets']:
-                    self.__label_tables_in_dataset(project_id, dataset)
+                    self.__label_dataset_and_tables(project_id, dataset)
             if 'nextPageToken' in response:
                 page_token = response['nextPageToken']
             else:
                 more_results = False
 
-    def __label_tables_in_dataset(self, project_id, dataset):
+    def __label_dataset_and_tables(self, project_id, dataset):
         self.__label_one_dataset(dataset)
         page_token = None
         more_results = True
@@ -132,6 +132,7 @@ class Bigquery(Plugin):
     @sleep_and_retry
     @limits(calls=35, period=60)
     def __label_one_dataset(self, gcp_object):
+        #TODO use _build_labels for the following line
         labels = {'labels': self._gen_labels(gcp_object)}
         try:
             self._google_client.datasets().patch(
@@ -145,6 +146,7 @@ class Bigquery(Plugin):
     @sleep_and_retry
     @limits(calls=35, period=60)
     def __label_one_table(self, gcp_object):
+        #TODO use _build_labels for the following line
         labels = {'labels': self._gen_labels(gcp_object)}
         try:
 
@@ -169,4 +171,4 @@ class Bigquery(Plugin):
             else:
                 self.__label_one_table(gcp_object)
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)

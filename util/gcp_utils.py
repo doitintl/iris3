@@ -63,11 +63,3 @@ def pubsub_token():
         return localdev_pubsub_token()
 
 
-def get_name(gcp_object):
-    try:
-        name = gcp_object['name']
-        name = name.replace('.', '_').lower()[:62]
-        return name
-    except KeyError as e:
-        logging.error(e)
-        return None
