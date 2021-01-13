@@ -1,0 +1,51 @@
+
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "principalEmail": "xxx@example.com",
+        "principalSubject": "user:xxx@example.com"
+      },
+      "requestMetadata": {
+        "callerIp": "185.3.145.123",
+        "callerSuppliedUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36,gzip(gfe)",
+        "requestAttributes": {
+          "time": "2021-01-13T15:56:29.265617803Z",
+          "auth": {}
+        },
+        "destinationAttributes": {}
+      },
+      "serviceName": "pubsub.googleapis.com",
+      "methodName": "google.pubsub.v1.Publisher.CreateTopic",
+      "authorizationInfo": [
+        {
+          "resource": "projects/${project}",
+          "permission": "pubsub.topics.create",
+          "granted": true,
+          "resourceAttributes": {}
+        }
+      ],
+      "resourceName": "projects/${project}/topics/${name}",
+      "request": {
+        "name": "projects/${project}/topics/${name}",
+        "@type": "type.googleapis.com/google.pubsub.v1.Topic",
+        "kmsKeyName": ""
+      },
+      "response": {
+        "name": "projects/${project}/topics/${name}",
+        "@type": "type.googleapis.com/google.pubsub.v1.Topic"
+      }
+    },
+    "insertId": "t5a3l7d3hy0",
+    "resource": {
+      "type": "pubsub_topic",
+      "labels": {
+        "topic_id": "projects/${project}/topics/${name}",
+        "project_id": "${project}"
+      }
+    },
+    "timestamp": "2021-01-13T15:56:29.259998538Z",
+    "severity": "NOTICE",
+    "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
+    "receiveTimestamp": "2021-01-13T15:56:31.257012335Z"
+  }

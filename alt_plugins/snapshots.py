@@ -16,14 +16,19 @@ class Snapshots(GceBase):
         more_results = True
         while more_results:
             try:
-                result = self._google_client.snapshots().list(
-                    project=project_id,
-                    filter='-labels.iris_name:*',
-                    pageToken=page_token).execute()
-                if 'items' in result:
-                    snapshots = snapshots + result['items']
-                if 'nextPageToken' in result:
-                    page_token = result['nextPageToken']
+                result = (
+                    self._google_client.snapshots()
+                    .list(
+                        project=project_id,
+                        filter="-labels.iris_name:*",
+                        pageToken=page_token,
+                    )
+                    .execute()
+                )
+                if "items" in result:
+                    snapshots = snapshots + result["items"]
+                if "nextPageToken" in result:
+                    page_token = result["nextPageToken"]
                 else:
                     more_results = False
             except errors.HttpError as e:
@@ -33,9 +38,11 @@ class Snapshots(GceBase):
 
     def __get_snapshot(self, project_id, name):
         try:
-            result = self._google_client.snapshots().get(
-                project=project_id,
-                snapshot=name).execute()
+            result = (
+                self._google_client.snapshots()
+                .get(project=project_id, snapshot=name)
+                .execute()
+            )
             return result
         except errors.HttpError as e:
             logging.exception(e)
@@ -47,16 +54,17 @@ class Snapshots(GceBase):
             self.label_one(snapshot, project_id)
         if self.counter > 0:
             self.do_batch()
-        return 'OK', 200
+        return "OK", 200
 
     def get_gcp_object(self, data):
         try:
-            if 'response' not in data['protoPayload']:
+            if "response" not in data["protoPayload"]:
                 return None
-            request = data['protoPayload']['request']
-            snap_name = request['name']
+            request = data["protoPayload"]["request"]
+            snap_name = request["name"]
             snapshot = self.__get_snapshot(
-                data['resource']['labels']['project_id'], snap_name)
+                data["resource"]["labels"]["project_id"], snap_name
+            )
             return snapshot
         except Exception as e:
             logging.exception(e)
@@ -65,14 +73,16 @@ class Snapshots(GceBase):
     def label_one(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object)
         try:
-            self._batch.add(self._google_client.snapshots().setLabels(
-                project=project_id,
-                resource=gcp_object['name'],
-                body=labels), request_id=gcp_utils.generate_uuid())
+            self._batch.add(
+                self._google_client.snapshots().setLabels(
+                    project=project_id, resource=gcp_object["name"], body=labels
+                ),
+                request_id=gcp_utils.generate_uuid(),
+            )
             self.counter += 1
             if self.counter == 1000:
                 self.do_batch()
         except Exception as e:
             logging.exception(e)
-            return 'Error', 500
-        return 'OK', 200
+            return "Error", 500
+        return "OK", 200

@@ -1,0 +1,89 @@
+{
+  "protoPayload": {
+    "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+    "status": {},
+    "authenticationInfo": {
+      "principalEmail": "xxx@example.com"
+    },
+    "requestMetadata": {
+      "callerIp": "185.3.145.123",
+      "callerSuppliedUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36,gzip(gfe),gzip(gfe)",
+      "requestAttributes": {
+        "time": "2021-01-13T09:19:44.270443328Z",
+        "auth": {}
+      },
+      "destinationAttributes": {}
+    },
+    "serviceName": "storage.googleapis.com",
+    "methodName": "storage.buckets.create",
+    "authorizationInfo": [
+      {
+        "resource": "projects/_/buckets/${name}",
+        "permission": "storage.buckets.create",
+        "granted": true,
+        "resourceAttributes": {}
+      }
+    ],
+    "resourceName": "projects/_/buckets/${name}",
+    "serviceData": {
+      "@type": "type.googleapis.com/google.iam.v1.logging.AuditData",
+      "policyDelta": {
+        "bindingDeltas": [
+          {
+            "action": "ADD",
+            "role": "roles/storage.legacyBucketOwner",
+            "member": "projectEditor:${project}"
+          },
+          {
+            "action": "ADD",
+            "role": "roles/storage.legacyBucketOwner",
+            "member": "projectOwner:${project}"
+          },
+          {
+            "action": "ADD",
+            "role": "roles/storage.legacyBucketReader",
+            "member": "projectViewer:${project}"
+          }
+        ]
+      }
+    },
+    "request": {
+      "defaultObjectAcl": {
+        "@type": "type.googleapis.com/google.iam.v1.Policy",
+        "bindings": [
+          {
+            "members": [
+              "projectViewer:${project}"
+            ],
+            "role": "roles/storage.legacyObjectReader"
+          },
+          {
+            "members": [
+              "projectOwner:${project}",
+              "projectEditor:${project}"
+            ],
+            "role": "roles/storage.legacyObjectOwner"
+          }
+        ]
+      }
+    },
+    "resourceLocation": {
+      "currentLocations": [
+        "us"
+      ]
+    }
+  },
+  "insertId": "7rpxlbeozw6y",
+  "resource": {
+    "type": "gcs_bucket",
+    "labels": {
+      "location": "us",
+      "project_id": "${project}",
+      "bucket_name": "${name}"
+    }
+  },
+  "timestamp": "2021-01-13T09:19:44.263762326Z",
+  "severity": "NOTICE",
+  "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
+  "receiveTimestamp": "2021-01-13T09:19:45.352356885Z"
+}

@@ -6,13 +6,12 @@ from gce_base.gce_base import GceBase
 
 
 class GceZonalBase(GceBase, metaclass=ABCMeta):
-
     def _get_zone(self, gcp_object):
         """Method dynamically called in _gen_labels, so don't change name"""
         try:
-            zone = gcp_object['zone']
-            index = zone.rfind('/')
-            zone = zone[index + 1:]
+            zone = gcp_object["zone"]
+            index = zone.rfind("/")
+            zone = zone[index + 1 :]
             zone = zone.lower()
             return zone
         except KeyError as e:
@@ -35,5 +34,5 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         """
         request = self._google_client.zones().list(project=project_id)
         response = request.execute()
-        zones = [zone['description'] for zone in response['items']]
+        zones = [zone["description"] for zone in response["items"]]
         return zones

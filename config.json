@@ -5,17 +5,5 @@
     "region",
     "location",
     "instance_type"
-  ],
-  "on_demand": [
-    "Bigquery",
-    "Bigtable",
-    "Cloudpubsub",
-    "Gcs",
-    "Instances",
-    "Disks",
-    "Snapshots"
-  ],
-  "not_on_demand": [
-    "Cloudsql"
   ]
 }

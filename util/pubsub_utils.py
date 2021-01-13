@@ -36,11 +36,11 @@ __publisher = pubsub_v1.PublisherClient()
 
 
 def logs_topic() -> str:
-    return f'{config_utils.iris_prefix()}_logs_topic'
+    return f"{config_utils.iris_prefix()}_logs_topic"
 
 
 def requestfulllabeling_topic() -> str:
-    return f'{config_utils.iris_prefix()}_requestfulllabeling_topic'
+    return f"{config_utils.iris_prefix()}_requestfulllabeling_topic"
 
 
 def publish(msg: str, topic_id: str):
@@ -52,11 +52,11 @@ def publish(msg: str, topic_id: str):
             try:
                 int(result)  # Int results indicate success, no need to log
             except ValueError:  # not an int, failed
-                logging.info('PubSub publishing result %s', result)
+                logging.info("PubSub publishing result %s", result)
         except Exception as e:
             logging.exception(e)
 
-    future = __publisher.publish(topic_path, msg.encode('utf-8'))
+    future = __publisher.publish(topic_path, msg.encode("utf-8"))
     future.add_done_callback(on_publish)
 
-    logging.info('Published to %s: %s', topic_id, utils.shorten(msg, 200))
+    logging.info("Published to %s: %s", topic_id, utils.shorten(msg, 200))

@@ -11,8 +11,8 @@ import util.gcp_utils
 from pluginbase import Plugin
 from util import pubsub_utils, gcp_utils, utils
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
+logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
 gcp_utils.set_env()
 
@@ -20,70 +20,81 @@ app = flask.Flask(__name__)
 
 
 def __init_flaskapp():
-    logging.info('Initializing Iris in process %s', os.getpid())
+    logging.info("Initializing Iris in process %s", os.getpid())
     Plugin.init()
 
 
 __init_flaskapp()
 
 
-@app.route('/')
+@app.route("/")
 def index():
-    logging.info('environ', os.environ)
-    return 'I don\'t think you meant to be here...', 200
+    logging.info("environ", os.environ)
+    return "I don't think you meant to be here...", 200
 
 
-@app.route('/schedule', methods=['GET'])
+@app.route("/schedule", methods=["GET"])
 def schedule():
     """
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
-    is_cron = flask.request.headers.get('X-Appengine-Cron')
+    is_cron = flask.request.headers.get("X-Appengine-Cron")
     if not is_cron:
-        return 'Access Denied: No token or Cron header found', 403
+        return "Access Denied: No token or Cron header found", 403
 
     projects = gcp_utils.get_all_projects()
     for project_id in projects:
         for plugin_cls in Plugin.subclasses:
-            msg_dict = {'project_id': project_id,
-                        'plugin': plugin_cls.__name__}
+            msg_dict = {"project_id": project_id, "plugin": plugin_cls.__name__}
             msg = json.dumps(msg_dict)
             # TODO Maybe use Cloud Tasks instead of Pubsub to allow delay, which
             # is necessary for labeling objects that are initializing, especially CloudSQL
             # Yet,
             # 1. Though Iris(Py2) used TaskQueue, it did NOT use delayed delivery  though it easily could  have.
             # 2. Apparently objects other than CloudSQL get correctly labeled 'on-demand' based on the log event.
-            pubsub_utils.publish(msg=msg, topic_id=pubsub_utils.requestfulllabeling_topic())
+            pubsub_utils.publish(
+                msg=msg, topic_id=pubsub_utils.requestfulllabeling_topic()
+            )
 
-    return 'OK', 200
+    return "OK", 200
 
 
-@app.route('/label_one', methods=['POST'])
+@app.route("/label_one", methods=["POST"])
 def label_one():
     """Pubsub push endpoint for messages from the Log Sink"""
     data = __extract_pubsub_content()
 
-    method_from_log = data['protoPayload']['methodName']
+    method_from_log = data["protoPayload"]["methodName"]
     for plugin_cls in Plugin.subclasses:
-        if plugin_cls.is_on_demand():
+        # Arg overrides on_demand, for testing
+        if plugin_cls.is_on_demand() or "true" == flask.request.args.get(
+            "override_on_demand"
+        ):
             plugin = plugin_cls()
             for supported_method in plugin.method_names():
                 if supported_method.lower() in method_from_log.lower():
                     gcp_object = plugin.get_gcp_object(data)
                     if gcp_object is not None:
-                        project_id = data['resource']['labels']['project_id']
-                        logging.info("Calling %s.label_one() in %s ", plugin.__class__.__name__, project_id)
+                        project_id = data["resource"]["labels"]["project_id"]
+                        logging.info(
+                            "Calling %s.label_one() in %s ",
+                            plugin.__class__.__name__,
+                            project_id,
+                        )
                         plugin.label_one(gcp_object, project_id)
                         plugin.do_batch()
                     else:
-                        logging.info('Cannot find gcp_object from %s to label',
-                                     utils.shorten(str(data.get('resource'), ''), 300))
+                        logging.error(
+                            "Cannot find gcp_object from %s to label",
+                            utils.shorten(str(data.get("resource"), ""), 300),
+                        )
         else:
-            assert plugin_cls.__name__ == 'Cloudsql',\
-                'For now, there is only one non-on-demand plugin. Change this assertion as needed. ' \
-                'Found %s' % plugin_cls.__name__
+            assert plugin_cls.__name__ == "Cloudsql", (
+                "For now, there is only one non-on-demand plugin. Change this assertion as needed. "
+                "Found %s" % plugin_cls.__name__
+            )
 
-    return 'OK', 200
+    return "OK", 200
 
 
 def __extract_pubsub_content() -> typing.Dict:
@@ -91,34 +102,34 @@ def __extract_pubsub_content() -> typing.Dict:
 
     envelope = flask.request.get_json()
     if not envelope:
-        raise FlaskException('Expect JSON')
+        raise FlaskException("Expect JSON")
 
-    data = json.loads(base64.b64decode(envelope['message']['data']))
+    data = json.loads(base64.b64decode(envelope["message"]["data"]))
     return data
 
 
-@app.route('/do_label', methods=['POST'])
+@app.route("/do_label", methods=["POST"])
 def do_label():
-    """ Receive a push message from PubSub, sent from schedule() above,
-     with instructions to label all objects of a given plugin and project_id.
+    """Receive a push message from PubSub, sent from schedule() above,
+    with instructions to label all objects of a given plugin and project_id.
     """
     data = __extract_pubsub_content()
 
-    plugin_class_localname = data['plugin']
+    plugin_class_localname = data["plugin"]
     plugin = Plugin.create_plugin(plugin_class_localname)
-    project_id = data['project_id']
+    project_id = data["project_id"]
     logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
     plugin.do_label(project_id)
-    return 'OK', 200
+    return "OK", 200
 
 
 def __check_pubsub_verification_token():
     """ Token verifying that only PubSub accesses PubSub push endpoints"""
     known_token = util.gcp_utils.pubsub_token()
     if not known_token:
-        raise FlaskException(f'Should define token in env {os.environ}', 400)
+        raise FlaskException(f"Should define token in env {os.environ}", 400)
 
-    token_from_args = flask.request.args.get('token', '')
+    token_from_args = flask.request.args.get("token", "")
     if known_token != token_from_args:
         raise FlaskException(f'Access denied: Invalid token "{known_token}"', 403)
 
@@ -135,7 +146,7 @@ class FlaskException(Exception):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv['message'] = self.message
+        rv["message"] = self.message
         return rv
 
 
@@ -147,10 +158,10 @@ def handle_invalid_usage(error):
     return response
 
 
-if __name__ in ['__main__']:
+if __name__ in ["__main__"]:
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app. This
     # can be configured by adding an `entrypoint` to app.yaml.
-    port = os.environ.get('PORT', 8000)
-    logging.info('Running __main__ for main.py, port %s', port)
+    port = os.environ.get("PORT", 8000)
+    logging.info("Running __main__ for main.py, port %s", port)
     app.run(host="127.0.0.1", port=port, debug=True)

@@ -9,7 +9,7 @@ import util.config_utils
 from util import config_utils, utils
 from util.utils import cls_by_name
 
-PLUGINS_MODULE = 'plugins'
+PLUGINS_MODULE = "plugins"
 
 
 class Plugin(object, metaclass=ABCMeta):
@@ -18,7 +18,9 @@ class Plugin(object, metaclass=ABCMeta):
     def __init__(self):
         self.counter = 0
         self._google_client = discovery.build(*self.discovery_api())
-        self._batch = self._google_client.new_batch_http_request(callback=self.__batch_callback)
+        self._batch = self._google_client.new_batch_http_request(
+            callback=self.__batch_callback
+        )
 
     @classmethod
     @abstractmethod
@@ -28,7 +30,7 @@ class Plugin(object, metaclass=ABCMeta):
     @classmethod
     def is_on_demand(cls) -> bool:
         """
-         Only a few classes are  not-on-demand, and these classes should overwrite this method.
+        Only a few classes are  not-on-demand, and these classes should overwrite this method.
         """
         return True  # only a few are not-on-demand
 
@@ -48,7 +50,7 @@ class Plugin(object, metaclass=ABCMeta):
 
     def _gen_labels(self, gcp_object):
         labels = {}
-        logging.info('gcp_object %s', gcp_object)
+        logging.info("gcp_object %s", gcp_object)
 
         # if utils.project_inheriting():
         #    labels = gcp.get_project_labels(gcp_object)
@@ -56,16 +58,21 @@ class Plugin(object, metaclass=ABCMeta):
         label_keys = config_utils.get_labels()
 
         for label_key in label_keys:
-            f = '_get_' + label_key
+            f = "_get_" + label_key
             if hasattr(self, f):
                 func = getattr(self, f)
                 label_value = func(gcp_object)
-                labels[util.config_utils.iris_prefix() + '_' + label_key] = label_value
+                labels[util.config_utils.iris_prefix() + "_" + label_key] = label_value
         return labels
 
     def __batch_callback(self, request_id, response, exception):
         if exception is not None:
-            logging.error('Error in Request Id: %s Response: %s Exception: %s', response, request_id, exception)
+            logging.error(
+                "Error in Request Id: %s Response: %s Exception: %s",
+                response,
+                request_id,
+                exception,
+            )
 
     def do_batch(self):
         """In do_label, we loop over all objects. But for efficienccy, we do not process
@@ -102,59 +109,59 @@ class Plugin(object, metaclass=ABCMeta):
 
     @classmethod
     def init(cls):
-
         def load_plugin_class(name):
-            module_name = PLUGINS_MODULE + '.' + name
+            module_name = PLUGINS_MODULE + "." + name
             __import__(module_name)
             assert name == name.lower()
-            plugin_cls= utils.cls_by_name(PLUGINS_MODULE + '.' + name + '.' + name.title())
+            plugin_cls = utils.cls_by_name(
+                PLUGINS_MODULE + "." + name + "." + name.title()
+            )
             return plugin_cls
 
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
             plugin_class = load_plugin_class(module)
             Plugin.subclasses.append(plugin_class)
 
-        assert Plugin.subclasses, 'No plugins defined'
-
+        assert Plugin.subclasses, "No plugins defined"
 
     @staticmethod
-    def create_plugin(plugin_name: str) -> 'Plugin':
-        cls = cls_by_name(PLUGINS_MODULE + '.' + plugin_name.lower() + '.' + plugin_name)
+    def create_plugin(plugin_name: str) -> "Plugin":
+        cls = cls_by_name(
+            PLUGINS_MODULE + "." + plugin_name.lower() + "." + plugin_name
+        )
         plugin = cls()
         return plugin
 
-    #TODO use this in all subclasses; but check into whteher we should nest the labels as below.
+    # TODO use this in all subclasses; but check into whteher we should nest the labels as below.
     def _build_labels(self, gcp_object):
         try:
-            original_labels = gcp_object['labels']
+            original_labels = gcp_object["labels"]
         except KeyError:
             original_labels = {}
         gen_labels = self._gen_labels(gcp_object)
         all_labels = {**gen_labels, **original_labels}
-        fingerprint = gcp_object.get('labelFingerprint', '')
+        fingerprint = gcp_object.get("labelFingerprint", "")
         # TODO  labelFingerprint exists in GCE instances. In what other objects does it exist?
-        logging.info('For %s fingerprint was "%s"', self.__class__.__name__, fingerprint)
-        labels = {
-            'labels': all_labels,
-            'labelFingerprint': fingerprint
-        }
+        logging.info(
+            'For %s fingerprint was "%s"', self.__class__.__name__, fingerprint
+        )
+        labels = {"labels": all_labels, "labelFingerprint": fingerprint}
         return labels
 
     def name_after_slash(self, gcp_object):
-        return self.__name(gcp_object, separator='/')
-
+        return self.__name(gcp_object, separator="/")
 
     def name_no_separator(self, gcp_object):
-        return self.__name(gcp_object, separator='')
+        return self.__name(gcp_object, separator="")
 
-    def __name(self, gcp_object, separator=''):
+    def __name(self, gcp_object, separator=""):
         try:
-            name = gcp_object['name']
+            name = gcp_object["name"]
             if separator:
-             index = name.rfind(separator)
-             name = name[index + 1:]
-             name = name.replace('.', '_').lower()[:62]
-             return name
+                index = name.rfind(separator)
+                name = name[index + 1 :]
+                name = name.replace(".", "_").lower()[:62]
+                return name
         except KeyError as e:
             logging.exception(e)
             return None

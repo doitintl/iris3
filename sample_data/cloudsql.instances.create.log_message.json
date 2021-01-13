@@ -1,0 +1,94 @@
+{
+  "protoPayload": {
+    "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+    "status": {},
+    "authenticationInfo": {
+      "principalEmail": "xxx@example.com"
+    },
+    "requestMetadata": {
+      "callerIp": "185.3.145.123",
+      "requestAttributes": {
+        "time": "2021-01-13T09:06:31.784602Z",
+        "auth": {}
+      },
+      "destinationAttributes": {}
+    },
+    "serviceName": "cloudsql.googleapis.com",
+    "methodName": "cloudsql.instances.create",
+    "authorizationInfo": [
+      {
+        "resource": "instances/${project}:${name}",
+        "permission": "cloudsql.instances.create",
+        "granted": true,
+        "resourceAttributes": {}
+      }
+    ],
+    "resourceName": "instances/${project}:${name}",
+    "request": {
+      "@type": "type.googleapis.com/google.cloud.sql.v1beta4.SqlInstancesInsertRequest",
+      "project": "${project}",
+      "body": {
+        "settings": {
+          "tier": "db-custom-1-3840",
+          "locationPreference": {},
+          "dataDiskType": "PD_SSD",
+          "ipConfiguration": {
+            "ipv4Enabled": true
+          },
+          "pricingPlan": "PER_USE",
+          "activationPolicy": "ALWAYS",
+          "availabilityType": "ZONAL",
+          "maintenanceWindow": {},
+          "backupConfiguration": {
+            "enabled": true,
+            "pointInTimeRecoveryEnabled": true,
+            "startTime": "14:00",
+            "location": "us"
+          },
+          "storageAutoResizeLimit": "0",
+          "dataDiskSizeGb": "10",
+          "storageAutoResize": true
+        },
+        "region": "us-central1",
+        "instanceType": "CLOUD_SQL_INSTANCE",
+        "databaseVersion": "POSTGRES_9_6",
+        "name": "${name}",
+        "failoverReplica": {},
+        "backendType": "SECOND_GEN",
+        "project": "${project}"
+      }
+    },
+    "response": {
+      "targetId": "${name}",
+      "instanceUid": "1-6c752f7a-066c-4288-ba15-5204cedcb66d",
+      "insertTime": "2021-01-13T09:06:31.696Z",
+      "name": "9056b766-8d64-436e-bb77-1e758b975838",
+      "targetProject": "${project}",
+      "targetLink": "https://sqladmin.clients6.google.com/sql/v1beta4/projects/${project}/instances/${name}",
+      "kind": "sql#operation",
+      "operationType": "CREATE",
+      "user": "xxx@example.com",
+      "@type": "type.googleapis.com/google.cloud.sql.v1beta4.Operation",
+      "status": "PENDING",
+      "selfLink": "https://sqladmin.clients6.google.com/sql/v1beta4/projects/${project}/operations/9056b766-8d64-436e-bb77-1e758b975838"
+    }
+  },
+  "insertId": "-95kqpef2gsw50",
+  "resource": {
+    "type": "cloudsql_database",
+    "labels": {
+      "region": "us-central",
+      "project_id": "${project}",
+      "database_id": "${project}:${name}"
+    }
+  },
+  "timestamp": "2021-01-13T09:06:26.694361Z",
+  "severity": "NOTICE",
+  "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
+  "operation": {
+    "id": "9056b766-8d64-436e-bb77-1e758b975838",
+    "producer": "cloudsql.googleapis.com",
+    "first": true
+  },
+  "receiveTimestamp": "2021-01-13T09:06:32.550011541Z"
+}
