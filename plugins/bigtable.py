@@ -36,7 +36,7 @@ class Bigtable(Plugin):
     def _get_region(self, gcp_object):
         """Method dynamically called in __generate_labels, so don't change name"""
         try:
-            #project_id was added to the dict, in BigTable.label_one()
+            # project_id was added to the dict, in BigTable.label_one()
             zone = self.__get_location(gcp_object, gcp_object["project_id"])
             region = util.gcp_utils.region_from_zone(zone).lower()
             return region
@@ -49,10 +49,10 @@ class Bigtable(Plugin):
         try:
             result = (
                 self._google_client.projects()
-                .instances()
-                .clusters()
-                .list(parent="projects/" + project_id + "/instances/" + name)
-                .execute()
+                    .instances()
+                    .clusters()
+                    .list(parent="projects/" + project_id + "/instances/" + name)
+                    .execute()
             )
 
             return result
@@ -71,9 +71,9 @@ class Bigtable(Plugin):
         try:
             result = (
                 self._google_client.projects()
-                .instances()
-                .get(name="projects/" + project_id + "/instances/" + name)
-                .execute()
+                    .instances()
+                    .get(name="projects/" + project_id + "/instances/" + name)
+                    .execute()
             )
             return result
         except errors.HttpError as e:
@@ -98,13 +98,13 @@ class Bigtable(Plugin):
             try:
                 result = (
                     self._google_client.projects()
-                    .instances()
-                    .list(
+                        .instances()
+                        .list(
                         parent="projects/" + project_id,
                         pageToken=page_token,
                         # Filter not supported
                     )
-                    .execute()
+                        .execute()
                 )
             except errors.HttpError as e:
                 logging.exception(e)
@@ -135,7 +135,7 @@ class Bigtable(Plugin):
         try:
 
             self._batch.add(
-                self._google_client.projects() .instances() .partialUpdateInstance(
+                self._google_client.projects().instances().partialUpdateInstance(
                     name=gcp_object["name"],
                     body=gcp_object,
                     updateMask="labels"),

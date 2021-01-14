@@ -29,13 +29,13 @@ class Instances(GceZonalBase):
             try:
                 result = (
                     self._google_client.instances()
-                    .list(
+                        .list(
                         project=project_id,
                         zone=zone,
                         filter=self._filter_already_labeled,
                         pageToken=page_token,
                     )
-                    .execute()
+                        .execute()
                 )
                 if "items" in result:
                     instances = instances + result["items"]
@@ -52,8 +52,8 @@ class Instances(GceZonalBase):
         try:
             result = (
                 self._google_client.instances()
-                .get(project=project_id, zone=zone, instance=name)
-                .execute()
+                    .get(project=project_id, zone=zone, instance=name)
+                    .execute()
             )
             return result
         except errors.HttpError as e:

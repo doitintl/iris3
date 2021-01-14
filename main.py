@@ -87,7 +87,7 @@ def label_one():
                     if gcp_object is not None:
                         project_id = data["resource"]["labels"]["project_id"]
                         if config_utils.is_project_included(project_id):
-                            logging.info( "Calling %s.label_one() in %s", plugin.__class__.__name__, project_id )
+                            logging.info("Calling %s.label_one() in %s", plugin.__class__.__name__, project_id)
                             plugin.label_one(gcp_object, project_id)
                             plugin.do_batch()
                     else:
@@ -97,8 +97,8 @@ def label_one():
 
         else:
             assert plugin_cls.__name__ == "Cloudsql", (
-                "For now, there is only one non-on-demand plugin. Change this assertion as needed. "
-                "Found %s" % plugin_cls.__name__
+                    "For now, there is only one non-on-demand plugin. Change this assertion as needed. "
+                    "Found %s" % plugin_cls.__name__
             )
 
     return "OK", 200

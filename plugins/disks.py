@@ -18,13 +18,13 @@ class Disks(GceZonalBase):
             try:
                 result = (
                     self._google_client.disks()
-                    .list(
+                        .list(
                         project=project_id,
                         zone=zone,
                         filter=self._filter_already_labeled,
                         pageToken=page_token,
                     )
-                    .execute()
+                        .execute()
                 )
                 if "items" in result:
                     disks = disks + result["items"]
@@ -41,8 +41,8 @@ class Disks(GceZonalBase):
         try:
             result = (
                 self._google_client.disks()
-                .get(project=project_id, zone=zone, disk=name)
-                .execute()
+                    .get(project=project_id, zone=zone, disk=name)
+                    .execute()
             )
             return result
         except errors.HttpError as e:

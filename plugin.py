@@ -4,19 +4,17 @@ import re
 import typing
 from abc import ABCMeta, abstractmethod
 
-from deepdiff import DeepDiff
 from googleapiclient import discovery
+from googleapiclient import errors
 
 import util.config_utils
 from util import config_utils, utils
 from util.utils import cls_by_name
-from googleapiclient import errors
 
 PLUGINS_MODULE = "plugins"
 
 
 class Plugin(object, metaclass=ABCMeta):
-
     __project_access_client = discovery.build('cloudresourcemanager', 'v1')
     __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     subclasses = []
@@ -112,7 +110,7 @@ class Plugin(object, metaclass=ABCMeta):
 
     @abstractmethod
     def method_names(self):
-        #TODO Here we use partial method names. It is best to be precise and use full names.
+        # TODO Here we use partial method names. It is best to be precise and use full names.
         # That would allow an equality check and not just: if supported_method.lower() in method_from_log.lower():
         pass
 

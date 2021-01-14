@@ -35,8 +35,8 @@ class Topics(Plugin):
         try:
             result = (
                 self._google_client.projects()
-                .topics() .get(topic=topic_path)
-                .execute()
+                    .topics().get(topic=topic_path)
+                    .execute()
             )
             return result
         except errors.HttpError as e:
@@ -51,13 +51,13 @@ class Topics(Plugin):
             try:
                 result = (
                     self._google_client.projects()
-                    .topics()
-                    .list(
+                        .topics()
+                        .list(
                         project=f"projects/{project_id}",
                         pageToken=page_token
                         # No filter param availble
                     )
-                    .execute()
+                        .execute()
                 )
                 if "topics" in result:
                     topics += result["topics"]

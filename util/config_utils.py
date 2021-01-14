@@ -1,6 +1,4 @@
 import functools
-import json
-
 import typing
 
 import yaml
@@ -14,15 +12,13 @@ def get_possible_label_keys():
 def is_copying_labels_from_project():
     config = __load_config()
     from_project_ = config.get("from_project")
-    assert isinstance(from_project_,bool)
+    assert isinstance(from_project_, bool)
     return from_project_
 
 
 def iris_label_key_prefix():
     config = __load_config()
-    return  config["iris_prefix"]
-
-
+    return config["iris_prefix"]
 
 
 def is_project_included(project_id):
@@ -32,6 +28,7 @@ def is_project_included(project_id):
         return True
     else:
         return project_id in projects
+
 
 # Py3.9 has functools.cache
 @functools.lru_cache

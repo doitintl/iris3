@@ -17,7 +17,7 @@ class Cloudsql(Plugin):
         But 3 log messages arrive during initialization. Maybe by the third one, CloudSQL will be
         labeled?
         """
-        #TODO check if this works on that final log message
+        # TODO check if this works on that final log message
         return True
 
     def _get_name(self, gcp_object):
@@ -44,8 +44,8 @@ class Cloudsql(Plugin):
         try:
             result = (
                 self._google_client.instances()
-                .get(project=project_id, instance=name)
-                .execute()
+                    .get(project=project_id, instance=name)
+                    .execute()
             )
             return result
         except errors.HttpError as e:
@@ -72,13 +72,13 @@ class Cloudsql(Plugin):
             try:
                 response = (
                     self._google_client.instances()
-                    .list(
+                        .list(
                         project=project_id,
                         pageToken=page_token,
                         # Filter supported, but syntax not OK. We get this message: "Field not found. In
                         # expression labels.iris_name HAS *, At field labels ."
                     )
-                    .execute()
+                        .execute()
                 )
             except errors.HttpError as e:
                 logging.exception(e)
@@ -109,7 +109,7 @@ class Cloudsql(Plugin):
             if "PENDING_CREATE" == gcp_object.get("state"):
                 logging.exception(
                     "CloudSQL cannot accept labels until it is fully initialized, which is why"
-                    "we do not label it on-demand in the usual way", exc_info=e )
+                    "we do not label it on-demand in the usual way", exc_info=e)
             else:
                 logging.exception(e)
         return "OK", 200

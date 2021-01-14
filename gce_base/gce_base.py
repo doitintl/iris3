@@ -5,7 +5,7 @@ from plugin import Plugin
 
 
 class GceBase(Plugin, metaclass=ABCMeta):
-    _filter_already_labeled = "-labels.iris_name:*"#Test filter
+    _filter_already_labeled = "-labels.iris_name:*"  # Test filter
 
     @classmethod
     def discovery_api(cls) -> typing.Tuple[str, str]:

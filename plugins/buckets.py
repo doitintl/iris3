@@ -57,12 +57,12 @@ class Buckets(Plugin):
             try:
                 response = (
                     self._google_client.buckets()
-                    .list(
+                        .list(
                         project=project_id,
                         pageToken=page_token,
                         # filter not supported
                     )
-                    .execute()
+                        .execute()
                 )
             except errors.HttpError as e:
                 logging.exception(e)
