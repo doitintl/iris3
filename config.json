@@ -1,9 +1,0 @@
-{
-  "labels": [
-    "name",
-    "zone",
-    "region",
-    "location",
-    "instance_type"
-  ]
-}

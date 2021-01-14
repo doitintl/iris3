@@ -5,3 +5,4 @@ backoff==1.4.3
 ratelimit==2.2.1
 google-cloud-resource-manager==0.30.3
 google-cloud-tasks==2.1.0
+deepdiff

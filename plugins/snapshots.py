@@ -8,7 +8,7 @@ from util import gcp_utils
 
 class Snapshots(GceBase):
     def method_names(self):
-        return ["v1.compute.disks.createSnapshot"]
+        return ["compute.disks.createSnapshot"]
 
     def __list_snapshots(self, project_id):
         snapshots = []
@@ -20,7 +20,7 @@ class Snapshots(GceBase):
                     self._google_client.snapshots()
                     .list(
                         project=project_id,
-                        filter="-labels.iris_name:*",
+                        filter=self._filter_already_labeled,
                         pageToken=page_token,
                     )
                     .execute()
@@ -71,12 +71,13 @@ class Snapshots(GceBase):
             return None
 
     def label_one(self, gcp_object, project_id):
-        labels = self._build_labels(gcp_object)
+        labels = self._build_labels(gcp_object, project_id)
         try:
             self._batch.add(
                 self._google_client.snapshots().setLabels(
-                    project=project_id, resource=gcp_object["name"], body=labels
-                ),
+                    project=project_id,
+                    resource=gcp_object["name"],
+                    body=labels),
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1

@@ -21,25 +21,18 @@ if [[ $# -eq 0 ]]; then
   exit
 fi
 
-#TODO Why do we list projects and then extract project id from output? This serves
-# to check that the project exists and allows us to get projects by name, not just ID,
-# but that is error-prone, particularly as one project id can be a substring of another,
-# or an id could be a substring of a name.
-# Better: Do an existence  check with gcloud projects describe;and only support id, not name;
-# then use the $1 (command-line arg directly as our PROJECTID.
+PROJECTID=$1
 
-PROJECTID=$(gcloud projects list | grep -i "^$1 " | awk '{print $1}')
-
-if [ -z "$PROJECTID" ]; then
-  echo "Project $1 Not Found!"
+gcloud projects describe "$PROJECTID" || {
+  echo "Project $PROJECTID not found"
   exit 1
-fi
+}
 
 echo "Project ID $PROJECTID"
 gcloud config set project "$PROJECTID"
 
-GAE_SVC=$(cat app.yaml | grep "service:" | awk '{print $2}')
-PUBSUB_VERIFICATION_TOKEN=$(cat app.yaml | grep " PUBSUB_VERIFICATION_TOKEN:" | awk '{print $2}')
+GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
+PUBSUB_VERIFICATION_TOKEN=$(grep " PUBSUB_VERIFICATION_TOKEN:" app.yaml | awk '{print $2}')
 LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
 DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
@@ -101,7 +94,8 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --quiet >/dev/null
 
-# Shell note: the single-quotes allow the double-quotes  to appear in the output. The single-quotes do not appear in output.
+# Shell note: the single-quotes allow the double-quotes  to appear in the output.
+# The single-quotes do not appear in output.
 # For the ORs, it makes no difference whether these are or are not inside the single-quotes
 log_filter=('protoPayload.methodName:(')
 log_filter+=('"storage.buckets.create"')
@@ -109,8 +103,10 @@ log_filter+=('OR "compute.instances.insert"' OR '"compute.instances.start"' OR '
 log_filter+=('OR "tableservice.insert"' OR '"google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
 log_filter+=('OR "cloudsql.instances.create"' OR '"v1.compute.disks.insert"' OR '"v1.compute.disks.createSnapshot"')
 log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')
+log_filter+=('OR "google.pubsub.v1.Publisher.CreateTopic"')
 log_filter+=(')')
 
+exit 1
 # Create or update a sink at org level
 if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
   gcloud logging sinks create "$LOG_SINK" \

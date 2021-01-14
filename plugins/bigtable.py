@@ -4,7 +4,7 @@ import typing
 from googleapiclient import errors
 
 import util.gcp_utils
-from pluginbase import Plugin
+from plugin import Plugin
 from util import gcp_utils
 
 
@@ -17,24 +17,26 @@ class Bigtable(Plugin):
         return "bigtableadmin.googleapis.com"
 
     def method_names(self):
-        return ["google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"]
+        return ["BigtableInstanceAdmin.CreateInstance"]
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
-        return self.name_after_slash(gcp_object)
+        """Method dynamically called in __generate_labels, so don't change name"""
+        return self._name_after_slash(gcp_object)
 
     def _get_zone(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
+        """Method dynamically called in __generate_labels, so don't change name"""
         try:
-            location = self.__get_location(gcp_object, gcp_object["project_id"])
+            location = self.__get_location(
+                gcp_object, gcp_object["project_id"])
             return location
         except KeyError as e:
             logging.exception(e)
             return None
 
     def _get_region(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
+        """Method dynamically called in __generate_labels, so don't change name"""
         try:
+            #project_id was added to the dict, in BigTable.label_one()
             zone = self.__get_location(gcp_object, gcp_object["project_id"])
             region = util.gcp_utils.region_from_zone(zone).lower()
             return region
@@ -43,7 +45,7 @@ class Bigtable(Plugin):
             return None
 
     def _get_cluster(self, project_id, name):
-        """Method dynamically called in _gen_labels, so don't change name"""
+        """Method dynamically called in __generate_labels, so don't change name"""
         try:
             result = (
                 self._google_client.projects()
@@ -63,7 +65,7 @@ class Bigtable(Plugin):
         result = self._get_cluster(project_id, instance)
         loc = result["clusters"][0]["location"]
         ind = loc.rfind("/")
-        return loc[ind + 1 :]
+        return loc[ind + 1:]
 
     def __get_instance(self, project_id, name):
         try:
@@ -97,7 +99,11 @@ class Bigtable(Plugin):
                 result = (
                     self._google_client.projects()
                     .instances()
-                    .list(parent="projects/" + project_id, pageToken=page_token)
+                    .list(
+                        parent="projects/" + project_id,
+                        pageToken=page_token,
+                        # Filter not supported
+                    )
                     .execute()
                 )
             except errors.HttpError as e:
@@ -114,13 +120,12 @@ class Bigtable(Plugin):
                 self.do_batch()
 
     def label_one(self, gcp_object, project_id):
-        labels = dict()
-        gcp_object[
-            "project_id"
-        ] = project_id  # TODO Why was this line here? Can I remove it (and also the pop, 2 lines down?)
-        # TODO use _build_labels for the following line
-        labels["labels"] = self._gen_labels(gcp_object)
-        gcp_object.pop("project_id", None)
+        # This line, plus two lines down, are needed so that _get_region
+        # can get the project_id
+        gcp_object["project_id"] = project_id
+        labels = self._build_labels(gcp_object, project_id)
+
+        del gcp_object["project_id"]
         if "labels" not in gcp_object:
             gcp_object["labels"] = {}
 
@@ -130,11 +135,10 @@ class Bigtable(Plugin):
         try:
 
             self._batch.add(
-                self._google_client.projects()
-                .instances()
-                .partialUpdateInstance(
-                    name=gcp_object["name"], body=gcp_object, updateMask="labels"
-                ),
+                self._google_client.projects() .instances() .partialUpdateInstance(
+                    name=gcp_object["name"],
+                    body=gcp_object,
+                    updateMask="labels"),
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1

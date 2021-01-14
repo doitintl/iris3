@@ -7,7 +7,7 @@ import typing
 from googleapiclient import errors
 from ratelimit import limits, sleep_and_retry
 
-from pluginbase import Plugin
+from plugin import Plugin
 from util import gcp_utils
 
 
@@ -23,14 +23,14 @@ class Bigquery(Plugin):
         return ["datasetservice.insert", "tableservice.insert"]
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
+        """Method dynamically called in __generate_labels, so don't change name"""
         try:
             if gcp_object["kind"] == "bigquery#dataset":
                 name = gcp_object["datasetReference"]["datasetId"]
             else:
                 name = gcp_object["tableReference"]["tableId"]
             index = name.rfind(":")
-            name = name[index + 1 :]
+            name = name[index + 1:]
             name = name.replace(".", "_").lower()[:62]
             return name
         except KeyError as e:
@@ -38,7 +38,7 @@ class Bigquery(Plugin):
             return None
 
     def _get_location(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
+        """Method dynamically called in __generate_labels, so don't change name"""
         try:
             location = gcp_object["location"]
             location = location.lower()
@@ -106,7 +106,12 @@ class Bigquery(Plugin):
             try:
                 response = (
                     self._google_client.datasets()
-                    .list(projectId=project_id, pageToken=page_token)
+                    .list(
+                        projectId=project_id,
+                        pageToken=page_token,
+                        # Though filters are supported here, "NOT" filters are
+                        # not
+                    )
                     .execute()
                 )
             except errors.HttpError as e:
@@ -122,7 +127,7 @@ class Bigquery(Plugin):
                 more_results = False
 
     def __label_dataset_and_tables(self, project_id, dataset):
-        self.__label_one_dataset(dataset)
+        self.__label_one_dataset(dataset, project_id)
         page_token = None
         more_results = True
         while more_results:
@@ -132,13 +137,15 @@ class Bigquery(Plugin):
                     projectId=project_id,
                     datasetId=dataset["datasetReference"]["datasetId"],
                     pageToken=page_token,
+                    # filter not supported
                 )
                 .execute()
             )
             if "tables" in response:
                 for t in response["tables"]:
                     t["location"] = dataset["location"]
-                    self.__label_one_table(t)
+                    self.__label_one_table(t,project_id)
+
             if "nextPageToken" in response:
                 page_token = response["nextPageToken"]
                 more_results = True
@@ -147,25 +154,25 @@ class Bigquery(Plugin):
 
     @sleep_and_retry
     @limits(calls=35, period=60)
-    def __label_one_dataset(self, gcp_object):
-        # TODO use _build_labels for the following line
-        labels = {"labels": self._gen_labels(gcp_object)}
+    def __label_one_dataset(self, gcp_object, project_id):
+        labels = self._build_labels(gcp_object, project_id)
+
         try:
+            dataset_reference = gcp_object["datasetReference"]
             self._google_client.datasets().patch(
-                projectId=gcp_object["datasetReference"]["projectId"],
+                projectId=dataset_reference["projectId"],
                 body=labels,
-                datasetId=gcp_object["datasetReference"]["datasetId"],
+                datasetId=dataset_reference["datasetId"],
             ).execute()
         except Exception as e:
             logging.exception(e)
 
     @sleep_and_retry
     @limits(calls=35, period=60)
-    def __label_one_table(self, gcp_object):
-        # TODO use _build_labels for the following line
-        labels = {"labels": self._gen_labels(gcp_object)}
-        try:
+    def __label_one_table(self, gcp_object, project_id):
+        labels = self._build_labels(gcp_object, project_id)
 
+        try:
             table_reference = gcp_object["tableReference"]
             self._batch.add(
                 self._google_client.tables().patch(
@@ -187,8 +194,8 @@ class Bigquery(Plugin):
     def label_one(self, gcp_object, project_id):
         try:
             if gcp_object["kind"] == "bigquery#dataset":
-                self.__label_one_dataset(gcp_object)
+                self.__label_one_dataset(gcp_object, project_id)
             else:
-                self.__label_one_table(gcp_object)
+                self.__label_one_table(gcp_object, project_id)
         except Exception as e:
             logging.exception(e)

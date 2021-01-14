@@ -37,12 +37,13 @@ def gae_svc():
 
 
 def get_all_projects() -> typing.List[str]:
-    projects = [p.project_id for p in resource_manager_client.list_projects()]
-    projects.sort()
+    projects = sorted(
+        [p.project_id for p in resource_manager_client.list_projects()])
     if localdev_config.localdev_projects():
         projects = list(
-            filter(lambda p: p in localdev_config.localdev_projects(), projects)
-        )
+            filter(
+                lambda p: p in localdev_config.localdev_projects(),
+                projects))
     logging.info("%s projects: %s ", len(projects), projects[:100])
     return projects
 

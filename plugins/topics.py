@@ -5,7 +5,7 @@ import typing
 from google.cloud import pubsub_v1
 from googleapiclient import errors
 
-from pluginbase import Plugin
+from plugin import Plugin
 
 
 class Topics(Plugin):
@@ -35,10 +35,7 @@ class Topics(Plugin):
         try:
             result = (
                 self._google_client.projects()
-                .topics()
-                .get(
-                    topic=topic_path,
-                )
+                .topics() .get(topic=topic_path)
                 .execute()
             )
             return result
@@ -55,9 +52,13 @@ class Topics(Plugin):
                 result = (
                     self._google_client.projects()
                     .topics()
-                    .list(project=f"projects/{project_id}", pageToken=page_token)
+                    .list(
+                        project=f"projects/{project_id}",
+                        pageToken=page_token
+                        # No filter param availble
+                    )
                     .execute()
-                )  # TODO add filter (see other types)
+                )
                 if "topics" in result:
                     topics += result["topics"]
                 if "nextPageToken" in result:
@@ -71,11 +72,12 @@ class Topics(Plugin):
 
     def label_one(self, gcp_object: typing.Dict, project_id):
         assert isinstance(gcp_object, dict), type(gcp_object)
-        # THis new API does not accept label-fingerprint, so extracting just labels
-        labels = self._build_labels(gcp_object)["labels"]
+        # THis new API does not accept label-fingerprint, so extracting just
+        # labels
+        labels_outer = self._build_labels(gcp_object, project_id)
+        labels = labels_outer["labels"]
         try:
             topic_name = self._get_name(gcp_object)
-            #       topic = gcp_object["topic"].split("/")[-1]
             topic_path = self.__topic_client.topic_path(project_id, topic_name)
             # Use the Google Cloud Library instead of the Google Client API used
             # elsewhere because the latter does not seem to support changing the label,
@@ -110,5 +112,5 @@ class Topics(Plugin):
             return None
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
-        return self.name_after_slash(gcp_object)
+        """Method dynamically called in __generate_labels, so don't change name"""
+        return self._name_after_slash(gcp_object)

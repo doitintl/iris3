@@ -1,0 +1,89 @@
+  {
+    "protoPayload": {
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+      "authenticationInfo": {
+        "principalEmail": "xxx@example.com"
+      },
+      "requestMetadata": {
+        "callerIp": "185.3.145.123",
+        "callerSuppliedUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36,gzip(gfe),gzip(gfe)",
+        "requestAttributes": {
+          "time": "2021-01-14T13:47:57.130302Z",
+          "reason": "8uSywAYQGg5Db2xpc2V1bSBGbG93cw",
+          "auth": {}
+        },
+        "destinationAttributes": {}
+      },
+      "serviceName": "compute.googleapis.com",
+      "methodName": "v1.compute.disks.createSnapshot",
+      "authorizationInfo": [
+        {
+          "permission": "compute.disks.createSnapshot",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "compute",
+            "name": "projects/${project}/zones/us-central1-a/disks/${name}",
+            "type": "compute.disks"
+          }
+        },
+        {
+          "permission": "compute.snapshots.create",
+          "granted": true,
+          "resourceAttributes": {
+            "service": "compute",
+            "name": "projects/${project}/global/snapshots/snapshot-1",
+            "type": "compute.snapshots"
+          }
+        }
+      ],
+      "resourceName": "projects/${project}/zones/us-central1-a/disks/${name}",
+      "request": {
+        "@type": "type.googleapis.com/compute.disks.createSnapshot",
+        "guestFlush": false,
+        "name": "snapshot-1",
+        "storageLocations": [
+          "us"
+        ],
+        "sourceDisk": "projects/${project}/zones/us-central1-a/disks/${name}"
+      },
+      "response": {
+        "startTime": "2021-01-14T05:47:56.961-08:00",
+        "zone": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a",
+        "selfLinkWithId": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/operations/2942277713079956835",
+        "@type": "type.googleapis.com/operation",
+        "progress": "0",
+        "user": "xxx@example.com",
+        "name": "operation-1610632076606-5b8dc80ca3d47-0aab4bbb-aeb2cd94",
+        "selfLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/operations/operation-1610632076606-5b8dc80ca3d47-0aab4bbb-aeb2cd94",
+        "operationType": "createSnapshot",
+        "status": "RUNNING",
+        "insertTime": "2021-01-14T05:47:56.959-08:00",
+        "targetLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/disks/${name}",
+        "targetId": "327216437446702469",
+        "id": "2942277713079956835"
+      },
+      "resourceLocation": {
+        "currentLocations": [
+          "us"
+        ]
+      }
+    },
+    "insertId": "-rqdnbhdej9s",
+    "resource": {
+      "type": "gce_disk",
+      "labels": {
+        "zone": "us-central1-a",
+        "disk_id": "327216437446702469",
+        "project_id": "${project}"
+      }
+    },
+    "timestamp": "2021-01-14T13:47:56.631786Z",
+    "severity": "NOTICE",
+    "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
+    "operation": {
+      "id": "operation-1610632076606-5b8dc80ca3d47-0aab4bbb-aeb2cd94",
+      "producer": "compute.googleapis.com",
+      "first": true
+    },
+    "receiveTimestamp": "2021-01-14T13:47:57.536574635Z"
+  }

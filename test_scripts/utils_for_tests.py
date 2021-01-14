@@ -4,6 +4,7 @@ import logging
 import os
 import typing
 from string import Template
+from textwrap import shorten
 from urllib import request
 from urllib.parse import urlencode
 
@@ -31,7 +32,8 @@ def do_local_http(
     extra_args=None,
 ):
     headers = headers or {}
-    data_bytes = __datastruct_for_pubsub_message(contents) if contents else None
+    data_bytes = __datastruct_for_pubsub_message(
+        contents) if contents else None
     # logging.info('Will call %s for %s', path, json.loads(contents)['plugin'])
     host_and_port = "localhost:%s" % LOCAL_PORT
     args_s = ""
@@ -48,7 +50,7 @@ def do_local_http(
         req.add_header(k, v)
     resp = request.urlopen(req)  # Exception if Status >=300
     assert resp.status < 300, resp.status
-    logging.info("OK for %s", path)
+    logging.info("OK for %s: %s", path, shorten(str(contents), 150))
 
 
 def label_one(project, name, method_name, parent_name="", extra_args=None):

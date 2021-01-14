@@ -3,7 +3,7 @@ import typing
 
 from googleapiclient import errors
 
-from pluginbase import Plugin
+from plugin import Plugin
 from util import gcp_utils
 
 
@@ -13,11 +13,11 @@ class Buckets(Plugin):
         return "storage", "v1"
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
-        return self.name_no_separator(gcp_object)
+        """Method dynamically called in __generate_labels, so don't change name"""
+        return self._name_no_separator(gcp_object)
 
     def _get_location(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
+        """Method dynamically called in __generate_labels, so don't change name"""
         try:
             location = gcp_object["location"]
             location = location.replace(".", "_").lower()
@@ -42,7 +42,8 @@ class Buckets(Plugin):
 
     def get_gcp_object(self, data):
         try:
-            bucket = self.__get_bucket(data["resource"]["labels"]["bucket_name"])
+            bucket = self.__get_bucket(
+                data["resource"]["labels"]["bucket_name"])
             return bucket
         except Exception as e:
             logging.exception(e)
@@ -56,7 +57,11 @@ class Buckets(Plugin):
             try:
                 response = (
                     self._google_client.buckets()
-                    .list(project=project_id, pageToken=page_token)
+                    .list(
+                        project=project_id,
+                        pageToken=page_token,
+                        # filter not supported
+                    )
                     .execute()
                 )
             except errors.HttpError as e:
@@ -73,7 +78,8 @@ class Buckets(Plugin):
             self.do_batch()
 
     def label_one(self, gcp_object, project_id):
-        labels = {"labels": self._gen_labels(gcp_object)}
+
+        labels = self._build_labels(gcp_object, project_id)
         try:
             self._batch.add(
                 self._google_client.buckets().patch(

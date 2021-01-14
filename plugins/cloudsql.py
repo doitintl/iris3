@@ -2,7 +2,7 @@ import logging
 
 from googleapiclient import errors
 
-from pluginbase import Plugin
+from plugin import Plugin
 
 
 class Cloudsql(Plugin):
@@ -13,17 +13,19 @@ class Cloudsql(Plugin):
     @classmethod
     def is_on_demand(cls) -> bool:
         """
-        CloudSQL cannot be labeled on-demand since labels cannot be applied
-        to CloudSQL during its long initialization phase.
+        Labels cannot be applied to CloudSQL during its long initialization phase.
+        But 3 log messages arrive during initialization. Maybe by the third one, CloudSQL will be
+        labeled?
         """
-        return False
+        #TODO check if this works on that final log message
+        return True
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
-        return self.name_no_separator(gcp_object)
+        """Method dynamically called in __generate_labels, so don't change name"""
+        return self._name_no_separator(gcp_object)
 
     def _get_region(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
+        """Method dynamically called in __generate_labels, so don't change name"""
         try:
             region = gcp_object["region"]
             region = region.lower()
@@ -56,7 +58,7 @@ class Cloudsql(Plugin):
                 return None
             labels_ = data["resource"]["labels"]
             ind = labels_["database_id"].rfind(":")
-            instance = labels_["database_id"][ind + 1 :]
+            instance = labels_["database_id"][ind + 1:]
             instance = self.__get_instance(labels_["project_id"], instance)
             return instance
         except Exception as e:
@@ -70,7 +72,12 @@ class Cloudsql(Plugin):
             try:
                 response = (
                     self._google_client.instances()
-                    .list(project=project_id, pageToken=page_token)
+                    .list(
+                        project=project_id,
+                        pageToken=page_token,
+                        # Filter supported, but syntax not OK. We get this message: "Field not found. In
+                        # expression labels.iris_name HAS *, At field labels ."
+                    )
                     .execute()
                 )
             except errors.HttpError as e:
@@ -86,10 +93,11 @@ class Cloudsql(Plugin):
                 more_results = False
 
     def label_one(self, gcp_object, project_id):
-        # TODO use _build_labels for the following line
-        labels = {"labels": self._gen_labels(gcp_object)}
+        labels = self._build_labels(gcp_object, project_id)
         try:
-            database_instance_body = {"settings": {"userLabels": labels["labels"]}}
+            database_instance_body = {
+                "settings": {
+                    "userLabels": labels["labels"]}}
 
             self._google_client.instances().patch(
                 project=project_id,
@@ -101,9 +109,7 @@ class Cloudsql(Plugin):
             if "PENDING_CREATE" == gcp_object.get("state"):
                 logging.exception(
                     "CloudSQL cannot accept labels until it is fully initialized, which is why"
-                    "we do not label it on-demand in the usual way",
-                    exc_info=e,
-                )
+                    "we do not label it on-demand in the usual way", exc_info=e )
             else:
                 logging.exception(e)
         return "OK", 200

@@ -2,14 +2,14 @@ import logging
 
 from google.cloud import pubsub_v1
 
-from util import gcp_utils, utils, config_utils
+from util import gcp_utils, utils
 
 __publisher = pubsub_v1.PublisherClient()
 
 """def create_subscription(subsc, topic):
     subscriber = pubsub_v1.SubscriberClient()
     with subscriber:
-        path = subsc 
+        path = subsc
         subscription_path = subscriber.subscription_path(gcp_utils.project_id(), path)
         try:
             subscriber.delete_subscription(request={"subscription": subscription_path})
@@ -36,11 +36,11 @@ __publisher = pubsub_v1.PublisherClient()
 
 
 def logs_topic() -> str:
-    return f"{config_utils.iris_prefix()}_logs_topic"
+    return f"iris_logs_topic"
 
 
 def requestfulllabeling_topic() -> str:
-    return f"{config_utils.iris_prefix()}_requestfulllabeling_topic"
+    return f"iris_requestfulllabeling_topic"
 
 
 def publish(msg: str, topic_id: str):

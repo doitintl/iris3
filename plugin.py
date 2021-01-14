@@ -1,18 +1,24 @@
 import logging
 import pkgutil
+import re
 import typing
 from abc import ABCMeta, abstractmethod
 
+from deepdiff import DeepDiff
 from googleapiclient import discovery
 
 import util.config_utils
 from util import config_utils, utils
 from util.utils import cls_by_name
+from googleapiclient import errors
 
 PLUGINS_MODULE = "plugins"
 
 
 class Plugin(object, metaclass=ABCMeta):
+
+    __project_access_client = discovery.build('cloudresourcemanager', 'v1')
+    __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     subclasses = []
 
     def __init__(self):
@@ -34,35 +40,36 @@ class Plugin(object, metaclass=ABCMeta):
         """
         return True  # only a few are not-on-demand
 
-    # TODO  Project labels: Copy the labels of a project to the objects in the project.
-    # def get_project_labels(self, gcp_object):
-    #    from googleapiclient import discovery
-    #    project_id=gcp_object['id'].split(':')[0]
-    #    service = discovery.build(
-    #        'cloudresourcemanager', 'v1')
-    #
-    #    request = service.projects().get(projectId=project_id)
-    #    response = request.execute()
-    #    if 'labels' in response:
-    #        return response['labels']
-    #    else:
-    #        return {}
+    def __project_labels(self, project_id) -> typing.Dict:
 
-    def _gen_labels(self, gcp_object):
-        labels = {}
+        assert 6 <= len(project_id) <= 30
+        assert self.__proj_regex.match(project_id), project_id
+
+        request = self.__project_access_client.projects().get(projectId=project_id)
+        try:
+            response = request.execute()
+            return response['labels']
+        except errors.HttpError as e:
+            logging.exception(e)
+            return {}
+
+    def __generate_labels(self, gcp_object, project_id):
         logging.info("gcp_object %s", gcp_object)
 
-        # if utils.project_inheriting():
-        #    labels = gcp.get_project_labels(gcp_object)
+        if config_utils.is_copying_labels_from_project():
+            labels = self.__project_labels(project_id)
+        else:
+            labels = {}
         # These label keys are the same across all Plugins
-        label_keys = config_utils.get_labels()
+        label_keys = config_utils.get_possible_label_keys()
 
         for label_key in label_keys:
             f = "_get_" + label_key
             if hasattr(self, f):
                 func = getattr(self, f)
                 label_value = func(gcp_object)
-                labels[util.config_utils.iris_prefix() + "_" + label_key] = label_value
+                key = util.config_utils.iris_label_key_prefix() + "_" + label_key
+                labels[key] = label_value
         return labels
 
     def __batch_callback(self, request_id, response, exception):
@@ -95,7 +102,7 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def label_one(self, gcp_object, project_id):
+    def label_one(self, gcp_object: typing.Dict, project_id: str):
         """Tag a single new object based on its description that comes from alog-line"""
         pass
 
@@ -105,6 +112,8 @@ class Plugin(object, metaclass=ABCMeta):
 
     @abstractmethod
     def method_names(self):
+        #TODO Here we use partial method names. It is best to be precise and use full names.
+        # That would allow an equality check and not just: if supported_method.lower() in method_from_log.lower():
         pass
 
     @classmethod
@@ -132,26 +141,26 @@ class Plugin(object, metaclass=ABCMeta):
         plugin = cls()
         return plugin
 
-    # TODO use this in all subclasses; but check into whteher we should nest the labels as below.
-    def _build_labels(self, gcp_object):
+    def _build_labels(self, gcp_object, project_id):
         try:
             original_labels = gcp_object["labels"]
         except KeyError:
             original_labels = {}
-        gen_labels = self._gen_labels(gcp_object)
+
+        gen_labels = self.__generate_labels(gcp_object, project_id)
         all_labels = {**gen_labels, **original_labels}
+
+        labels = {"labels": all_labels}
         fingerprint = gcp_object.get("labelFingerprint", "")
-        # TODO  labelFingerprint exists in GCE instances. In what other objects does it exist?
-        logging.info(
-            'For %s fingerprint was "%s"', self.__class__.__name__, fingerprint
-        )
-        labels = {"labels": all_labels, "labelFingerprint": fingerprint}
+        if fingerprint:
+            labels["labelFingerprint"] = fingerprint
+
         return labels
 
-    def name_after_slash(self, gcp_object):
+    def _name_after_slash(self, gcp_object):
         return self.__name(gcp_object, separator="/")
 
-    def name_no_separator(self, gcp_object):
+    def _name_no_separator(self, gcp_object):
         return self.__name(gcp_object, separator="")
 
     def __name(self, gcp_object, separator=""):
@@ -159,7 +168,7 @@ class Plugin(object, metaclass=ABCMeta):
             name = gcp_object["name"]
             if separator:
                 index = name.rfind(separator)
-                name = name[index + 1 :]
+                name = name[index + 1:]
                 name = name.replace(".", "_").lower()[:62]
                 return name
         except KeyError as e:

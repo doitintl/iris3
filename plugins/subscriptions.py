@@ -5,7 +5,7 @@ import typing
 from google.cloud import pubsub_v1
 from googleapiclient import errors
 
-from pluginbase import Plugin
+from plugin import Plugin
 
 
 class Subscriptions(Plugin):
@@ -19,12 +19,14 @@ class Subscriptions(Plugin):
         return "pubsub.googleapis.com"
 
     def method_names(self):
-        # Actually "google.pubsub.v1.Subscriber.CreateSubscription" but a substring is allowed
+        # Actually "google.pubsub.v1.Subscriber.CreateSubscription" but a
+        # substring is allowed
         return ["Subscriber.CreateSubscription"]
 
     def do_label(self, project_id):
         subs = self.__list_subscriptions(project_id)
         for sub in subs:
+
             self.label_one(sub, project_id)
         return "OK", 200
 
@@ -54,9 +56,13 @@ class Subscriptions(Plugin):
                 result = (
                     self._google_client.projects()
                     .subscriptions()
-                    .list(project=f"projects/{project_id}", pageToken=page_token)
+                    .list(
+                        project=f"projects/{project_id}",
+                        pageToken=page_token,
+                        # No filter param
+                    )
                     .execute()
-                )  # TODO add filter (see other types)
+                )
                 if "subscriptions" in result:
                     subscriptions += result["subscriptions"]
                 if "nextPageToken" in result:
@@ -70,8 +76,8 @@ class Subscriptions(Plugin):
 
     def label_one(self, gcp_object: typing.Dict, project_id):
         assert isinstance(gcp_object, dict), type(gcp_object)
-        # THis new API does not accept label-fingerprint, so extracting just labels
-        labels = self._build_labels(gcp_object)["labels"]
+        labels_outer = self._build_labels(gcp_object, project_id)
+        labels = labels_outer["labels"]
         try:
             subscription_name = self._get_name(gcp_object)
             topic = gcp_object["topic"].split("/")[-1]
@@ -113,5 +119,5 @@ class Subscriptions(Plugin):
             return None
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in _gen_labels, so don't change name"""
-        return self.name_after_slash(gcp_object)
+        """Method dynamically called in __generate_labels, so don't change name"""
+        return self._name_after_slash(gcp_object)
