@@ -112,5 +112,5 @@ class Topics(Plugin):
             return None
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         return self._name_after_slash(gcp_object)

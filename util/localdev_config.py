@@ -1,38 +1,37 @@
-import json
+import functools
+import logging
 import os
+import subprocess
 
 import yaml
 
 
-def __load_dev_config():
-    with open("dev_config.json", "r") as config_file:
-        config = json.load(config_file)
-    return config
-
-
-def local_gae_svc():
+@functools.lru_cache
+def __load_app_yaml():
     with open("app.yaml") as file:
         documents = yaml.full_load(file)
-        return documents.get("service", "default")
-
-
-def localdev_project_id():
-    config = __load_dev_config()
-    return config["project"]
-
-
-def localdev_projects():
-    config = __load_dev_config()
-    ret = config.get("dev_projects", [])
-    assert isinstance(ret, (list,)), type(ret)
-    return ret
-
-
-def set_localdev_project_id_in_env():
-    os.environ["GOOGLE_CLOUD_PROJECT"] = localdev_project_id()
+        return documents
 
 
 def localdev_pubsub_token():
     with open("app.yaml") as file:
         documents = yaml.full_load(file)
         return documents["env_variables"]["PUBSUB_VERIFICATION_TOKEN"]
+
+
+@functools.lru_cache
+def localdev_project_id():
+    if project_id := os.environ.get("IRIS_PROJECT"):
+        logging.info("Project %s (from env)", project_id)
+        return project_id
+    else:
+        command = "gcloud config get-value project".split(' ')
+        result = subprocess.run(command, stdout=subprocess.PIPE)
+        project_id = result.stdout.decode('utf-8')
+        project_id = project_id.strip('\n')
+        logging.info("Project %s (from gcloud)", project_id)
+        return project_id
+
+
+def set_localdev_project_id_in_env():
+    os.environ["GOOGLE_CLOUD_PROJECT"] = localdev_project_id()

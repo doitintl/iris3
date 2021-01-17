@@ -7,7 +7,7 @@ from gce_base.gce_base import GceBase
 
 class GceZonalBase(GceBase, metaclass=ABCMeta):
     def _get_zone(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             zone = gcp_object["zone"]
             index = zone.rfind("/")
@@ -19,7 +19,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             return None
 
     def _get_region(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             zone = self._get_zone(gcp_object)
             region = util.gcp_utils.region_from_zone(zone).lower()

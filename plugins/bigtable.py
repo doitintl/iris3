@@ -20,11 +20,11 @@ class Bigtable(Plugin):
         return ["BigtableInstanceAdmin.CreateInstance"]
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         return self._name_after_slash(gcp_object)
 
     def _get_zone(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             location = self.__get_location(
                 gcp_object, gcp_object["project_id"])
@@ -34,7 +34,7 @@ class Bigtable(Plugin):
             return None
 
     def _get_region(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             # project_id was added to the dict, in BigTable.label_one()
             zone = self.__get_location(gcp_object, gcp_object["project_id"])
@@ -45,7 +45,7 @@ class Bigtable(Plugin):
             return None
 
     def _get_cluster(self, project_id, name):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             result = (
                 self._google_client.projects()
@@ -124,7 +124,8 @@ class Bigtable(Plugin):
         # can get the project_id
         gcp_object["project_id"] = project_id
         labels = self._build_labels(gcp_object, project_id)
-
+        if labels is None:
+            return
         del gcp_object["project_id"]
         if "labels" not in gcp_object:
             gcp_object["labels"] = {}

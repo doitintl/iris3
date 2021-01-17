@@ -23,7 +23,7 @@ class Bigquery(Plugin):
         return ["datasetservice.insert", "tableservice.insert"]
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             if gcp_object["kind"] == "bigquery#dataset":
                 name = gcp_object["datasetReference"]["datasetId"]
@@ -38,7 +38,7 @@ class Bigquery(Plugin):
             return None
 
     def _get_location(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             location = gcp_object["location"]
             location = location.lower()
@@ -156,7 +156,8 @@ class Bigquery(Plugin):
     @limits(calls=35, period=60)
     def __label_one_dataset(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
-
+        if labels is None:
+            return
         try:
             dataset_reference = gcp_object["datasetReference"]
             self._google_client.datasets().patch(
@@ -171,7 +172,8 @@ class Bigquery(Plugin):
     @limits(calls=35, period=60)
     def __label_one_table(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
-
+        if labels is None:
+            return
         try:
             table_reference = gcp_object["tableReference"]
             self._batch.add(

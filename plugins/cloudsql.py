@@ -11,21 +11,27 @@ class Cloudsql(Plugin):
         return "sqladmin", "v1beta4"
 
     @classmethod
-    def is_on_demand(cls) -> bool:
+    def is_labeled_on_creation(cls) -> bool:
         """
         Labels cannot be applied to CloudSQL during its long initialization phase.
         But 3 log messages arrive during initialization. Maybe by the third one, CloudSQL will be
         labeled?
+
+        And maybe other objects sometimes fail to get labeled on creation for the same reason,
+        `even though they initialize faster than CloudSQL?
+        Maybe use Cloud Tasks instead of Pubsub to allow delay.
+        1. Though Iris(Py2) used TaskQueue, it did NOT use delayed delivery  though it easily could  have.
+        2. Apparently objects other than CloudSQL get correctly labeled 'on-creation' based on the log event.
         """
-        # TODO check if this works on that final log message
+        # TODO check if labeling works on that final log message indicating that CloudSQL is initialized
         return True
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         return self._name_no_separator(gcp_object)
 
     def _get_region(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             region = gcp_object["region"]
             region = region.lower()
@@ -94,6 +100,8 @@ class Cloudsql(Plugin):
 
     def label_one(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
+        if labels is None:
+            return
         try:
             database_instance_body = {
                 "settings": {

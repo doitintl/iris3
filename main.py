@@ -6,6 +6,7 @@ import os
 import typing
 
 import flask
+from google.cloud import resource_manager
 
 import util.gcp_utils
 from plugin import Plugin
@@ -17,6 +18,7 @@ logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 gcp_utils.set_env()
 
 app = flask.Flask(__name__)
+resource_manager_client = resource_manager.Client()
 
 
 def __init_flaskapp():
@@ -33,13 +35,6 @@ def index():
     return "I don't think you meant to be here...", 200
 
 
-# TODO Maybe use Cloud Tasks instead of Pubsub to allow delay, which
-# is necessary for labeling objects that are initializing, especially CloudSQL
-# Yet,
-# 1. Though Iris(Py2) used TaskQueue, it did NOT use delayed delivery  though it easily could  have.
-# 2. Apparently objects other than CloudSQL get correctly labeled
-# 'on-demand' based on the log event.
-
 @app.route("/schedule", methods=["GET"])
 def schedule():
     """
@@ -49,7 +44,8 @@ def schedule():
     if not is_cron:
         return "Access Denied: No token or Cron header found", 403
 
-    projects = gcp_utils.get_all_projects()
+    projects = sorted([p.project_id for p in resource_manager_client.list_projects()])
+
     projects = filter(lambda p: config_utils.is_project_included(p), projects)
     for project_id in projects:
         for plugin_cls in Plugin.subclasses:
@@ -76,10 +72,10 @@ def label_one():
 
     method_from_log = data["protoPayload"]["methodName"]
     for plugin_cls in Plugin.subclasses:
-        # We can override on_demand using an arg from Flask; this is forr
+        # We can override is_labeled_on_creation using an arg from Flask; this is forr
         # testing
-        if plugin_cls.is_on_demand() or \
-                "true" == flask.request.args.get("override_on_demand"):
+        if plugin_cls.is_labeled_on_creation() or \
+                "true" == flask.request.args.get("override_labeled_on_creation"):
             plugin = plugin_cls()
             for supported_method in plugin.method_names():
                 if supported_method.lower() in method_from_log.lower():
@@ -96,10 +92,7 @@ def label_one():
                             utils.shorten(str(data.get("resource")), 300))
 
         else:
-            assert plugin_cls.__name__ == "Cloudsql", (
-                    "For now, there is only one non-on-demand plugin. Change this assertion as needed. "
-                    "Found %s" % plugin_cls.__name__
-            )
+            assert False, "For now, there  are no plugins that are not labeld on creation. Found %s" % plugin_cls.__name__
 
     return "OK", 200
 

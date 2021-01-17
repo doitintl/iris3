@@ -76,6 +76,8 @@ class Subscriptions(Plugin):
     def label_one(self, gcp_object: typing.Dict, project_id):
         assert isinstance(gcp_object, dict), type(gcp_object)
         labels_outer = self._build_labels(gcp_object, project_id)
+        if labels_outer is None:
+            return
         labels = labels_outer["labels"]
         try:
             subscription_name = self._get_name(gcp_object)
@@ -118,5 +120,5 @@ class Subscriptions(Plugin):
             return None
 
     def _get_name(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         return self._name_after_slash(gcp_object)

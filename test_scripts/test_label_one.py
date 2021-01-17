@@ -7,13 +7,14 @@ project = "joshua-playground-host-vpc"
 def test_buckets():
     from plugins.buckets import Buckets
 
-    label_one(project, "b89712398", Buckets().method_names()[0])
+    label_one(project, "joshua-playground-host-vpc-bucket1", Buckets().method_names()[0])
 
 
 def test_cloudsql():
     from plugins.cloudsql import Cloudsql
 
-    label_one(project, "myinstance2", Cloudsql().method_names()[0], extra_args={"override_on_demand": "true"}, )
+    label_one(project, "myinstance2", Cloudsql().method_names()[0],
+              extra_args={"override_labeled_on_creation": "true"}, )
 
 
 def test_dataset():

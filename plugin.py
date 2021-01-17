@@ -7,8 +7,7 @@ from abc import ABCMeta, abstractmethod
 from googleapiclient import discovery
 from googleapiclient import errors
 
-import util.config_utils
-from util import config_utils, utils
+from util.config_utils import is_copying_labels_from_project, get_possible_label_keys, iris_label_key_prefix
 from util.utils import cls_by_name
 
 PLUGINS_MODULE = "plugins"
@@ -32,11 +31,11 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @classmethod
-    def is_on_demand(cls) -> bool:
+    def is_labeled_on_creation(cls) -> bool:
         """
-        Only a few classes are  not-on-demand, and these classes should overwrite this method.
+        Only a few classes are  labeled on creation, and these classes should overwrite this method.
         """
-        return True  # only a few are not-on-demand
+        return True
 
     def __project_labels(self, project_id) -> typing.Dict:
 
@@ -51,22 +50,17 @@ class Plugin(object, metaclass=ABCMeta):
             logging.exception(e)
             return {}
 
-    def __generate_labels(self, gcp_object, project_id):
-        logging.info("gcp_object %s", gcp_object)
-
-        if config_utils.is_copying_labels_from_project():
-            labels = self.__project_labels(project_id)
-        else:
-            labels = {}
+    def __iris_labels(self, gcp_object) -> typing.Dict:
+        labels = {}
         # These label keys are the same across all Plugins
-        label_keys = config_utils.get_possible_label_keys()
+        label_keys = get_possible_label_keys()
 
         for label_key in label_keys:
             f = "_get_" + label_key
             if hasattr(self, f):
                 func = getattr(self, f)
                 label_value = func(gcp_object)
-                key = util.config_utils.iris_label_key_prefix() + "_" + label_key
+                key = iris_label_key_prefix() + "_" + label_key
                 labels[key] = label_value
         return labels
 
@@ -85,7 +79,7 @@ class Plugin(object, metaclass=ABCMeta):
         1000 as we loop; then parse the remaining at the end of the loop"""
         try:
             self._batch.execute()
-        except TypeError as e:
+        except Exception as e:
             logging.exception(e)
         self.counter = 0
 
@@ -110,7 +104,7 @@ class Plugin(object, metaclass=ABCMeta):
 
     @abstractmethod
     def method_names(self):
-        # TODO Here we use partial method names. It is best to be precise and use full names.
+        # TODO In the subclasses we use partial method names. It is best to be precise and use full names.
         # That would allow an equality check and not just: if supported_method.lower() in method_from_log.lower():
         pass
 
@@ -119,10 +113,8 @@ class Plugin(object, metaclass=ABCMeta):
         def load_plugin_class(name):
             module_name = PLUGINS_MODULE + "." + name
             __import__(module_name)
-            assert name == name.lower()
-            plugin_cls = utils.cls_by_name(
-                PLUGINS_MODULE + "." + name + "." + name.title()
-            )
+            assert name == name.lower(), name
+            plugin_cls = cls_by_name(PLUGINS_MODULE + "." + name + "." + name.title())
             return plugin_cls
 
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
@@ -140,20 +132,26 @@ class Plugin(object, metaclass=ABCMeta):
         return plugin
 
     def _build_labels(self, gcp_object, project_id):
-        try:
-            original_labels = gcp_object["labels"]
-        except KeyError:
-            original_labels = {}
+        """
+        :return Dict including original labels, project labels (if the system is configured to add those)
+        and new labels.
+        But if that would result in no change, return None
+        """
+        logging.info("gcp_object %s", gcp_object)
+        original_labels = gcp_object["labels"] if "labels" in gcp_object else {}
+        project_labels = self.__project_labels(project_id) if is_copying_labels_from_project() else {}
+        iris_labels = self.__iris_labels(gcp_object)
+        all_labels = {**iris_labels, **project_labels, **original_labels}
+        if all_labels == original_labels:
+            logging.info('Skip labeling %s because no change', self.__class__.__name__)
+            return None
+        else:
+            labels = {"labels": all_labels}
+            fingerprint = gcp_object.get("labelFingerprint", "")
+            if fingerprint:
+                labels["labelFingerprint"] = fingerprint
 
-        gen_labels = self.__generate_labels(gcp_object, project_id)
-        all_labels = {**gen_labels, **original_labels}
-
-        labels = {"labels": all_labels}
-        fingerprint = gcp_object.get("labelFingerprint", "")
-        if fingerprint:
-            labels["labelFingerprint"] = fingerprint
-
-        return labels
+            return labels
 
     def _name_after_slash(self, gcp_object):
         return self.__name(gcp_object, separator="/")
@@ -168,7 +166,7 @@ class Plugin(object, metaclass=ABCMeta):
                 index = name.rfind(separator)
                 name = name[index + 1:]
                 name = name.replace(".", "_").lower()[:62]
-                return name
+            return name
         except KeyError as e:
             logging.exception(e)
             return None

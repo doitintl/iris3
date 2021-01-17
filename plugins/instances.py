@@ -8,7 +8,7 @@ from util import gcp_utils
 
 class Instances(GceZonalBase):
     def _get_instance_type(self, gcp_object):
-        """Method dynamically called in __generate_labels, so don't change name"""
+        """Method dynamically called in generating labels, so don't change name"""
         try:
             machine_type = gcp_object["machineType"]
             ind = machine_type.rfind("/")
@@ -85,6 +85,8 @@ class Instances(GceZonalBase):
 
     def label_one(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
+        if labels is None:
+            return
 
         try:
             zone = self._get_zone(gcp_object)

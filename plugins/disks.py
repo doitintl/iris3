@@ -73,6 +73,8 @@ class Disks(GceZonalBase):
 
     def label_one(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
+        if labels is None:
+            return
         try:
             zone = self._get_zone(gcp_object)
 
