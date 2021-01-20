@@ -50,7 +50,7 @@ class Disks(GceZonalBase):
             return None
 
     def do_label(self, project_id):
-        for zone in self.get_zones(project_id):
+        for zone in self._all_zones(project_id):
             disks = self.__list_disks(project_id, zone)
             for disk in disks:
                 self.label_one(disk, project_id)

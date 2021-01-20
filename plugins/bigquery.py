@@ -31,7 +31,6 @@ class Bigquery(Plugin):
                 name = gcp_object["tableReference"]["tableId"]
             index = name.rfind(":")
             name = name[index + 1:]
-            name = name.replace(".", "_").lower()[:62]
             return name
         except KeyError as e:
             logging.exception(e)

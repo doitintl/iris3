@@ -1,5 +1,5 @@
-title: "iris"
-description: "iris auto tagging service for google cloud"
+title: "Iris3"
+description: "Iris auto tagging service for google cloud"
 stage: "GA"
 includedPermissions:
   - bigquery.datasets.get
@@ -40,7 +40,7 @@ includedPermissions:
   - pubsub.topics.updateTag
   - pubsub.subscriptions.get
   - pubsub.subscriptions.list
-  - pubsub.subscriptions.patch
+  - pubsub.subscriptions.update
   - resourcemanager.folders.get
   - resourcemanager.folders.list
   - resourcemanager.organizations.get

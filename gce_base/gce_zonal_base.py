@@ -9,10 +9,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
     def _get_zone(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
-            zone = gcp_object["zone"]
-            index = zone.rfind("/")
-            zone = zone[index + 1:]
-            zone = zone.lower()
+            zone = gcp_object["zone"].split("/")[-1]
             return zone
         except KeyError as e:
             logging.exception(e)
@@ -28,11 +25,10 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             logging.exception(e)
             return None
 
-    def get_zones(self, project_id):
+    def _all_zones(self, project_id):
         """
         Get all available zones.
         """
-        request = self._google_client.zones().list(project=project_id)
-        response = request.execute()
+        response = self._google_client.zones().list(project=project_id).execute()
         zones = [zone["description"] for zone in response["items"]]
         return zones

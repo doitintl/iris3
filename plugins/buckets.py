@@ -85,7 +85,7 @@ class Buckets(Plugin):
 
             self._batch.add(
                 self._google_client.buckets().patch( bucket=bucket_name, body=labels ),
-                request_id=gcp_utils.generate_uuid(),
+                request_id=gcp_utils.generate_uuid()
             )
             self.counter += 1
             if self.counter == 1000:

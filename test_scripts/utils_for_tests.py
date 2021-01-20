@@ -24,18 +24,13 @@ def __datastruct_for_pubsub_message(contents: str) -> bytes:
     return data_str.encode("utf-8")
 
 
-def do_local_http(
-        path: str,
-        contents: typing.Optional[str],
-        method="POST",
-        headers: typing.Optional[typing.Dict[str, str]] = None,
-        extra_args=None,
-):
+def do_local_http( path: str, contents: typing.Optional[str], method="POST",
+        headers: typing.Optional[typing.Dict[str, str]] = None, extra_args=None ):
     headers = headers or {}
     data_bytes = __datastruct_for_pubsub_message(
         contents) if contents else None
-    # logging.info('Will call %s for %s', path, json.loads(contents)['plugin'])
-    host_and_port = "localhost:%s" % LOCAL_PORT
+    logging.info('Will call %s for %s', path, json.loads(contents).get('plugin'), contents)
+    host_and_port = f"localhost:{LOCAL_PORT}"
     args_s = ""
     if extra_args:
         args_s = "&"

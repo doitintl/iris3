@@ -1,8 +1,12 @@
 import os
 import uuid
 
-from util import localdev_config
+from util import localdev_config, config_utils
 from util.localdev_config import localdev_pubsub_token
+
+from google.cloud import resource_manager
+
+resource_manager_client = resource_manager.Client()
 
 
 def detect_gae():
@@ -44,3 +48,13 @@ def pubsub_token():
         return from_env
     else:
         return localdev_pubsub_token()
+
+
+def all_projects():
+    return sorted([p.project_id for p in resource_manager_client.list_projects()])
+
+
+def all_included_projects():
+    all_proj = all_projects()
+    ret = [p for p in all_proj if config_utils.is_project_included(p)]
+    return ret

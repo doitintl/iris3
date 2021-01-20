@@ -61,7 +61,7 @@ class Instances(GceZonalBase):
             return None
 
     def do_label(self, project_id):
-        for zone in self.get_zones(project_id):
+        for zone in self._all_zones(project_id):
             instances = self.__list_instances(project_id, zone)
             for instance in instances:
                 self.label_one(instance, project_id)

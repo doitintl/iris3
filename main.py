@@ -6,25 +6,22 @@ import os
 import typing
 
 import flask
-from google.cloud import resource_manager
 
 import util.gcp_utils
 from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils, config_utils
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
+logging.basicConfig(format=f"%(levelname)s {config_utils.iris_label_key_prefix()}: %(message)s", level=logging.INFO)
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
 gcp_utils.set_env()
 
 app = flask.Flask(__name__)
-resource_manager_client = resource_manager.Client()
-
 
 def __init_flaskapp():
-    logging.info("Initializing Iris in process %s", os.getpid())
+    logging.info("Initializing Iris")
     Plugin.init()
-
+    logging.info(f"Included projects:{gcp_utils.all_included_projects()}")
 
 __init_flaskapp()
 
@@ -44,9 +41,12 @@ def schedule():
     if not is_cron:
         return "Access Denied: No token or Cron header found", 403
 
-    projects = sorted([p.project_id for p in resource_manager_client.list_projects()])
+    all_projects= gcp_utils.all_projects()
 
-    projects = filter(lambda p: config_utils.is_project_included(p), projects)
+    skipped_projects = filter(lambda p:not config_utils.is_project_included(p), all_projects)
+    logging.info("schedule() not processing: %s", skipped_projects)
+    projects = filter(lambda p: config_utils.is_project_included(p), all_projects)
+    logging.info("schedule() processing: %s", projects)
     for project_id in projects:
         for plugin_cls in Plugin.subclasses:
             pubsub_utils.publish(
@@ -58,46 +58,55 @@ def schedule():
     return "OK", 200
 
 
+
 @app.route("/label_one", methods=["POST"])
 def label_one():
-    """Pubsub push endpoint for messages from the Log Sink
     """
-    # Performance issue: There are multiple messages for each object-creation, for example
+    PubSub push endpoint for messages from the Log Sink
+    """
+    # Performance question: There are multiple messages for each object-creation, for example
     # one for request and one for response. So, we may be labeling each object multiple times,
     # which is a waste of resources.
     #
-    # Or maybe the first one, on request, fails, becuase the resource is not initialized, and
+    # Or maybe the first PubSub-triggered action fails, because the resource is not initialized, and
     # then the second one succeeds; need to check that.
     data = __extract_pubsub_content()
 
     method_from_log = data["protoPayload"]["methodName"]
     for plugin_cls in Plugin.subclasses:
-        # We can override is_labeled_on_creation using an arg from Flask; this is forr
-        # testing
-        if plugin_cls.is_labeled_on_creation() or \
-                "true" == flask.request.args.get("override_labeled_on_creation"):
+        if plugin_cls.is_labeled_on_creation():
             plugin = plugin_cls()
             for supported_method in plugin.method_names():
                 if supported_method.lower() in method_from_log.lower():
-                    gcp_object = plugin.get_gcp_object(data)
-                    if gcp_object is not None:
-                        project_id = data["resource"]["labels"]["project_id"]
-                        if config_utils.is_project_included(project_id):
-                            logging.info("Calling %s.label_one() in %s", plugin.__class__.__name__, project_id)
-                            plugin.label_one(gcp_object, project_id)
-                            plugin.do_batch()
-                    else:
-                        logging.error(
-                            "Cannot find gcp_object to label based on %s",
-                            utils.shorten(str(data.get("resource")), 300))
+                    __do_label_one(data, plugin)
 
         else:
-            assert False, "For now, there  are no plugins that are not labeld on creation. Found %s" % plugin_cls.__name__
+            assert plugin_cls.__name__=="Cloudsql",  plugin_cls.__name__
 
     return "OK", 200
 
 
+def __do_label_one(data, plugin):
+    gcp_object = plugin.get_gcp_object(data)
+    if gcp_object is not None:
+        project_id = data["resource"]["labels"]["project_id"]
+        if config_utils.is_project_included(project_id):
+            logging.info("Will label_one() in %s, %s",
+                          project_id, gcp_object)
+            plugin.label_one(gcp_object, project_id)
+            plugin.do_batch()
+        else:
+            logging.info("Skipping %s.label_one() in unsupported project %s",
+                         plugin.__class__.__name__, project_id)
+    else:
+        logging.error(
+            "Cannot find gcp_object to label based on %s",
+            utils.shorten(str(data.get("resource")), 300))
+
+
 def __extract_pubsub_content() -> typing.Dict:
+    """Take the value at the relevant key in the logging message from PubSub,
+    Base64-decode, convert to Python object."""
     __check_pubsub_verification_token()
 
     envelope = flask.request.get_json()

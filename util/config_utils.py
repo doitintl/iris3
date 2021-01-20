@@ -4,7 +4,7 @@ import typing
 import yaml
 
 
-def get_possible_label_keys():
+def possible_label_keys():
     config = __load_config()
     return config["labels"]
 
@@ -36,3 +36,4 @@ def __load_config() -> typing.Dict:
     with open("config.yaml", "r") as config_file:
         config = yaml.full_load(config_file)
     return config
+

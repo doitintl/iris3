@@ -1,12 +1,12 @@
 #!/bin/zsh
 
+#TODO Remove the -x
 set -x
 set -u
 set -e
 
 START=$(date "+%s")
-
-ROLEID=iris
+ROLEID=iris3
 
 LOGS_TOPIC=iris_logs_topic
 REQUESTFULLLABELING_TOPIC=iris_requestfulllabeling_topic
@@ -14,7 +14,7 @@ LOG_SINK=iris_log
 DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
 REGION=us-central
-REGION_ABBREV=uc
+GAE_REGION_ABBREV=uc
 
 if [[ $# -eq 0 ]]; then
   echo Missing project id argument
@@ -33,11 +33,12 @@ gcloud config set project "$PROJECTID"
 
 GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
 PUBSUB_VERIFICATION_TOKEN=$(grep " PUBSUB_VERIFICATION_TOKEN:" app.yaml | awk '{print $2}')
-LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
-DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
+LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
+DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
 declare -A enabled_services
 while read -r svc _; do
+  # Using the associative array as a set. The value does not matter, just that we can check that a key is in it.
   enabled_services["$svc"]=yes
 done < <(gcloud services list | tail -n +2)
 
@@ -46,14 +47,16 @@ required_svcs=(
   pubsub.googleapis.com
   compute.googleapis.com
   bigtable.googleapis.com
+  bigtableadmin.googleapis.com
   storage-component.googleapis.com
   sql-component.googleapis.com
   sqladmin.googleapis.com
 )
-
-# Enable services if they are not
 for svc in "${required_svcs[@]}"; do
-  [[ "${enabled_services["$svc"]}" == "yes" ]] || gcloud services enable "$svc"
+   if ! [ ${enabled_services["$svc"]+_} ]; then
+     echo "Enabling $svc"
+     gcloud services enable "$svc"
+   fi
 done
 
 # Get organization id for this project
@@ -66,9 +69,11 @@ ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-toke
 gcloud app describe >&/dev/null || gcloud app create --region=$REGION
 
 # Create custom role to run iris
-gcloud iam roles describe "$ROLEID" --organization "$ORGID" ||
-  gcloud iam roles create "$ROLEID" --organization "$ORGID" --file roles.yaml
-
+if gcloud iam roles describe "$ROLEID" --organization "$ORGID" ; then
+   gcloud iam roles update -q "$ROLEID" --organization "$ORGID" --file roles.yaml
+else
+  gcloud iam roles create "$ROLEID" -q --organization "$ORGID" --file roles.yaml
+fi
 # Assign default iris app engine service account with role on organization level
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" \
@@ -105,8 +110,10 @@ log_filter+=('OR "cloudsql.instances.create"' OR '"v1.compute.disks.insert"' OR 
 log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')
 log_filter+=('OR "google.pubsub.v1.Publisher.CreateTopic"')
 log_filter+=(')')
+# TODO Could add clauses to log_filter to only include the projects specified in config.yaml.
+# However, even without doing that, the code only processes PubSub messages for the configured projects.
+# Also, the filter was meant as a dev feature so developing this additional level of filtering is not worthwhile.
 
-exit 1
 # Create or update a sink at org level
 if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
   gcloud logging sinks create "$LOG_SINK" \
@@ -134,4 +141,4 @@ gcloud app deploy -q app.yaml cron.yaml
 
 FINISH=$(date "+%s")
 ELAPSED_SEC=$((FINISH - START))
-echo "Elapsed time $ELAPSED_SEC s"
+echo "Elapsed time ${ELAPSED_SEC} s"

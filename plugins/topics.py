@@ -75,6 +75,8 @@ class Topics(Plugin):
         # THis new API does not accept label-fingerprint, so extracting just
         # labels
         labels_outer = self._build_labels(gcp_object, project_id)
+        if labels_outer is None:
+            return
         labels = labels_outer["labels"]
         try:
             topic_name = self._get_name(gcp_object)

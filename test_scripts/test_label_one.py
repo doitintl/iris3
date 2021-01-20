@@ -13,8 +13,7 @@ def test_buckets():
 def test_cloudsql():
     from plugins.cloudsql import Cloudsql
 
-    label_one(project, "myinstance2", Cloudsql().method_names()[0],
-              extra_args={"override_labeled_on_creation": "true"}, )
+    label_one(project, "myinstance2", Cloudsql().method_names()[0] )
 
 
 def test_dataset():

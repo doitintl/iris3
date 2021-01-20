@@ -12,13 +12,12 @@
 # below:
 .git
 .gitignore
-
-# Python pycache:
 __pycache__/
-# Ignored by the build system
 test_scripts/
 sample_data/
+.pytest_cache
+requirements-test.txt
 README.md
 *.sh
 *.template
-*.png
+
