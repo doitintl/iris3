@@ -9,7 +9,7 @@ START=$(date "+%s")
 ROLEID=iris3
 
 LOGS_TOPIC=iris_logs_topic
-REQUESTFULLLABELING_TOPIC=iris_requestfulllabeling_topic
+SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
 LOG_SINK=iris_log
 DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
@@ -90,12 +90,12 @@ gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJE
     --quiet >/dev/null
 
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
-gcloud pubsub topics describe "$REQUESTFULLLABELING_TOPIC" --project="$PROJECTID" ||
-  gcloud pubsub topics create "$REQUESTFULLLABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
+gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" ||
+  gcloud pubsub topics create "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
 
 # Create PubSub subscription for receiving log about new GCP objects
 gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECTID" ||
-  gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$REQUESTFULLLABELING_TOPIC" --project="$PROJECTID" \
+  gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --quiet >/dev/null
 

@@ -20,4 +20,4 @@ requirements-test.txt
 README.md
 *.sh
 *.template
-
+pytest.ini

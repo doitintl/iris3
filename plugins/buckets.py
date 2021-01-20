@@ -41,11 +41,9 @@ class Buckets(Plugin):
             logging.exception(e)
             return None
 
-
     def get_gcp_object(self, data):
         try:
-            bucket = self.__get_bucket(
-                data["resource"]["labels"]["bucket_name"])
+            bucket = self.__get_bucket(data["resource"]["labels"]["bucket_name"])
             return bucket
         except Exception as e:
             logging.exception(e)
@@ -58,9 +56,13 @@ class Buckets(Plugin):
         while more_results:
             try:
                 response = (
-                    self._google_client.buckets() .list( project=project_id, pageToken=page_token,
+                    self._google_client.buckets()
+                    .list(
+                        project=project_id,
+                        pageToken=page_token,
                         # filter not supported
-                    ) .execute()
+                    )
+                    .execute()
                 )
             except errors.HttpError as e:
                 logging.exception(e)
@@ -84,8 +86,8 @@ class Buckets(Plugin):
             bucket_name = gcp_object["name"]
 
             self._batch.add(
-                self._google_client.buckets().patch( bucket=bucket_name, body=labels ),
-                request_id=gcp_utils.generate_uuid()
+                self._google_client.buckets().patch(bucket=bucket_name, body=labels),
+                request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1
             if self.counter == 1000:

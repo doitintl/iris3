@@ -25,10 +25,10 @@ def localdev_project_id():
         logging.info("Project %s (from env)", project_id)
         return project_id
     else:
-        command = "gcloud config get-value project".split(' ')
+        command = "gcloud config get-value project".split(" ")
         result = subprocess.run(command, stdout=subprocess.PIPE)
-        project_id = result.stdout.decode('utf-8')
-        project_id = project_id.strip('\n')
+        project_id = result.stdout.decode("utf-8")
+        project_id = project_id.strip("\n")
         logging.info("Project %s (from gcloud)", project_id)
         return project_id
 

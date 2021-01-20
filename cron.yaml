@@ -1,5 +1,5 @@
 cron:
-  - description: "Send out messages to assign labels for each project/plugin"
+  - description: "The endpoint sends out PubSub messages triggering do_label per project/plugin."
     url: /schedule
     schedule: every 12 hours
     target: iris3

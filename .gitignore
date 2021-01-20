@@ -27,4 +27,4 @@ env.bak/
 index.yaml
 .DS_Store
 killserver.sh
-test_scripts/pytest.ini
+pytest.ini

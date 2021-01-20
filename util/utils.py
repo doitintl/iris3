@@ -15,7 +15,9 @@ def cls_by_name(fully_qualified_classname):
                 "Plugin classes must have the same name as their module "
                 "(file under the plugins directory), except that the "
                 "module name should be in lowercase and the class name in Titlecase, "
-                "as for example bigquery.Bigquery or gce.Gce.", exc_info=True)
+                "as for example bigquery.Bigquery or gce.Gce.",
+                exc_info=True,
+            )
             raise
     return module
 

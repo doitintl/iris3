@@ -47,8 +47,8 @@ class Cloudsql(Plugin):
         try:
             result = (
                 self._google_client.instances()
-                    .get(project=project_id, instance=name)
-                    .execute()
+                .get(project=project_id, instance=name)
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -61,7 +61,7 @@ class Cloudsql(Plugin):
                 return None
             labels_ = data["resource"]["labels"]
             ind = labels_["database_id"].rfind(":")
-            instance = labels_["database_id"][ind + 1:]
+            instance = labels_["database_id"][ind + 1 :]
             instance = self.__get_instance(labels_["project_id"], instance)
             return instance
         except Exception as e:
@@ -75,13 +75,13 @@ class Cloudsql(Plugin):
             try:
                 response = (
                     self._google_client.instances()
-                        .list(
+                    .list(
                         project=project_id,
                         pageToken=page_token,
                         # Filter supported, but syntax not OK. We get this message: "Field not found. In
                         # expression labels.iris_name HAS *, At field labels ."
                     )
-                        .execute()
+                    .execute()
                 )
             except errors.HttpError as e:
                 logging.exception(e)
@@ -100,9 +100,7 @@ class Cloudsql(Plugin):
         if labels is None:
             return
         try:
-            database_instance_body = {
-                "settings": {
-                    "userLabels": labels["labels"]}}
+            database_instance_body = {"settings": {"userLabels": labels["labels"]}}
 
             self._google_client.instances().patch(
                 project=project_id,
@@ -114,7 +112,9 @@ class Cloudsql(Plugin):
             if "PENDING_CREATE" == gcp_object.get("state"):
                 logging.exception(
                     "CloudSQL cannot accept labels until it is fully initialized, which is why"
-                    "we do not label it on-demand in the usual way", exc_info=e)
+                    "we do not label it on-demand in the usual way",
+                    exc_info=e,
+                )
             else:
                 logging.exception(e)
         return "OK", 200

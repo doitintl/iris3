@@ -7,16 +7,22 @@ from abc import ABCMeta, abstractmethod
 from googleapiclient import discovery
 from googleapiclient import errors
 
-from util.config_utils import is_copying_labels_from_project, possible_label_keys, iris_label_key_prefix
-from util.utils import cls_by_name
+from util.config_utils import (
+    is_copying_labels_from_project,
+    possible_label_keys,
+    iris_label_key_prefix,
+)
+from util.utils import cls_by_name, shorten
 
 PLUGINS_MODULE = "plugins"
+
+
 class Plugin(object, metaclass=ABCMeta):
-    __project_access_client = discovery.build('cloudresourcemanager', 'v1')
+    __project_access_client = discovery.build("cloudresourcemanager", "v1")
     __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     subclasses = []
 
-    __label_chars = re.compile(r'[\w\d_-]')
+    __label_chars = re.compile(r"[\w\d_-]")
 
     def __init__(self):
         self.counter = 0
@@ -33,9 +39,9 @@ class Plugin(object, metaclass=ABCMeta):
     @classmethod
     def is_labeled_on_creation(cls) -> bool:
         """
-        Only a few classes are  labeled on creation, and these classes should overwrite this method.
+        Only a few classes are  labeled on creation, and these classes should override this method.
         """
-        return  True
+        return False  # TODO Revert
 
     def __project_labels(self, project_id) -> typing.Dict:
 
@@ -45,7 +51,7 @@ class Plugin(object, metaclass=ABCMeta):
         request = self.__project_access_client.projects().get(projectId=project_id)
         try:
             response = request.execute()
-            return response['labels']
+            return response["labels"]
         except errors.HttpError as e:
             logging.exception(e)
             return {}
@@ -60,15 +66,15 @@ class Plugin(object, metaclass=ABCMeta):
             if hasattr(self, f):
                 func = getattr(self, f)
                 label_value = func(gcp_object)
-                #Only hyphens (-), underscores (_), lowercase characters,
+                # Only hyphens (-), underscores (_), lowercase characters,
                 # and numbers are allowed. International characters are allowed.
                 key = iris_label_key_prefix() + "_" + label_key
-                label_value=self._make_legal_label_value(label_value)
+                label_value = self._make_legal_label_value(label_value)
                 labels[key] = label_value
         return labels
 
     def __batch_callback(self, request_id, response, exception):
-        # TODO address this error, which is intermittent
+        # TODO address this error, which is intermittent. Perhaps retry; perhaps ignore and let the cron get it.
         # ERROR: Error in Request Id: None Response: f748b107-ac27-4907-94dd-b9272898989b
         # Exception: <HttpError 412 when requesting https://compute.googleapis.com/compute/v1/projects/joshua-playground-host-vpc/zones/us-central1-a/disks/diskx/setLabels?alt=json
         # returned "Labels fingerprint either invalid or resource labels have changed".
@@ -145,11 +151,19 @@ class Plugin(object, metaclass=ABCMeta):
         But if that would result in no change, return None
         """
         original_labels = gcp_object["labels"] if "labels" in gcp_object else {}
-        project_labels = self.__project_labels(project_id) if is_copying_labels_from_project() else {}
+        project_labels = (
+            self.__project_labels(project_id)
+            if is_copying_labels_from_project()
+            else {}
+        )
         iris_labels = self.__iris_labels(gcp_object)
         all_labels = {**iris_labels, **project_labels, **original_labels}
         if all_labels == original_labels:
-            logging.info('Skip labeling %s because no change', self.__class__.__name__)
+            logging.info(
+                "Skip labeling %s because no change: %s",
+                self.__class__.__name__,
+                shorten(gcp_object),
+            )
             return None
         else:
             labels = {"labels": all_labels}
@@ -170,13 +184,14 @@ class Plugin(object, metaclass=ABCMeta):
             name = gcp_object["name"]
             if separator:
                 index = name.rfind(separator)
-                name = name[index + 1:]
+                name = name[index + 1 :]
             return name
         except KeyError as e:
             logging.exception(e)
             return None
+
     @classmethod
     def _make_legal_label_value(cls, s):
-        ret="".join(c if cls.__label_chars.match(c) else "_"  for c in s )
+        ret = "".join(c if cls.__label_chars.match(c) else "_" for c in s)
         ret = ret.lower()[:62]
         return ret

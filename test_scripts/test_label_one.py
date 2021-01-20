@@ -7,13 +7,15 @@ project = "joshua-playground-host-vpc"
 def test_buckets():
     from plugins.buckets import Buckets
 
-    label_one(project, "joshua-playground-host-vpc-bucket1", Buckets().method_names()[0])
+    label_one(
+        project, "joshua-playground-host-vpc-bucket1", Buckets().method_names()[0]
+    )
 
 
 def test_cloudsql():
     from plugins.cloudsql import Cloudsql
 
-    label_one(project, "myinstance2", Cloudsql().method_names()[0] )
+    label_one(project, "myinstance2", Cloudsql().method_names()[0])
 
 
 def test_dataset():
@@ -41,7 +43,11 @@ def test_subscriptions():
 def test_disks():
     from plugins.disks import Disks
 
-    label_one(project, "disk1", Disks().method_names()[0], )
+    label_one(
+        project,
+        "disk1",
+        Disks().method_names()[0],
+    )
 
 
 def test_topics():

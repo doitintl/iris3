@@ -30,7 +30,7 @@ class Bigquery(Plugin):
             else:
                 name = gcp_object["tableReference"]["tableId"]
             index = name.rfind(":")
-            name = name[index + 1:]
+            name = name[index + 1 :]
             return name
         except KeyError as e:
             logging.exception(e)
@@ -50,8 +50,8 @@ class Bigquery(Plugin):
         try:
             result = (
                 self._google_client.datasets()
-                    .get(projectId=project_id, datasetId=name)
-                    .execute()
+                .get(projectId=project_id, datasetId=name)
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -62,8 +62,8 @@ class Bigquery(Plugin):
         try:
             result = (
                 self._google_client.tables()
-                    .get(projectId=project_id, datasetId=dataset, tableId=table)
-                    .execute()
+                .get(projectId=project_id, datasetId=dataset, tableId=table)
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -105,13 +105,13 @@ class Bigquery(Plugin):
             try:
                 response = (
                     self._google_client.datasets()
-                        .list(
+                    .list(
                         projectId=project_id,
                         pageToken=page_token,
                         # Though filters are supported here, "NOT" filters are
                         # not
                     )
-                        .execute()
+                    .execute()
                 )
             except errors.HttpError as e:
                 logging.exception(e)
@@ -132,13 +132,13 @@ class Bigquery(Plugin):
         while more_results:
             response = (
                 self._google_client.tables()
-                    .list(
+                .list(
                     projectId=project_id,
                     datasetId=dataset["datasetReference"]["datasetId"],
                     pageToken=page_token,
                     # filter not supported
                 )
-                    .execute()
+                .execute()
             )
             if "tables" in response:
                 for t in response["tables"]:

@@ -37,7 +37,7 @@ def generate_uuid() -> str:
     """
     :return a UUID as a string (and not an object or bytes);
      this is required by the http API.
-     """
+    """
     return str(uuid.uuid4())
 
 

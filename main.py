@@ -11,17 +11,21 @@ import util.gcp_utils
 from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils, config_utils
 
-logging.basicConfig(format=f"%(levelname)s {config_utils.iris_label_key_prefix()}: %(message)s", level=logging.INFO)
+logging.basicConfig(
+    format=f"%(levelname)s {config_utils.iris_label_key_prefix()}: %(message)s",
+    level=logging.INFO,
+)
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
 gcp_utils.set_env()
 
 app = flask.Flask(__name__)
 
+
 def __init_flaskapp():
-    logging.info("Initializing Iris")
+    logging.info("Initializing Iris in process %s", os.getpid())
     Plugin.init()
-    logging.info(f"Included projects:{gcp_utils.all_included_projects()}")
+
 
 __init_flaskapp()
 
@@ -29,7 +33,7 @@ __init_flaskapp()
 @app.route("/")
 def index():
     logging.info("environ", os.environ)
-    return "I don't think you meant to be here...", 200
+    return "I'm Iris, pleased to meet you!", 200
 
 
 @app.route("/schedule", methods=["GET"])
@@ -39,24 +43,26 @@ def schedule():
     """
     is_cron = flask.request.headers.get("X-Appengine-Cron")
     if not is_cron:
-        return "Access Denied: No token or Cron header found", 403
+        return "Access Denied: No Cron header found", 403
 
-    all_projects= gcp_utils.all_projects()
-
-    skipped_projects = filter(lambda p:not config_utils.is_project_included(p), all_projects)
+    skipped_projects = list(
+        filter(
+            lambda p: not config_utils.is_project_included(p), gcp_utils.all_projects()
+        )
+    )
     logging.info("schedule() not processing: %s", skipped_projects)
-    projects = filter(lambda p: config_utils.is_project_included(p), all_projects)
-    logging.info("schedule() processing: %s", projects)
-    for project_id in projects:
+    included_projects = gcp_utils.all_included_projects()
+    logging.info("schedule() processing: %s", included_projects)
+    for project_id in included_projects:
         for plugin_cls in Plugin.subclasses:
             pubsub_utils.publish(
-                msg=json.dumps({"project_id": project_id,
-                                "plugin": plugin_cls.__name__}),
-                topic_id=pubsub_utils.requestfulllabeling_topic()
+                msg=json.dumps(
+                    {"project_id": project_id, "plugin": plugin_cls.__name__}
+                ),
+                topic_id=pubsub_utils.schedulelabeling_topic(),
             )
 
     return "OK", 200
-
 
 
 @app.route("/label_one", methods=["POST"])
@@ -78,30 +84,30 @@ def label_one():
             plugin = plugin_cls()
             for supported_method in plugin.method_names():
                 if supported_method.lower() in method_from_log.lower():
-                    __do_label_one(data, plugin)
-
-        else:
-            assert plugin_cls.__name__=="Cloudsql",  plugin_cls.__name__
+                    __label_one_0(data, plugin)
 
     return "OK", 200
 
 
-def __do_label_one(data, plugin):
+def __label_one_0(data, plugin):
     gcp_object = plugin.get_gcp_object(data)
     if gcp_object is not None:
         project_id = data["resource"]["labels"]["project_id"]
         if config_utils.is_project_included(project_id):
-            logging.info("Will label_one() in %s, %s",
-                          project_id, gcp_object)
+            logging.info("Will label_one() in %s, %s", project_id, gcp_object)
             plugin.label_one(gcp_object, project_id)
             plugin.do_batch()
         else:
-            logging.info("Skipping %s.label_one() in unsupported project %s",
-                         plugin.__class__.__name__, project_id)
+            logging.info(
+                "Skipping %s.label_one() in unsupported project %s",
+                plugin.__class__.__name__,
+                project_id,
+            )
     else:
         logging.error(
             "Cannot find gcp_object to label based on %s",
-            utils.shorten(str(data.get("resource")), 300))
+            utils.shorten(str(data.get("resource")), 300),
+        )
 
 
 def __extract_pubsub_content() -> typing.Dict:
@@ -127,10 +133,7 @@ def do_label():
     plugin_class_localname = data["plugin"]
     plugin = Plugin.create_plugin(plugin_class_localname)
     project_id = data["project_id"]
-    logging.info(
-        "do_label() for %s in %s",
-        plugin.__class__.__name__,
-        project_id)
+    logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
     plugin.do_label(project_id)
     return "OK", 200
 
@@ -143,8 +146,7 @@ def __check_pubsub_verification_token():
 
     token_from_args = flask.request.args.get("token", "")
     if known_token != token_from_args:
-        raise FlaskException(
-            f'Access denied: Invalid token "{known_token}"', 403)
+        raise FlaskException(f'Access denied: Invalid token "{known_token}"', 403)
 
 
 class FlaskException(Exception):

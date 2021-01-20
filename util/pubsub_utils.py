@@ -39,8 +39,8 @@ def logs_topic() -> str:
     return f"iris_logs_topic"
 
 
-def requestfulllabeling_topic() -> str:
-    return f"iris_requestfulllabeling_topic"
+def schedulelabeling_topic() -> str:
+    return f"iris_schedulelabeling_topic"
 
 
 def publish(msg: str, topic_id: str):

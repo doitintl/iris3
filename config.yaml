@@ -1,6 +1,6 @@
 # This is prefixed to the key of each label that is added.
-#TODO Restore iris_prefix
-iris_prefix: iris3a
+#TODO Restore iris_prefix to iris3
+iris_prefix: iris3
 # labels are the keys we might use for labeling each resource, but only
 # if a _get<LABEL>() function is defined in the relevant plugin class.
 labels:
