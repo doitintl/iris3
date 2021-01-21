@@ -120,9 +120,9 @@ if [ -n "$included_projects_line" ]; then
   done
   log_filter+=(') AND ')
 fi
-#TODO add + below
+
 # Add methodName filter to the log sink
-log_filter=('protoPayload.methodName:(')
+log_filter+=('protoPayload.methodName:(')
 log_filter+=('"storage.buckets.create"')
 log_filter+=('OR "compute.instances.insert" OR "compute.instances.start" OR "datasetservice.insert"')
 log_filter+=('OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')

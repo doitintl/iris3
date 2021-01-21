@@ -1,7 +1,6 @@
 #!/bin/zsh
 
-#TODO Remove the -x
-set -x
+
 set -u
 set -e
 

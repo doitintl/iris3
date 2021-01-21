@@ -41,7 +41,7 @@ class Plugin(object, metaclass=ABCMeta):
         """
         Only a few classes are  labeled on creation, and these classes should override this method.
         """
-        return False  # TODO Revert
+        return True
 
     def __project_labels(self, project_id) -> typing.Dict:
 
@@ -74,10 +74,10 @@ class Plugin(object, metaclass=ABCMeta):
         return labels
 
     def __batch_callback(self, request_id, response, exception):
-        # TODO address this error, which is intermittent. Perhaps retry; perhaps ignore and let the cron get it.
-        # ERROR: Error in Request Id: None Response: f748b107-ac27-4907-94dd-b9272898989b
-        # Exception: <HttpError 412 when requesting https://compute.googleapis.com/compute/v1/projects/joshua-playground-host-vpc/zones/us-central1-a/disks/diskx/setLabels?alt=json
-        # returned "Labels fingerprint either invalid or resource labels have changed".
+        # TODO Address this error, which is intermittent and found most often with disks.
+        #  "Labels fingerprint either invalid or resource labels have changed".
+        #  - Perhaps retry
+        #  - Perhaps ignore and let the cron get it.
         if exception is not None:
             logging.error(
                 "Error in Request Id: %s Response: %s Exception: %s",
@@ -117,8 +117,6 @@ class Plugin(object, metaclass=ABCMeta):
 
     @abstractmethod
     def method_names(self):
-        # TODO In the subclasses we use partial method names. It is best to be precise and use full names.
-        # That would allow an equality check and not just: if supported_method.lower() in method_from_log.lower():
         pass
 
     @classmethod

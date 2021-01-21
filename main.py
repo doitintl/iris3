@@ -76,24 +76,37 @@ def label_one():
     #
     # Or maybe the first PubSub-triggered action fails, because the resource is not initialized, and
     # then the second one succeeds; need to check that.
+
     data = __extract_pubsub_content()
 
+
+
     method_from_log = data["protoPayload"]["methodName"]
+
     for plugin_cls in Plugin.subclasses:
+
+
         if plugin_cls.is_labeled_on_creation():
             plugin = plugin_cls()
+
             for supported_method in plugin.method_names():
+
                 if supported_method.lower() in method_from_log.lower():
+
                     __label_one_0(data, plugin)
 
     return "OK", 200
 
 
 def __label_one_0(data, plugin):
+
     gcp_object = plugin.get_gcp_object(data)
+
     if gcp_object is not None:
         project_id = data["resource"]["labels"]["project_id"]
+
         if config_utils.is_project_included(project_id):
+
             logging.info("Will label_one() in %s, %s", project_id, gcp_object)
             plugin.label_one(gcp_object, project_id)
             plugin.do_batch()
