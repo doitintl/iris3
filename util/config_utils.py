@@ -22,12 +22,14 @@ def iris_label_key_prefix():
 
 
 def is_project_included(project_id):
+    projects = included_projects()
+    return (project_id in projects) if projects else True
+
+
+def included_projects():
     config = __load_config()
     projects = config.get("projects")
-    if not projects:  # No filter
-        return True
-    else:
-        return project_id in projects
+    return projects
 
 
 # Py3.9 has functools.cache

@@ -82,6 +82,7 @@ class Buckets(Plugin):
         labels = self._build_labels(gcp_object, project_id)
         if labels is None:
             return
+
         try:
             bucket_name = gcp_object["name"]
 

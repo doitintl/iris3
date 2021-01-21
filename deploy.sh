@@ -8,6 +8,7 @@ set -e
 START=$(date "+%s")
 ROLEID=iris3
 
+
 LOGS_TOPIC=iris_logs_topic
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
 LOG_SINK=iris_log
@@ -99,20 +100,36 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --quiet >/dev/null
 
-# Shell note: the single-quotes allow the double-quotes  to appear in the output.
-# The single-quotes do not appear in output.
-# For the ORs, it makes no difference whether these are or are not inside the single-quotes
+
+log_filter=("")
+
+# Add included-projects filter if such is defined, to the log sink
+export PYTHONPATH="."
+included_projects_line=$(python3 ./util/print_included_projects.py)
+if [ -n "$included_projects_line" ]; then
+  log_filter+=('logName:(')
+  or_=""
+
+  # shellcheck disable=SC2207
+  # because  zsh uses read -A and bash used read -a
+  supported_projects_arr=($(echo "${included_projects_line}"))
+
+  for p in "${supported_projects_arr[@]}"; do
+    log_filter+=("${or_}\"projects/${p}/logs/\"")
+    or_='OR '
+  done
+  log_filter+=(') AND ')
+fi
+#TODO add + below
+# Add methodName filter to the log sink
 log_filter=('protoPayload.methodName:(')
 log_filter+=('"storage.buckets.create"')
-log_filter+=('OR "compute.instances.insert"' OR '"compute.instances.start"' OR '"datasetservice.insert"')
-log_filter+=('OR "tableservice.insert"' OR '"google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
-log_filter+=('OR "cloudsql.instances.create"' OR '"v1.compute.disks.insert"' OR '"v1.compute.disks.createSnapshot"')
+log_filter+=('OR "compute.instances.insert" OR "compute.instances.start" OR "datasetservice.insert"')
+log_filter+=('OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
+log_filter+=('OR "cloudsql.instances.create" OR "v1.compute.disks.insert" OR "v1.compute.disks.createSnapshot"')
 log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')
 log_filter+=('OR "google.pubsub.v1.Publisher.CreateTopic"')
 log_filter+=(')')
-# TODO Could add clauses to log_filter to only include the projects specified in config.yaml.
-# However, even without doing that, the code only processes PubSub messages for the configured projects.
-# Also, the filter was meant as a dev feature so developing this additional level of filtering is not worthwhile.
 
 # Create or update a sink at org level
 if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
