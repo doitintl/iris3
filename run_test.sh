@@ -57,6 +57,7 @@ envsubst <config.yaml.test.template >config.yaml
 
 
 function clean_resources() {
+  EXIT_CODE=$?
   # The cleanup should not stop on error
   set +e
   # First call the earlier revert
@@ -70,6 +71,7 @@ function clean_resources() {
   bq rm -f --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
+  exit $EXIT_CODE
 }
 
 trap "clean_resources" INT
