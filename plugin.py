@@ -10,7 +10,7 @@ from googleapiclient import errors
 from util.config_utils import (
     is_copying_labels_from_project,
     possible_label_keys,
-    iris_label_key_prefix,
+    iris_prefix,
 )
 from util.utils import cls_by_name, shorten
 
@@ -53,7 +53,7 @@ class Plugin(object, metaclass=ABCMeta):
             response = request.execute()
             return response["labels"]
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception(f"Failing to get labels for project {project_id}", e)
             return {}
 
     def __iris_labels(self, gcp_object) -> typing.Dict:
@@ -68,16 +68,13 @@ class Plugin(object, metaclass=ABCMeta):
                 label_value = func(gcp_object)
                 # Only hyphens (-), underscores (_), lowercase characters,
                 # and numbers are allowed. International characters are allowed.
-                key = iris_label_key_prefix() + "_" + label_key
+                key = iris_prefix() + "_" + label_key
                 label_value = self._make_legal_label_value(label_value)
                 labels[key] = label_value
         return labels
 
     def __batch_callback(self, request_id, response, exception):
-        # TODO Address this error, which is intermittent and found most often with disks.
-        #  "Labels fingerprint either invalid or resource labels have changed".
-        #  - Perhaps retry
-        #  - Perhaps ignore and let the cron get it.
+
         if exception is not None:
             logging.error(
                 "Error in Request Id: %s Response: %s Exception: %s",

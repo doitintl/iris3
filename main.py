@@ -9,10 +9,11 @@ import flask
 
 import util.gcp_utils
 from plugin import Plugin
-from util import pubsub_utils, gcp_utils, utils, config_utils
+from util import pubsub_utils, gcp_utils, utils
+from util.config_utils import iris_prefix, is_project_included
 
 logging.basicConfig(
-    format=f"%(levelname)s {config_utils.iris_label_key_prefix()}: %(message)s",
+    format=f"%(levelname)s [${iris_prefix()}]: %(message)s",
     level=logging.INFO,
 )
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
@@ -32,8 +33,8 @@ __init_flaskapp()
 
 @app.route("/")
 def index():
-    logging.info("environ", os.environ)
-    return "I'm Iris, pleased to meet you!", 200
+    logging.info("environ: %s", os.environ)
+    return f"I'm {iris_prefix().title()}, pleased to meet you!", 200
 
 
 @app.route("/schedule", methods=["GET"])
@@ -47,7 +48,7 @@ def schedule():
 
     skipped_projects = list(
         filter(
-            lambda p: not config_utils.is_project_included(p), gcp_utils.all_projects()
+            lambda p: not is_project_included(p), gcp_utils.all_projects()
         )
     )
     logging.info("schedule() not processing: %s", skipped_projects)
@@ -79,43 +80,30 @@ def label_one():
 
     data = __extract_pubsub_content()
 
-
-
     method_from_log = data["protoPayload"]["methodName"]
 
     for plugin_cls in Plugin.subclasses:
-
-
         if plugin_cls.is_labeled_on_creation():
             plugin = plugin_cls()
-
             for supported_method in plugin.method_names():
-
                 if supported_method.lower() in method_from_log.lower():
-
                     __label_one_0(data, plugin)
 
     return "OK", 200
 
 
 def __label_one_0(data, plugin):
-
     gcp_object = plugin.get_gcp_object(data)
-
     if gcp_object is not None:
         project_id = data["resource"]["labels"]["project_id"]
-
-        if config_utils.is_project_included(project_id):
-
+        if is_project_included(project_id):
             logging.info("Will label_one() in %s, %s", project_id, gcp_object)
             plugin.label_one(gcp_object, project_id)
             plugin.do_batch()
         else:
-            logging.info(
-                "Skipping %s.label_one() in unsupported project %s",
-                plugin.__class__.__name__,
-                project_id,
-            )
+            msg= f"Skipping %s.label_one({plugin.__class__.__name__}) in unsupported" \
+                 f" project ${project_id}; (Should not get here in current design.)"
+            logging.info(msg )
     else:
         logging.error(
             "Cannot find gcp_object to label based on %s",

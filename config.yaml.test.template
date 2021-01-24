@@ -1,7 +1,7 @@
 # This is prefixed to the key of each label that is added.
-iris_prefix: iris3
+iris_prefix: ${RUN_ID}
 # labels are the keys we might use for labeling each resource, but only
-# if a _get<LABEL>() function is defined in the relevant plugin class.
+# if a _get_<LABEL>() function is defined in the relevant plugin class.
 labels:
   - name
   - zone
@@ -11,7 +11,6 @@ labels:
 # If from_project enabled, then for each resource we are labeling, copy in the labels from its project.
 from_project: True
 #  Only these projects are included. If empty, all projects in the organization are included.
-# TODO Restore (Replace with empty list)
 projects:
-  - joshua-playground2
-  - joshua-playground-host-vpc
+  - ${DEPLOYMENT_PROJECT}
+  - ${TEST_PROJECT}

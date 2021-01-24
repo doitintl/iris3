@@ -41,7 +41,6 @@ def generate_uuid() -> str:
     return str(uuid.uuid4())
 
 
-# TODO Use IAM-based pubsub security
 def pubsub_token():
     from_env = os.environ.get("PUBSUB_VERIFICATION_TOKEN")
     if from_env:

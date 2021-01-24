@@ -16,9 +16,11 @@ def is_copying_labels_from_project():
     return from_project_
 
 
-def iris_label_key_prefix():
+def iris_prefix():
     config = __load_config()
-    return config["iris_prefix"]
+    ret = config["iris_prefix"]
+    assert ret, ret
+    return ret
 
 
 def is_project_included(project_id):

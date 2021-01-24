@@ -7,6 +7,7 @@ from util import gcp_utils
 
 
 class Disks(GceZonalBase):
+    """Label disks, but not boot disks launched with instances!"""
     def method_names(self):
         return ["v1.compute.disks.insert"]
 

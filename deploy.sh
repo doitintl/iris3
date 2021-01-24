@@ -1,13 +1,11 @@
 #!/bin/zsh
 
-#TODO Remove the -x
 set -x
 set -u
 set -e
 
 START=$(date "+%s")
 ROLEID=iris3
-
 
 LOGS_TOPIC=iris_logs_topic
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
@@ -106,14 +104,14 @@ log_filter=("")
 # Add included-projects filter if such is defined, to the log sink
 export PYTHONPATH="."
 included_projects_line=$(python3 ./util/print_included_projects.py)
+
 if [ -n "$included_projects_line" ]; then
   log_filter+=('logName:(')
   or_=""
 
   # shellcheck disable=SC2207
   # because  zsh uses read -A and bash used read -a
-  supported_projects_arr=($(echo "${included_projects_line}"))
-
+  supported_projects_arr=($(echo "${included_projects_line}" ))
   for p in "${supported_projects_arr[@]}"; do
     log_filter+=("${or_}\"projects/${p}/logs/\"")
     or_='OR '
@@ -158,4 +156,5 @@ gcloud app deploy -q app.yaml cron.yaml
 
 FINISH=$(date "+%s")
 ELAPSED_SEC=$((FINISH - START))
-echo "Elapsed time ${ELAPSED_SEC} s"
+echo "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
+

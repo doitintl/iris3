@@ -44,9 +44,6 @@ Options for configuration include:
 - Which potential label keys to include (such as name, zone, etc.). However, a given plugin
 will be able to apply a key only if it has a function `_get_<KEY_NAME>`
 
-## Local Development
-For local development, run `main.py` as an ordinary Flask application, either by running the module,
-or with `export FLASK_ENV=development;export FLASK_DEBUG=1; python -m flask run --port 8000`
 
 ## Supported Google Cloud Products
 
@@ -63,6 +60,19 @@ Right now, there are plugins for the following types of resources.
 * PubSub Topics
 * CloudSQL (These receive a label only on the cron schedule, not on creation.)
 
+## Local Development
+For local development, run `main.py` as an ordinary Flask application, either by running the module,
+or with `export FLASK_ENV=development;export FLASK_DEBUG=1; python -m flask run --port 8000`
+
+### Prerequisites:
+* In development
+```
+pip install -r requirements.txt
+pip install -r requirements-test.txt
+```
+* Install `envsubst`
+* Install and initialize `gcloud`
+~~~~
 ## Plugin development
 
 Iris is easily extensible to support labeling of other GCP resources. 

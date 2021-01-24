@@ -1,0 +1,11 @@
+#TODO BigTable and CloudSQL in run_test.sh
+#TODO Test more labels (Other than iris3_name) in run_test.sh
+#TODO Test the copying of project labels in run_test.sh
+# TODO Reduce the repetition in lines like gcloud compute instances describe "instance${sfx}" --project "$TEST_PROJECT" --format json --flatten="labels[]" | jq -e ".[0].${IRIS_PREFIX}_name"
+# TODO eliminate the labels configuration in config.yaml and instead just read all methods starting with _get_
+# TODO Instead of _get_ as the magic prefix, use _gcp_ (because _get_ methods are  too easy to mistake for ordinary getters and then delete or alter them)
+# TODO Use IAM-based pubsub security instead of pubsub_token
+# TODO Address this error, printed in _batch_callback, which is intermittent and found most often with disks.
+#  "Labels fingerprint either invalid or resource labels have changed".
+#  - Perhaps retry
+#  - Perhaps ignore and let the cron get it
