@@ -100,14 +100,10 @@ bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | jq -e ".labels.${RUN_
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | jq -e ".labels.${RUN_ID}_name"
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".${RUN_ID}_name"
 
-
-
+clean_resources
 
 FINISH=$(date "+%s")
 ELAPSED_SEC=$((FINISH - START))
 echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
 
-revert
 
-}
-}
