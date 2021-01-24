@@ -71,6 +71,10 @@ function clean_resources() {
   bq rm -f --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
+  FINISH=$(date "+%s")
+  ELAPSED_SEC=$((FINISH - START))
+  echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
+
   exit $EXIT_CODE
 }
 
@@ -100,10 +104,8 @@ bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | jq -e ".labels.${RUN_
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | jq -e ".labels.${RUN_ID}_name"
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".${RUN_ID}_name"
 
+#clean up and exit
 clean_resources
 
-FINISH=$(date "+%s")
-ELAPSED_SEC=$((FINISH - START))
-echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
 
 
