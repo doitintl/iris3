@@ -4,7 +4,7 @@ set -u
 set -e
 set -x
 
-START=$(date "+%s")
+START_TEST=$(date "+%s")
 
 if [[ $# -lt 2 ]]; then
   echo >&2 "Usage: deployment-project project-under-test [execution-id]" \
@@ -72,16 +72,16 @@ function clean_resources() {
   bq rm -f --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
-  FINISH=$(date "+%s")
-  ELAPSED_SEC=$((FINISH - START))
-  echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s; exiting with $EXIT_CODE"
+  FINISH_TEST=$(date "+%s")
+  ELAPSED_SEC_TEST=$((FINISH_TEST - START_TEST))
+  echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC_TEST} s; exiting with $EXIT_CODE"
 
   exit $EXIT_CODE
 }
 
-trap "clean_resources" INT
+trap "clean_resources" EXIT
 
-sleep 10 # Need time for traffic to be migrated to the new version
+sleep 20 # Need time for traffic to be migrated to the new version
 
 gcloud compute instances create "instance${RUN_ID}" --project "$TEST_PROJECT"
 gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT"
@@ -96,13 +96,18 @@ gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
 # However, by creating several types of objects in sequence, we allow for  that time to pass.
 #
 # jq -e generates exit code 1 on failure. Since we set -e, the script will fail appropriately if the value is not found
-gcloud compute instances describe "instance${RUN_ID}" --project "$TEST_PROJECT" --format json --flatten="labels[]" | jq -e ".[0].${RUN_ID}_name"
-gcloud compute disks describe "disk${RUN_ID}" --project "$TEST_PROJECT" --format json --flatten="labels[]" | jq -e ".[0].${RUN_ID}_name"
-gcloud compute snapshots describe "snapshot${RUN_ID}" --project "$TEST_PROJECT" --format json --flatten="labels[]" | jq -e ".[0].${RUN_ID}_name"
-gcloud pubsub topics describe "topic${RUN_ID}" --project "$TEST_PROJECT" --format json --flatten="labels[]" | jq -e ".[0].${RUN_ID}_name"
-gcloud pubsub subscriptions describe "subscription${RUN_ID}" --project "$TEST_PROJECT" --format json --flatten="labels[]" | jq -e ".[0].${RUN_ID}_name"
-bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | jq -e ".labels.${RUN_ID}_name"
-bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | jq -e ".labels.${RUN_ID}_name"
+
+DESCRIBE_FLAGS=( --project "$TEST_PROJECT" --format json )
+JQ=(jq -e ".labels.${RUN_ID}_name")
+
+gcloud compute instances describe "instance${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+gcloud compute disks describe "disk${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
+bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
+# For buckets, JSON shows labels without the label:{} wrapper seen in  the others
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".${RUN_ID}_name"
 
 #clean up and exit in clean_resources, which is called on exit
