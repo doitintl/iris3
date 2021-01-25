@@ -1,5 +1,5 @@
 # This is prefixed to the key of each label that is added.
-iris_prefix: irisxye3nd
+iris_prefix: iris3
 # labels are the keys we might use for labeling each resource, but only
 # if a _get_<LABEL>() function is defined in the relevant plugin class.
 labels:
@@ -11,6 +11,4 @@ labels:
 # If from_project enabled, then for each resource we are labeling, copy in the labels from its project.
 from_project: True
 #  Only these projects are included. If empty, all projects in the organization are included.
-projects:
-  - joshua-playground2
-  - joshua-playground-host-vpc
+projects: {}
