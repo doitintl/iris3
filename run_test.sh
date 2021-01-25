@@ -45,35 +45,36 @@ fi
 # Set up the config file for the deployment
 mv config.yaml config.yaml.original
 function revert_config() {
+  # Cleanup should not stop on error
+  set +e
   echo >&2 "Reverting"
   mv config.yaml.original config.yaml
 }
 
-trap "revert_config" INT
+trap "revert_config" EXIT
 
 envsubst <config.yaml.test.template >config.yaml
 
 ./deploy.sh $DEPLOYMENT_PROJECT
 
-
 function clean_resources() {
   EXIT_CODE=$?
-  # The cleanup should not stop on error
+  # cleanup should not stop on error
   set +e
-  # First call the earlier revert
+  # Include the earlier on-exit code inside this one.
   revert_config
 
   gcloud compute instances delete "instance${RUN_ID}" -q --project "$TEST_PROJECT"
   gcloud compute snapshots delete "snapshot${RUN_ID}" -q --project "$TEST_PROJECT"
   gcloud compute disks delete "disk${RUN_ID}" -q --project "$TEST_PROJECT"
   gcloud pubsub topics delete "topic${RUN_ID}" -q --project "$TEST_PROJECT"
-  gcloud pubsub subscriptions delete "subscription${RUN_ID}" --project "$TEST_PROJECT"
+  gcloud pubsub subscriptions delete "subscription${RUN_ID}" -q --project "$TEST_PROJECT"
   bq rm -f --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
   FINISH=$(date "+%s")
   ELAPSED_SEC=$((FINISH - START))
-  echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
+  echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s; exiting with $EXIT_CODE"
 
   exit $EXIT_CODE
 }
@@ -91,9 +92,9 @@ bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
 bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
 gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
 
-# A test shows that it takes about 3 seconds to  label a new object. However, by creating several types of objects in sequence,
-# we allow for more than 3 seconds between creating the object and describing it to check for labels.
-false
+# It takes about 3 seconds before  labels are available to be read by "describe".
+# However, by creating several types of objects in sequence, we allow for  that time to pass.
+#
 # jq -e generates exit code 1 on failure. Since we set -e, the script will fail appropriately if the value is not found
 gcloud compute instances describe "instance${RUN_ID}" --project "$TEST_PROJECT" --format json --flatten="labels[]" | jq -e ".[0].${RUN_ID}_name"
 gcloud compute disks describe "disk${RUN_ID}" --project "$TEST_PROJECT" --format json --flatten="labels[]" | jq -e ".[0].${RUN_ID}_name"
@@ -104,8 +105,7 @@ bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | jq -e ".labels.${RUN_
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | jq -e ".labels.${RUN_ID}_name"
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".${RUN_ID}_name"
 
-#clean up and exit
-clean_resources
+#clean up and exit in clean_resources, which is called on exit
 
 
 

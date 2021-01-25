@@ -13,7 +13,7 @@ from util import pubsub_utils, gcp_utils, utils
 from util.config_utils import iris_prefix, is_project_included
 
 logging.basicConfig(
-    format=f"%(levelname)s [${iris_prefix()}]: %(message)s",
+    format=f"%(levelname)s [{iris_prefix()}]: %(message)s",
     level=logging.INFO,
 )
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
