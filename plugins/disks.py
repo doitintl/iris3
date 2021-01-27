@@ -11,6 +11,7 @@ class Disks(GceZonalBase):
     Label GCE disks. Boot disks created with instances only get labeled on the cron schedule.
     Independently created disks get labeled on creation.
     """
+
     def method_names(self):
         return ["v1.compute.disks.insert"]
 

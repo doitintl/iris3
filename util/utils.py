@@ -27,6 +27,11 @@ def cls_by_name(fully_qualified_classname):
 def shorten(o, length=400) -> str:
     return textwrap.shorten(str(o), length)
 
+
 def methods(o, pfx="") -> typing.List[typing.Callable]:
-    names= (name for name in dir(o.__class__) if callable(getattr(o.__class__, name)) and name.startswith(pfx))
+    names = (
+        name
+        for name in dir(o.__class__)
+        if callable(getattr(o.__class__, name)) and name.startswith(pfx)
+    )
     return [getattr(o, name) for name in names]

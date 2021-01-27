@@ -7,9 +7,7 @@ from abc import ABCMeta, abstractmethod
 from googleapiclient import discovery
 from googleapiclient import errors
 
-from util.config_utils import (
-    is_copying_labels_from_project,
-    iris_prefix)
+from util.config_utils import is_copying_labels_from_project, iris_prefix
 from util.utils import cls_by_name, shorten, methods
 
 PLUGINS_MODULE = "plugins"
@@ -57,8 +55,8 @@ class Plugin(object, metaclass=ABCMeta):
 
         def legalize_value(s):
             """
-             Only hyphens (-), underscores (_), lowercase characters,
-             and numbers are allowed in label values. International characters are allowed.
+            Only hyphens (-), underscores (_), lowercase characters,
+            and numbers are allowed in label values. International characters are allowed.
             """
             label_chars = re.compile(r"[\w\d_-]")  # cached
             return "".join(c if label_chars.match(c) else "_" for c in s).lower()[:62]
@@ -66,7 +64,8 @@ class Plugin(object, metaclass=ABCMeta):
         def value(func, gcp_object):
             return legalize_value(func(gcp_object))
 
-        def key(func) -> str: return iris_prefix() + "_" + func.__name__[len(pfx):]
+        def key(func) -> str:
+            return iris_prefix() + "_" + func.__name__[len(pfx) :]
 
         ret = {key(f): value(f, gcp_object) for f in methods(self, pfx)}
 
@@ -178,7 +177,7 @@ class Plugin(object, metaclass=ABCMeta):
             name = gcp_object["name"]
             if separator:
                 index = name.rfind(separator)
-                name = name[index + 1:]
+                name = name[index + 1 :]
             return name
         except KeyError as e:
             logging.exception(e)

@@ -3,6 +3,7 @@ import typing
 
 import yaml
 
+
 def is_copying_labels_from_project():
     config = __load_config()
     from_project_ = config.get("from_project")

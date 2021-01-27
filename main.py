@@ -47,9 +47,7 @@ def schedule():
         return "Access Denied: No Cron header found", 403
 
     skipped_projects = list(
-        filter(
-            lambda p: not is_project_included(p), gcp_utils.all_projects()
-        )
+        filter(lambda p: not is_project_included(p), gcp_utils.all_projects())
     )
     logging.info("schedule() not processing: %s", skipped_projects)
     included_projects = gcp_utils.all_included_projects()
@@ -101,9 +99,11 @@ def __label_one_0(data, plugin):
             plugin.label_one(gcp_object, project_id)
             plugin.do_batch()
         else:
-            msg= f"Skipping %s.label_one({plugin.__class__.__name__}) in unsupported" \
-                 f" project ${project_id}; (Should not get here in current design.)"
-            logging.info(msg )
+            msg = (
+                f"Skipping %s.label_one({plugin.__class__.__name__}) in unsupported"
+                f" project ${project_id}; (Should not get here in current design.)"
+            )
+            logging.info(msg)
     else:
         logging.error(
             "Cannot find gcp_object to label based on %s",

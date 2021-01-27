@@ -1,5 +1,4 @@
 # Iris
-
 [Blog Post](https://blog.doit-intl.com/auto-tagging-google-cloud-resources-6647cc7477c5)
 
 In Greek mythology, Iris (/ˈaɪɹɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. 
@@ -7,11 +6,18 @@ She was the handmaiden to Hera.
 
 Iris automatically assigns labels to Google Cloud resources for manageability and easier billing reporting. 
 
-Each resource in Google Cloud in the GCP organization will get n automatically generated labels
+## Iris3 vs Iris
+
+This is a complete rewrite of [Iris](https://github.com/doitintl/iris), replatforming it to AppEngine Python 3, 
+adding functionality, and fixing bugs. Change logs [below](#change-log).
+
+## What it does for you
+Each resource in Google Cloud in the GCP organization will get in automatically generated labels
 with a key like `iris_name`, `iris_region`, `iris_zone`, `iris_zone`, and the relevant value.
 For example, a Google Compute Engine instance would get labels like
 with [iris_name:nginx], [iris_region:us-central1] and [iris_zone:us-central1-a].
 
+# When it does it
 Iris does this in two ways:
 * On the creation event, by listening to Operations (Stackdriver) Logs.
 * On schedule, using a cron job, now scheduled to run every 12 hours. (See `cron.yaml`.) Some types
@@ -118,3 +124,16 @@ To test this manually:
 * Trigger `cron` (there's a button in the App Engine Console).
 * Check for labels.
 
+## Change log
+1. Porting to Python 3 version of Google App Engine Standard Environment. 
+(The Python 2 version is long since obsolete, not well-supported, and some 
+APIs simply cannot be used with it.)
+1. Labeling for PubSub Topics and Subscriptions
+1. Project labels can be automatically copied into each resource in the project.
+1. Easier plugin development: No need to maintain a list of permitted labels in config.
+1. Bug fix: Deployment failing for certain project names.
+1. Automated test suites
+1. Option to choose the projects that will be labeled; or to label across the entire organization.
+1. Simple authentication for cron endpoint and PubSub Push endpopint.
+1. Expanded documentation
+1. Optimization: Do not attempt to set labels if labels ahve not changed.
