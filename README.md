@@ -13,16 +13,30 @@ adding functionality, and fixing bugs. Change logs [below](#change-log).
 
 Iris automatically assigns labels to Google Cloud resources for manageability and easier billing reporting. 
 
-Each resource in Google Cloud in the GCP organization will get in automatically generated labels
+Each resource in Google Cloud in the GCP organization will get automatically generated labels
 with a key like `iris3_name`, `iris3_region`, `iris3_zone`, `iris3_zone`, and the relevant value.
 For example, a Google Compute Engine instance would get labels like
-with [iris3_name:nginx], [iris3_region:us-central1] and [iris3_zone:us-central1-a].
+with `[iris3_name:nginx]`, `[iris3_region:us-central1]` and `[iris3_zone:us-central1-a]`.
 
-# When it does it
+## When it does it
 Iris does this in two ways:
 * On the creation event, by listening to Operations (Stackdriver) Logs.
 * On schedule, using a cron job, now scheduled to run every 12 hours. (See `cron.yaml`.) Some types
 of resources only get labeled on schedule.
+
+## Supported Google Cloud Products
+
+Right now, there are plugins for the following types of resources.
+* Compute Engine Instances (including  preemptible instances or instances created by Managed Instnace Groups.)
+* Compute Engine Disks
+* Compute Engine Snapshots
+* Cloud Storage
+* BigQuery Datasets
+* BigQuery Tables
+* BigTable Instances
+* PubSub Subscriptions
+* PubSub Topics
+* CloudSQL (These receive a label only on the cron schedule, not on creation.)
 
 ## Installation
 
@@ -50,22 +64,6 @@ Options for configuration include:
 - Whether to copy all labels from the project into resources in the project.
 
 
-
-## Supported Google Cloud Products
-
-Right now, there are plugins for the following types of resources.
-* Compute Engine Instances (including  preemptible instances or instances created by Managed Instnace Groups.)
-* Compute Engine Disks
-* Compute Engine Snapshots
-* Cloud Storage
-* CloudSQL (These receive a label only on the cron schedule, not on creation.)
-* BigQuery Datasets
-* BigQuery Tables
-* BigTable Instances
-* PubSub Subscriptions
-* PubSub Topics
-* CloudSQL (These receive a label only on the cron schedule, not on creation.)
-
 ## Local Development
 For local development, run `main.py` as an ordinary Flask application, either by running the module,
 or with `export FLASK_ENV=development;export FLASK_DEBUG=1; python -m flask run --port 8000`
@@ -85,18 +83,18 @@ Iris is easily extensible to support labeling of other GCP resources.
 
 1. Create a Python file in the `/plugins` directory, holding a subclass of `Plugin`. 
 
-    a. The Python file and class-name should be the same, except for case:
-    The filename should be lowercase and the class name should be in Titlecase.
-    (Only the first character should be in upper case, even in multiword names.)
+    a. The filename and class name take the form: `cloudsql.py` and `Cloudsql`.
+    That's lowercase and Titlecase. (Only the first character is capitalized, even in multiword names.)
+    Otherwise, the two names should be the same.
  
     b. Implement abstract methods. 
     
-    c. Add `_gcp_<LABEL_KEY>` methods (like `_gcp_zone`). Labels will be 
+    c. Add `_gcp_<LABEL_KEY>` methods (like `_gcp_zone()`). Labels will be 
     added with a key taken from the function name (`zone` in that example),
-    and a value returned by the function (the actual zone value, retrieved from the Google
-    API by `_gcp_zone`).
+    and a value returned by the function (the actual zone value in the example, 
+    retrieved from the Google API in the function `_gcp_zone()`).
 
-    d. Override `is_labeled_on_creation` and return `False` if the
+    d. Override `is_labeled_on_creation()` and return `False` if the
     resource cannot be labeled on creation (like CloudSQL), though 
     if you don't, the only bad side effect will be errors in the logs.
 
@@ -139,8 +137,12 @@ or to label across the entire organization.
     * Abstract methods clarify what needs to be implemented
     * `_gcp_` prefix rather than `_get_` highlights the dynamically invoked methods to 
 distinguish them from getters
-    * More functionality in base classes to minimize the amount of implementation needed
+    * More functionality in base classes, minimizing the amount of implementation needed
+    for each plugin
 1. Bug fix: Deployment was failing for certain project names.
 1. Simple authentication for cron endpoint and PubSub Push endpopint.
 1. Expanded documentation
 1. Optimization: Do not attempt to set labels if labels have not changed.
+
+## Next steps
+See `todo.txt` for potential future improvements.

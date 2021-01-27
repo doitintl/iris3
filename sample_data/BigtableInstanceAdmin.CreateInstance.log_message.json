@@ -2,8 +2,8 @@
   "protoPayload": {
     "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
     "authenticationInfo": {
-      "principalEmail": "joshua@doit-intl.com",
-      "principalSubject": "user:joshua@doit-intl.com"
+      "principalEmail": "xxx@example.com",
+      "principalSubject": "user:xxx@example.com"
     },
     "requestMetadata": {
       "callerIp": "185.3.145.123",
@@ -18,31 +18,31 @@
     "methodName": "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance",
     "authorizationInfo": [
       {
-        "resource": "projects/joshua-playground-host-vpc",
+        "resource": "projects/${project}",
         "permission": "bigtable.instances.create",
         "granted": true,
         "resourceAttributes": {
           "service": "bigtableadmin.googleapis.com",
-          "name": "projects/joshua-playground-host-vpc/instances/instance1",
+          "name": "projects/${project}/instances/${name}",
           "type": "bigtableadmin.googleapis.com/Instance"
         }
       }
     ],
-    "resourceName": "projects/joshua-playground-host-vpc/instances/instance1",
+    "resourceName": "projects/${project}/instances/${name}",
     "request": {
       "instance": {
         "type": "PRODUCTION"
       },
       "clusters": {
-        "instance1-c1": {
+        "${name}-c1": {
           "serveNodes": 1,
           "defaultStorageType": "HDD",
-          "location": "projects/joshua-playground-host-vpc/locations/us-central1-b"
+          "location": "projects/${project}/locations/us-central1-b"
         }
       },
       "@type": "type.googleapis.com/google.bigtable.admin.v2.CreateInstanceRequest",
-      "instanceId": "instance1",
-      "parent": "projects/joshua-playground-host-vpc"
+      "instanceId": "${name}",
+      "parent": "projects/${project}"
     },
     "resourceLocation": {
       "currentLocations": [
@@ -55,15 +55,15 @@
     "type": "audited_resource",
     "labels": {
       "service": "bigtableadmin.googleapis.com",
-      "project_id": "joshua-playground-host-vpc",
+      "project_id": "${project}",
       "method": "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"
     }
   },
   "timestamp": "2021-01-14T12:57:06.936479401Z",
   "severity": "NOTICE",
-  "logName": "projects/joshua-playground-host-vpc/logs/cloudaudit.googleapis.com%2Factivity",
+  "logName": "projects/${project}/logs/cloudaudit.googleapis.com%2Factivity",
   "operation": {
-    "id": "operations/projects/joshua-playground-host-vpc/instances/instance1/locations/us-central1-b/operations/5975833332461543822",
+    "id": "operations/projects/${project}/instances/${name}/locations/us-central1-b/operations/5975833332461543822",
     "producer": "bigtableadmin.googleapis.com",
     "first": true
   },

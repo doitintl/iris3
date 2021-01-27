@@ -1,4 +1,6 @@
 import json
+import os
+
 from test_scripts.utils_for_tests import do_local_http
 
 """
@@ -7,18 +9,24 @@ test_do_label.
 
 Comment or uncomment resource types in `test_do_label` to focus the testing.
 """
-
+def __project():
+    proj = os.environ.get("project")
+    if not proj:
+        raise ValueError(
+            "Must specify 'project' key in environment."
+        )
+    return proj
 
 def test_do_label():
-    project = "joshua-playground-host-vpc"
+    project =__project()
     plugins = [
-        # 'Buckets', 'Bigquery',
+         'Buckets', 'Bigquery',
         "Instances",
-        # 'Disks', 'Snapshots',
-        # 'Topics',
-        # "Subscriptions",
-        # 'Cloudsql',
-        # 'Bigtable'
+         'Disks', 'Snapshots',
+         'Topics',
+         "Subscriptions",
+         'Cloudsql',
+         'Bigtable'
     ]
 
     for plugin in plugins:
