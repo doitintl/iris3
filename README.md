@@ -4,18 +4,19 @@
 In Greek mythology, Iris (/ˈaɪɹɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. 
 She was the handmaiden to Hera.
 
-Iris automatically assigns labels to Google Cloud resources for manageability and easier billing reporting. 
-
 ## Iris3 vs Iris
 
 This is a complete rewrite of [Iris](https://github.com/doitintl/iris), replatforming it to AppEngine Python 3, 
 adding functionality, and fixing bugs. Change logs [below](#change-log).
 
 ## What it does for you
+
+Iris automatically assigns labels to Google Cloud resources for manageability and easier billing reporting. 
+
 Each resource in Google Cloud in the GCP organization will get in automatically generated labels
-with a key like `iris_name`, `iris_region`, `iris_zone`, `iris_zone`, and the relevant value.
+with a key like `iris3_name`, `iris3_region`, `iris3_zone`, `iris3_zone`, and the relevant value.
 For example, a Google Compute Engine instance would get labels like
-with [iris_name:nginx], [iris_region:us-central1] and [iris_zone:us-central1-a].
+with [iris3_name:nginx], [iris3_region:us-central1] and [iris3_zone:us-central1-a].
 
 # When it does it
 Iris does this in two ways:
@@ -45,7 +46,7 @@ to complete the deployment:
 Configuration is stored in the `config.yaml`, and is documented there.
 Options for configuration include:
 - What projects to include. (The default is all projects in the organization.)
-- A prefix for all label keys (so, if the prefix is `iris`, labels will look like `iris_name` etc.)
+- A prefix for all label keys (so, if the prefix is `iris3`, labels will look like `iris3_name` etc.)
 - Whether to copy all labels from the project into resources in the project.
 
 
