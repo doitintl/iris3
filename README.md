@@ -126,11 +126,16 @@ To test this manually:
 
 ## Change log
 1. Porting to Python 3 version of Google App Engine Standard Environment. 
-(The Python 2 version is long since obsolete, not well-supported, and some 
-APIs simply cannot be used with it.)
+(The Python 2 version is long since obsolete, not well-supported, and some necessary
+APIs cannot be used with it.)
 1. Labeling for PubSub Topics and Subscriptions
 1. Project labels can be automatically copied into each resource in the project.
-1. Easier plugin development: No need to maintain a list of permitted labels in config.
+1. Easier plugin development: 
+    * No need to maintain a separate list of permitted labels or of "on-demand" plugins
+    * Abstract methods clarify what needs to be implemented
+    * `_gcp_` prefix rather than `_get_` highlights the dynamically invoked methods to 
+distinguish them from getters
+    * More functionality in base classes to minimize the amount of implementation needed
 1. Bug fix: Deployment failing for certain project names.
 1. Automated test suites
 1. Option to choose the projects that will be labeled; or to label across the entire organization.
