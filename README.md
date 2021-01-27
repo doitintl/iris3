@@ -131,15 +131,16 @@ To test this manually:
 APIs cannot be used with it.)
 1. Labeling for PubSub Topics and Subscriptions
 1. Project labels can be automatically copied into each resource in the project.
+1. Option to choose the projects in which resources that will be labeled;
+or to label across the entire organization.
 1. Easier plugin development: 
-    * No need to maintain a separate list of permitted labels or of "on-demand" plugins
+1. Automated test suites
+    * Less need to configure a list of permitted labels or of "on-demand" plugins
     * Abstract methods clarify what needs to be implemented
     * `_gcp_` prefix rather than `_get_` highlights the dynamically invoked methods to 
 distinguish them from getters
     * More functionality in base classes to minimize the amount of implementation needed
-1. Bug fix: Deployment failing for certain project names.
-1. Automated test suites
-1. Option to choose the projects that will be labeled; or to label across the entire organization.
+1. Bug fix: Deployment was failing for certain project names.
 1. Simple authentication for cron endpoint and PubSub Push endpopint.
 1. Expanded documentation
-1. Optimization: Do not attempt to set labels if labels ahve not changed.
+1. Optimization: Do not attempt to set labels if labels have not changed.
