@@ -41,8 +41,7 @@ Options for configuration include:
 - What projects to include. (The default is all projects in the organization.)
 - A prefix for all label keys (so, if the prefix is `iris`, labels will look like `iris_name` etc.)
 - Whether to copy all labels from the project into resources in the project.
-- Which potential label keys to include (such as name, zone, etc.). However, a given plugin
-will be able to apply a key only if it has a function `_get_<KEY_NAME>`
+
 
 
 ## Supported Google Cloud Products
@@ -72,24 +71,50 @@ pip install -r requirements-test.txt
 ```
 * Install `envsubst`
 * Install and initialize `gcloud`
-~~~~
+
 ## Plugin development
 
 Iris is easily extensible to support labeling of other GCP resources. 
 
 1. Create a Python file in the `/plugins` directory, holding a subclass of `Plugin`. 
 
-    The Python file and class-name should be the same, except for case:
+    a. The Python file and class-name should be the same, except for case:
     The filename should be lowercase and the class name should be in Titlecase.
     (Only the first character should be in upper case, even in multiword names.)
  
-    In each class, in addition to implementing abstract methods, you will 
-    need `_get_<KEY_NAME>` methods. 
+    b. Implement abstract methods. 
+    
+    c. Add `_gcp_<LABEL_KEY>` methods (like `_gcp_zone`). Labels will be 
+    added with a key taken from the function name (`zone` in that example),
+    and a value returned by the function (the actual zone value, retrieved from the Google
+    API by `_gcp_zone`).
 
-    Override `is_labeled_on_creation` and return `False` if the
-    resource cannot be labeled on creation (like CloudSQL),
+    d. Override `is_labeled_on_creation` and return `False` if the
+    resource cannot be labeled on creation (like CloudSQL), though 
     if you don't, the only bad side effect will be errors in the logs.
 
 2. Add your methods to `log_filter` in `deploy.sh` 
 3. Add roles in `roles.yaml` allowing Iris to list, get, and 
 update (add labels to) your resources.
+
+## Testing
+### `run_test.sh`
+This is an integration test with a deployed app and deployed cloud resources.
+See the file for instructions.
+
+### `test_do_label` and `test_label_one`
+These integration tests are useful in development. See the files for instructions.
+
+### Testing the scheduled labeling
+This is difficult to test, as the event-based labeling will add labels long before cron is
+likely to kick in (except for Cloud SQL). 
+
+To test this manually:
+* Launch some resources. The script `run_test.sh` will do this for you so long as you remove the 
+`trap` that runs resource-deletion code on exit.
+* Change `is_labeled_on_creation` in the `Plugin` class to return `False` 
+* Change `iris_prefix` to a unique value in `config.yaml` 
+* Deploy 
+* Trigger `cron` (there's a button in the App Engine Console).
+* Check for labels.
+

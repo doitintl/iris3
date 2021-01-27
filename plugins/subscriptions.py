@@ -80,7 +80,7 @@ class Subscriptions(Plugin):
             return
         labels = labels_outer["labels"]
         try:
-            subscription_name = self._get_name(gcp_object)
+            subscription_name = self._gcp_name(gcp_object)
             topic = gcp_object["topic"].split("/")[-1]
             subscriber_client = pubsub_v1.SubscriberClient()
             subscription_path = subscriber_client.subscription_path(
@@ -119,6 +119,6 @@ class Subscriptions(Plugin):
             logging.exception(e)
             return None
 
-    def _get_name(self, gcp_object):
+    def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         return self._name_after_slash(gcp_object)

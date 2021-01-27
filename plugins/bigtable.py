@@ -19,38 +19,37 @@ class Bigtable(Plugin):
     def method_names(self):
         return ["BigtableInstanceAdmin.CreateInstance"]
 
-    def _get_name(self, gcp_object):
+    def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         return self._name_after_slash(gcp_object)
 
-    def _get_zone(self, gcp_object):
+    def _gcp_zone(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
-            location = self.__get_location(gcp_object, gcp_object["project_id"])
-            return location
+            zone = self.__get_location(gcp_object, gcp_object["project_id"])
+            return zone
         except KeyError as e:
             logging.exception(e)
             return None
 
-    def _get_region(self, gcp_object):
+    def _gcp_region(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             # project_id was added to the dict, in BigTable.label_one()
             zone = self.__get_location(gcp_object, gcp_object["project_id"])
-            region = util.gcp_utils.region_from_zone(zone).lower()
+            region = util.gcp_utils.region_from_zone(zone)
             return region
         except KeyError as e:
             logging.exception(e)
             return None
 
-    def _get_cluster(self, project_id, name):
-        """Method dynamically called in generating labels, so don't change name"""
+    def __get_cluster(self, project_id, instance_name):
         try:
             result = (
                 self._google_client.projects()
                 .instances()
                 .clusters()
-                .list(parent="projects/" + project_id + "/instances/" + name)
+                .list(parent="projects/" + project_id + "/instances/" + instance_name)
                 .execute()
             )
 
@@ -61,10 +60,9 @@ class Bigtable(Plugin):
 
     def __get_location(self, gcp_object, project_id):
         instance = gcp_object["displayName"]
-        result = self._get_cluster(project_id, instance)
+        result = self.__get_cluster(project_id, instance)
         loc = result["clusters"][0]["location"]
-        ind = loc.rfind("/")
-        return loc[ind + 1 :]
+        return loc.split("/")[-1]
 
     def __get_instance(self, project_id, name):
         try:
@@ -119,7 +117,7 @@ class Bigtable(Plugin):
                 self.do_batch()
 
     def label_one(self, gcp_object, project_id):
-        # This line, plus two lines down, are needed so that _get_region
+        # This line, plus two lines down, are needed so that _gcp_region
         # can get the project_id
         gcp_object["project_id"] = project_id
         labels = self._build_labels(gcp_object, project_id)

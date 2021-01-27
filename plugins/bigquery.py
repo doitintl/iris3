@@ -22,7 +22,7 @@ class Bigquery(Plugin):
     def method_names(self):
         return ["datasetservice.insert", "tableservice.insert"]
 
-    def _get_name(self, gcp_object):
+    def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             if gcp_object["kind"] == "bigquery#dataset":
@@ -36,7 +36,7 @@ class Bigquery(Plugin):
             logging.exception(e)
             return None
 
-    def _get_location(self, gcp_object):
+    def _gcp_location(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             location = gcp_object["location"]

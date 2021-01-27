@@ -6,21 +6,19 @@ from gce_base.gce_base import GceBase
 
 
 class GceZonalBase(GceBase, metaclass=ABCMeta):
-    def _get_zone(self, gcp_object):
+    def _gcp_zone(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
-            zone = gcp_object["zone"].split("/")[-1]
-            return zone
+            return gcp_object["zone"].split("/")[-1]
         except KeyError as e:
             logging.exception(e)
             return None
 
-    def _get_region(self, gcp_object):
+    def _gcp_region(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
-            zone = self._get_zone(gcp_object)
-            region = util.gcp_utils.region_from_zone(zone).lower()
-            return region
+            zone = self._gcp_zone(gcp_object)
+            return util.gcp_utils.region_from_zone(zone)
         except KeyError as e:
             logging.exception(e)
             return None

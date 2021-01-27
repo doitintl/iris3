@@ -7,7 +7,10 @@ from util import gcp_utils
 
 
 class Disks(GceZonalBase):
-    """Label disks, but not boot disks launched with instances!"""
+    """
+    Label GCE disks. Boot disks created with instances only get labeled on the cron schedule.
+    Independently created disks get labeled on creation.
+    """
     def method_names(self):
         return ["v1.compute.disks.insert"]
 
@@ -76,7 +79,7 @@ class Disks(GceZonalBase):
         if labels is None:
             return
         try:
-            zone = self._get_zone(gcp_object)
+            zone = self._gcp_zone(gcp_object)
 
             self._batch.add(
                 self._google_client.disks().setLabels(

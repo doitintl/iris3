@@ -23,11 +23,11 @@ class Cloudsql(Plugin):
         """
         return False
 
-    def _get_name(self, gcp_object):
+    def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         return self._name_no_separator(gcp_object)
 
-    def _get_region(self, gcp_object):
+    def _gcp_region(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             region = gcp_object["region"]

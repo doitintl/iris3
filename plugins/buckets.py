@@ -12,11 +12,11 @@ class Buckets(Plugin):
     def discovery_api(cls) -> typing.Tuple[str, str]:
         return "storage", "v1"
 
-    def _get_name(self, gcp_object):
+    def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         return self._name_no_separator(gcp_object)
 
-    def _get_location(self, gcp_object):
+    def _gcp_location(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             location = gcp_object["location"]

@@ -7,7 +7,7 @@ from util import gcp_utils
 
 
 class Instances(GceZonalBase):
-    def _get_instance_type(self, gcp_object):
+    def _gcp_instance_type(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             machine_type = gcp_object["machineType"]
@@ -89,7 +89,7 @@ class Instances(GceZonalBase):
             return
 
         try:
-            zone = self._get_zone(gcp_object)
+            zone = self._gcp_zone(gcp_object)
             self._batch.add(
                 self._google_client.instances().setLabels(
                     project=project_id,

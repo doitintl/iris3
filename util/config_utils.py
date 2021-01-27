@@ -3,12 +3,6 @@ import typing
 
 import yaml
 
-
-def possible_label_keys():
-    config = __load_config()
-    return config["labels"]
-
-
 def is_copying_labels_from_project():
     config = __load_config()
     from_project_ = config.get("from_project")

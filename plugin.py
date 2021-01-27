@@ -9,10 +9,8 @@ from googleapiclient import errors
 
 from util.config_utils import (
     is_copying_labels_from_project,
-    possible_label_keys,
-    iris_prefix,
-)
-from util.utils import cls_by_name, shorten
+    iris_prefix)
+from util.utils import cls_by_name, shorten, methods
 
 PLUGINS_MODULE = "plugins"
 
@@ -21,8 +19,6 @@ class Plugin(object, metaclass=ABCMeta):
     __project_access_client = discovery.build("cloudresourcemanager", "v1")
     __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     subclasses = []
-
-    __label_chars = re.compile(r"[\w\d_-]")
 
     def __init__(self):
         self.counter = 0
@@ -56,22 +52,25 @@ class Plugin(object, metaclass=ABCMeta):
             logging.exception(f"Failing to get labels for project {project_id}", e)
             return {}
 
-    def __iris_labels(self, gcp_object) -> typing.Dict:
-        labels = {}
-        # These label keys are the same across all Plugins
-        label_keys = possible_label_keys()
+    def __iris_labels(self, gcp_object) -> typing.Dict[str, str]:
+        pfx = "_gcp_"
 
-        for label_key in label_keys:
-            f = "_get_" + label_key
-            if hasattr(self, f):
-                func = getattr(self, f)
-                label_value = func(gcp_object)
-                # Only hyphens (-), underscores (_), lowercase characters,
-                # and numbers are allowed. International characters are allowed.
-                key = iris_prefix() + "_" + label_key
-                label_value = self._make_legal_label_value(label_value)
-                labels[key] = label_value
-        return labels
+        def legalize_value(s):
+            """
+             Only hyphens (-), underscores (_), lowercase characters,
+             and numbers are allowed in label values. International characters are allowed.
+            """
+            label_chars = re.compile(r"[\w\d_-]")  # cached
+            return "".join(c if label_chars.match(c) else "_" for c in s).lower()[:62]
+
+        def value(func, gcp_object):
+            return legalize_value(func(gcp_object))
+
+        def key(func) -> str: return iris_prefix() + "_" + func.__name__[len(pfx):]
+
+        ret = {key(f): value(f, gcp_object) for f in methods(self, pfx)}
+
+        return ret
 
     def __batch_callback(self, request_id, response, exception):
 
@@ -141,10 +140,10 @@ class Plugin(object, metaclass=ABCMeta):
 
     def _build_labels(self, gcp_object, project_id):
         """
-        :return Dict including original labels, project labels (if the system is configured to add those)
-        and new labels.
-        But if that would result in no change, return None
+        :return dict including original labels, project labels (if the system is configured to add those)
+        and new labels. But if that would result in no change, return None
         """
+
         original_labels = gcp_object["labels"] if "labels" in gcp_object else {}
         project_labels = (
             self.__project_labels(project_id)
@@ -179,14 +178,8 @@ class Plugin(object, metaclass=ABCMeta):
             name = gcp_object["name"]
             if separator:
                 index = name.rfind(separator)
-                name = name[index + 1 :]
+                name = name[index + 1:]
             return name
         except KeyError as e:
             logging.exception(e)
             return None
-
-    @classmethod
-    def _make_legal_label_value(cls, s):
-        ret = "".join(c if cls.__label_chars.match(c) else "_" for c in s)
-        ret = ret.lower()[:62]
-        return ret

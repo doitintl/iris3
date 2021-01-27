@@ -77,7 +77,7 @@ class Topics(Plugin):
             return
         labels = labels_outer["labels"]
         try:
-            topic_name = self._get_name(gcp_object)
+            topic_name = self._gcp_name(gcp_object)
             topic_path = self.__topic_client.topic_path(project_id, topic_name)
             # Use the Google Cloud Library instead of the Google Client API used
             # elsewhere because the latter does not seem to support changing the label,
@@ -111,6 +111,6 @@ class Topics(Plugin):
             logging.exception(e)
             return None
 
-    def _get_name(self, gcp_object):
+    def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         return self._name_after_slash(gcp_object)

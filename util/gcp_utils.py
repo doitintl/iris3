@@ -30,7 +30,7 @@ def set_env():
 
 
 def region_from_zone(zone):
-    return zone[: len(zone) - 2]
+    return zone[: len(zone) - 2].lower()
 
 
 def generate_uuid() -> str:

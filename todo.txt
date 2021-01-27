@@ -1,10 +1,12 @@
-#TODO BigTable and CloudSQL in run_test.sh
-#TODO Test more labels (Other than iris3_name) in run_test.sh
-#TODO Test the copying of project labels in run_test.sh
-# TODO eliminate the labels configuration in config.yaml and instead just read all methods starting with _get_
-# TODO Instead of _get_ as the magic prefix, use _gcp_ (because _get_ methods are  too easy to mistake for ordinary getters and then delete or alter them)
-# TODO Use IAM-based pubsub security instead of pubsub_token
-# TODO Address this error, printed in _batch_callback, which is intermittent and found most often with disks.
-#  "Labels fingerprint either invalid or resource labels have changed".
-#  - Perhaps retry
-#  - Perhaps ignore and let the cron get it
+# TODO In run_test.sh, test more labels (other than iris3_name); and test the copying of project labels.
+# TODO Test CloudSQL automatically (difficult because it takes 10 minutes to initialize)
+# TODO PubSub push endpoint security:
+#   Note: This token is not very secure, though it is an improvement on earlier versions of Iris,
+#   and Google has at times recommended it.
+#   You could replace the PUBSUB_VERIFICATION_TOKEN with random value in deploy.sh
+#   Using JWT is better: https://cloud.google.com/pubsub/docs/push
+# TODO Address the error "Labels fingerprint either invalid or resource labels have changed", printed in _batch_callback,
+# which is intermittent and found most often with disks.
+# Solutions:
+#  - Retry
+#  - Ignore and let the cron do it

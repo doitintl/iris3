@@ -14,6 +14,6 @@ class GceBase(Plugin, metaclass=ABCMeta):
     def api_name(self):
         return "compute.googleapis.com"
 
-    def _get_name(self, gcp_object):
+    def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         return self._name_no_separator(gcp_object)
