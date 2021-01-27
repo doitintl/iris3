@@ -14,13 +14,13 @@ This integration test is useful in development.
   
 """
 
+
 def __project():
     proj = os.environ.get("project")
     if not proj:
-        raise ValueError(
-            "Must specify 'project' key in environment."
-        )
+        raise ValueError("Must specify 'project' key in environment.")
     return proj
+
 
 def __instance_name():
     instance = os.environ.get("instance")
@@ -49,11 +49,7 @@ def test_buckets():
 
     from plugins.buckets import Buckets
 
-    label_one(
-        __project(), __instance_name(), Buckets().method_names()[0]
-    )
-
-
+    label_one(__project(), __instance_name(), Buckets().method_names()[0])
 
 
 def test_cloudsql():
@@ -98,7 +94,10 @@ def test_subscriptions():
     from plugins.subscriptions import Subscriptions
 
     label_one(
-        __project(), __instance_name(), Subscriptions().method_names()[0], __parent_name()
+        __project(),
+        __instance_name(),
+        Subscriptions().method_names()[0],
+        __parent_name(),
     )
 
 

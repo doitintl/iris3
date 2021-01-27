@@ -9,24 +9,27 @@ test_do_label.
 
 Comment or uncomment resource types in `test_do_label` to focus the testing.
 """
+
+
 def __project():
     proj = os.environ.get("project")
     if not proj:
-        raise ValueError(
-            "Must specify 'project' key in environment."
-        )
+        raise ValueError("Must specify 'project' key in environment.")
     return proj
 
+
 def test_do_label():
-    project =__project()
+    project = __project()
     plugins = [
-         'Buckets', 'Bigquery',
+        "Buckets",
+        "Bigquery",
         "Instances",
-         'Disks', 'Snapshots',
-         'Topics',
-         "Subscriptions",
-         'Cloudsql',
-         'Bigtable'
+        "Disks",
+        "Snapshots",
+        "Topics",
+        "Subscriptions",
+        "Cloudsql",
+        "Bigtable",
     ]
 
     for plugin in plugins:
