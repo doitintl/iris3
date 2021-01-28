@@ -19,7 +19,8 @@ if [[ $# -lt 2 ]]; then
     "- The project to which Iris is deployed" \
     "- The project where resources will be labeled" \
     "- An optional lower-case alphanumerical string to identify this run," \
-    "     used as a prefix on Iris labels and as part of the name of launched resources."
+    "     used as a prefix on Iris labels and as part of the name of launched resources. "\
+    "     If omitted, one will be generated."
   exit
 fi
 
@@ -50,8 +51,11 @@ if [ -n "$(echo "$RUN_ID" | grep '[_-]')" ]; then
     "and dashes are illegal in BigQuery names."
   exit 1
 fi
+
 # Set up the config file for the deployment
 mv config.yaml config.yaml.original
+
+# Prepare to revert that on exit
 function revert_config() {
   # Cleanup should not stop on error
   set +e
@@ -65,6 +69,7 @@ envsubst <config.yaml.test.template >config.yaml
 
 ./deploy.sh $DEPLOYMENT_PROJECT
 
+# Cleanup on exit
 function clean_resources() {
   EXIT_CODE=$?
   # cleanup should not stop on error
