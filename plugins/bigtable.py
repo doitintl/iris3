@@ -7,7 +7,7 @@ import util.gcp_utils
 from plugin import Plugin
 from util import gcp_utils
 
-
+PROJECTS = "projects/"
 class Bigtable(Plugin):
     @classmethod
     def discovery_api(cls) -> typing.Tuple[str, str]:
@@ -45,11 +45,12 @@ class Bigtable(Plugin):
 
     def __get_cluster(self, project_id, instance_name):
         try:
+
             result = (
                 self._google_client.projects()
                 .instances()
                 .clusters()
-                .list(parent="projects/" + project_id + "/instances/" + instance_name)
+                .list(parent=PROJECTS + project_id + "/instances/" + instance_name)
                 .execute()
             )
 
@@ -69,7 +70,7 @@ class Bigtable(Plugin):
             result = (
                 self._google_client.projects()
                 .instances()
-                .get(name="projects/" + project_id + "/instances/" + name)
+                .get(name=PROJECTS + project_id + "/instances/" + name)
                 .execute()
             )
             return result
@@ -97,7 +98,7 @@ class Bigtable(Plugin):
                     self._google_client.projects()
                     .instances()
                     .list(
-                        parent="projects/" + project_id,
+                        parent=PROJECTS + project_id,
                         pageToken=page_token,
                         # Filter not supported
                     )

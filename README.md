@@ -131,12 +131,11 @@ APIs cannot be used with it.)
 1. Project labels can be automatically copied into each resource in the project.
 1. Option to choose the projects in which resources that will be labeled;
 or to label across the entire organization.
-1. Easier plugin development: 
 1. Automated test suites
+1. Easier plugin development: 
     * Less need to configure a list of permitted labels or of "on-demand" plugins
     * Abstract methods clarify what needs to be implemented
-    * `_gcp_` prefix rather than `_get_` highlights the dynamically invoked methods to 
-distinguish them from getters
+    * `_gcp_` prefix rather than `_get_` highlights the dynamically invoked methods also distinguishing them from getters
     * More functionality in base classes, minimizing the amount of implementation needed
     for each plugin
 1. Bug fix: Deployment was failing for certain project names.

@@ -6,34 +6,6 @@ from util import gcp_utils, utils
 
 __publisher = pubsub_v1.PublisherClient()
 
-"""def create_subscription(subsc, topic):
-    subscriber = pubsub_v1.SubscriberClient()
-    with subscriber:
-        path = subsc
-        subscription_path = subscriber.subscription_path(gcp_utils.project_id(), path)
-        try:
-            subscriber.delete_subscription(request={"subscription": subscription_path})
-            logging.info(f'Subscription deleted: {subscription_path}')
-        except NotFound as e:
-            logging.debug(e)  # OK, nothing to delete
-
-        endpoint = gcp_utils.gae_url(subsc)+'?token='+token
-        topic_path = __publisher.topic_path(gcp_utils.project_id(), topic)
-
-        push_config = pubsub_v1.types.PushConfig(push_endpoint=endpoint)
-        try:
-            _subscription = subscriber.create_subscription(
-                request={'name': subscription_path,
-                         'topic': topic_path,
-                         'push_config': push_config, })
-            logging.info(
-                'Created subscription %s  %s (%s) in %s ',
-                endpoint, subscription_path, topic, gcp_utils.project_id())
-        except AlreadyExists:
-            logging.info('Subscription %s (%s) already exists', subscription_path, endpoint)
-
-"""
-
 
 def logs_topic() -> str:
     return f"iris_logs_topic"
