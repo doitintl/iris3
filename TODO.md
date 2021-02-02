@@ -1,6 +1,5 @@
 # Improvements and fixes to be done
 
-* Add an option to work without event-based labeling. (This saves money.)
 * Implement good ideas from the [GCP Auto Tag project](https://github.com/doitintl/gcp-auto-tag/)
     - Add a label with the email of the creator of the resource
     - For disks, add a label with the name of the instance to which 

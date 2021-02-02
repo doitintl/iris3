@@ -20,27 +20,26 @@ if [[ $# -eq 0 ]]; then
   exit
 fi
 
-
 PROJECTID=$1
 
 shift
 
 CRON_ONLY=
-while getopts c opt
-do
+while getopts c opt; do
   case $opt in
-    c) CRON_ONLY=true
-      ;;
-    *)
-      echo "deploy.sh PROJECTID"
-      cat <<EOF
+  c)
+    CRON_ONLY=true
+    ;;
+  *)
+    cat <<EOF
       Usage deploy.sh PROJECTID [-c]
           Argument:
                   The project to which Iris 3 will be deployed
           Options:
                   -c   Use cron only  to add labels. Do not add labels on resource creation
 EOF
-   exit 1
+    exit 1
+    ;;
   esac
 done
 
@@ -74,10 +73,10 @@ required_svcs=(
   sqladmin.googleapis.com
 )
 for svc in "${required_svcs[@]}"; do
-   if ! [ ${enabled_services["$svc"]+_} ]; then
-     echo "Enabling $svc"
-     gcloud services enable "$svc"
-   fi
+  if ! [ ${enabled_services["$svc"]+_} ]; then
+    echo "Enabling $svc"
+    gcloud services enable "$svc"
+  fi
 done
 
 # Get organization id for this project
@@ -90,8 +89,8 @@ ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-toke
 gcloud app describe >&/dev/null || gcloud app create --region=$REGION
 
 # Create custom role to run iris
-if gcloud iam roles describe "$ROLEID" --organization "$ORGID" ; then
-   gcloud iam roles update -q "$ROLEID" --organization "$ORGID" --file roles.yaml
+if gcloud iam roles describe "$ROLEID" --organization "$ORGID"; then
+  gcloud iam roles update -q "$ROLEID" --organization "$ORGID" --file roles.yaml
 else
   gcloud iam roles create "$ROLEID" -q --organization "$ORGID" --file roles.yaml
 fi
@@ -110,7 +109,6 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --quiet >/dev/null
-
 
 if [[ "$CRON_ONLY" == "true" ]]; then
   gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" || true
@@ -137,7 +135,7 @@ else
 
     # shellcheck disable=SC2207
     # because  zsh uses read -A and bash used read -a
-    supported_projects_arr=($(echo "${included_projects_line}" ))
+    supported_projects_arr=($(echo "${included_projects_line}"))
     for p in "${supported_projects_arr[@]}"; do
       log_filter+=("${or_}\"projects/${p}/logs/\"")
       or_='OR '
