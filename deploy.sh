@@ -15,6 +15,7 @@ LABEL_ONE_SUBSCRIPTION=label_one
 REGION=us-central
 GAE_REGION_ABBREV=uc
 
+
 if [[ $# -eq 0 ]]; then
   echo Missing project id argument
   exit
@@ -111,7 +112,7 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --quiet >/dev/null
 
 if [[ "$CRON_ONLY" == "true" ]]; then
-  gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" || true
+  gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" > &/dev/null || true
 else
   # Create PubSub topic for receiving logs about new GCP objects
   gcloud pubsub topics describe "$LOGS_TOPIC" ||
