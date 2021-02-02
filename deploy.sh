@@ -112,7 +112,7 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --quiet >/dev/null
 
 if [[ "$CRON_ONLY" == "true" ]]; then
-  gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" > &/dev/null || true
+  gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" 2>/dev/null || true
 else
   # Create PubSub topic for receiving logs about new GCP objects
   gcloud pubsub topics describe "$LOGS_TOPIC" ||
