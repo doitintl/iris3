@@ -2,6 +2,5 @@
 iris_prefix: iris3
 # If from_project enabled, then for each resource we are labeling, copy in the labels from its project.
 from_project: True
-#  Only resources these projects are included. If empty, all projects in the organization are included.
+#  Only resources in these projects are included. If empty, all projects in the organization are included.
 projects: {}
-

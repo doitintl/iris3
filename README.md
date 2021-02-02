@@ -53,7 +53,8 @@ to complete the deployment:
 
 ## Deploy
 * Optionally edit `app.yaml`, changing the secret token for PubSub.
-* Run  `./deploy.sh <project-id>` 
+* Run  `./deploy.sh <PROJECT_ID>`. 
+   * Add option `-c` to use only cron, without labeling on demand, to save costs on the log sink.
 
 ## Configuration
 
@@ -77,9 +78,16 @@ pip install -r requirements-test.txt
 * Install `envsubst`
 * Install and initialize `gcloud`
 
-## Plugin development
+## New labels
 
-Iris is easily extensible to support labeling of other GCP resources. 
+To add a new label to an existing resource type, just create 
+a method `_gcp_<LABEL_NAME>` on the example of the existing ones.
+(For example, you might want to add a label dentifying
+the creator of a resource.)
+
+##  New resource types
+
+Iris is easily extensible with plugins, to support labeling of other GCP resources. 
 
 1. Create a Python file in the `/plugins` directory, holding a subclass of `Plugin`. 
 
@@ -90,9 +98,9 @@ Iris is easily extensible to support labeling of other GCP resources.
     b. Implement abstract methods. 
     
     c. Add `_gcp_<LABEL_KEY>` methods (like `_gcp_zone()`). Labels will be 
-    added with a key taken from the function name (`zone` in that example),
+    added with a key from the function name (`zone` in that example),
     and a value returned by the function (the actual zone value in the example, 
-    retrieved from the Google API in the function `_gcp_zone()`).
+    retrieved, using the Google API, in the function `_gcp_zone()`).
 
     d. Override `is_labeled_on_creation()` and return `False` if the
     resource cannot be labeled on creation (like CloudSQL), though 
@@ -103,7 +111,7 @@ Iris is easily extensible to support labeling of other GCP resources.
 update (add labels to) your resources.
 
 ## Testing
-### `run_test.sh`
+### `integration_test.sh`
 This is an integration test with a deployed app and deployed cloud resources.
 See the file for instructions.
 
@@ -131,6 +139,7 @@ APIs cannot be used with it.)
 1. Project labels can be automatically copied into each resource in the project.
 1. Option to choose the projects in which resources that will be labeled;
 or to label across the entire organization.
+1. An option to save costs by using only cron, without labeling on demand,
 1. Automated test suites
 1. Easier plugin development: 
     * Less need to configure a list of permitted labels or of "on-demand" plugins
@@ -144,4 +153,4 @@ or to label across the entire organization.
 1. Optimization: Do not attempt to set labels if labels have not changed.
 
 ## Next steps
-See `todo.txt` for potential future improvements.
+See `TODO.md` for potential future improvements.

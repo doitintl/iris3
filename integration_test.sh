@@ -15,12 +15,13 @@ set -x
 START_TEST=$(date "+%s")
 
 if [[ $# -lt 2 ]]; then
-  echo >&2 "Usage: deployment-project project-under-test [execution-id]" \
-    "- The project to which Iris is deployed" \
-    "- The project where resources will be labeled" \
-    "- An optional lower-case alphanumerical string to identify this run," \
-    "     used as a prefix on Iris labels and as part of the name of launched resources. "\
-    "     If omitted, one will be generated."
+  echo >&2 "Usage: integration_test.sh deployment-project project-under-test [execution-id]\n" \
+    "- The project to which Iris is deployed\n" \
+    "- The project where resources will be labeled\n" \
+    "- An optional lower-case alphanumerical string to identify this run,\n" \
+    "     used as a prefix on Iris labels and as part of the name of launched resources. \n"\
+    "     If omitted, one will be generated.\n\n" \
+    "Returns exit code 0 on test-success, non-zero on test-failure"
   exit
 fi
 

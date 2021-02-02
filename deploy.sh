@@ -20,7 +20,29 @@ if [[ $# -eq 0 ]]; then
   exit
 fi
 
+
 PROJECTID=$1
+
+shift
+
+CRON_ONLY=
+while getopts c opt
+do
+  case $opt in
+    c) CRON_ONLY=true
+      ;;
+    *)
+      echo "deploy.sh PROJECTID"
+      cat <<EOF
+      Usage deploy.sh PROJECTID [-c]
+          Argument:
+                  The project to which Iris 3 will be deployed
+          Options:
+                  -c   Use cron only  to add labels. Do not add labels on resource creation
+EOF
+   exit 1
+  esac
+done
 
 gcloud projects describe "$PROJECTID" || {
   echo "Project $PROJECTID not found"
@@ -73,83 +95,89 @@ if gcloud iam roles describe "$ROLEID" --organization "$ORGID" ; then
 else
   gcloud iam roles create "$ROLEID" -q --organization "$ORGID" --file roles.yaml
 fi
+
 # Assign default iris app engine service account with role on organization level
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" \
   --role "organizations/$ORGID/roles/$ROLEID"
 
-# Create PubSub topic for receiving logs about new GCP objects
-gcloud pubsub topics describe "$LOGS_TOPIC" ||
-  gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECTID" --quiet >/dev/null
-
-# Create PubSub subscription for receiving log about new GCP objects
-gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" ||
-  gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
-    --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
-    --quiet >/dev/null
-
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
 gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" ||
   gcloud pubsub topics create "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
 
-# Create PubSub subscription for receiving log about new GCP objects
+# Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
 gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECTID" ||
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --quiet >/dev/null
 
 
-log_filter=("")
-
-# Add included-projects filter if such is defined, to the log sink
-export PYTHONPATH="."
-included_projects_line=$(python3 ./util/print_included_projects.py)
-
-if [ -n "$included_projects_line" ]; then
-  log_filter+=('logName:(')
-  or_=""
-
-  # shellcheck disable=SC2207
-  # because  zsh uses read -A and bash used read -a
-  supported_projects_arr=($(echo "${included_projects_line}" ))
-  for p in "${supported_projects_arr[@]}"; do
-    log_filter+=("${or_}\"projects/${p}/logs/\"")
-    or_='OR '
-  done
-  log_filter+=(') AND ')
-fi
-
-# Add methodName filter to the log sink
-log_filter+=('protoPayload.methodName:(')
-log_filter+=('"storage.buckets.create"')
-log_filter+=('OR "compute.instances.insert" OR "compute.instances.start" OR "datasetservice.insert"')
-log_filter+=('OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
-log_filter+=('OR "cloudsql.instances.create" OR "v1.compute.disks.insert" OR "v1.compute.disks.createSnapshot"')
-log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')
-log_filter+=('OR "google.pubsub.v1.Publisher.CreateTopic"')
-log_filter+=(')')
-
-# Create or update a sink at org level
-if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
-  gcloud logging sinks create "$LOG_SINK" \
-    pubsub.googleapis.com/projects/"$PROJECTID"/topics/"$LOGS_TOPIC" \
-    --organization="$ORGID" --include-children \
-    --log-filter="${log_filter[*]}" --quiet
+if [[ "$CRON_ONLY" == "true" ]]; then
+  gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" || true
 else
-  gcloud logging sinks update "$LOG_SINK" \
-    pubsub.googleapis.com/projects/"$PROJECTID"/topics/"$LOGS_TOPIC" \
-    --organization="$ORGID" \
-    --log-filter="${log_filter[*]}" --quiet
+  # Create PubSub topic for receiving logs about new GCP objects
+  gcloud pubsub topics describe "$LOGS_TOPIC" ||
+    gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECTID" --quiet >/dev/null
+
+  # Create PubSub subscription for receiving log about new GCP objects
+  gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" ||
+    gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
+      --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
+      --quiet >/dev/null
+
+  log_filter=("")
+
+  # Add included-projects filter if such is defined, to the log sink
+  export PYTHONPATH="."
+  included_projects_line=$(python3 ./util/print_included_projects.py)
+
+  if [ -n "$included_projects_line" ]; then
+    log_filter+=('logName:(')
+    or_=""
+
+    # shellcheck disable=SC2207
+    # because  zsh uses read -A and bash used read -a
+    supported_projects_arr=($(echo "${included_projects_line}" ))
+    for p in "${supported_projects_arr[@]}"; do
+      log_filter+=("${or_}\"projects/${p}/logs/\"")
+      or_='OR '
+    done
+    log_filter+=(') AND ')
+  fi
+
+  # Add methodName filter to the log sink
+  log_filter+=('protoPayload.methodName:(')
+  log_filter+=('"storage.buckets.create"')
+  log_filter+=('OR "compute.instances.insert" OR "compute.instances.start" OR "datasetservice.insert"')
+  log_filter+=('OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
+  log_filter+=('OR "cloudsql.instances.create" OR "v1.compute.disks.insert" OR "v1.compute.disks.createSnapshot"')
+  log_filter+=('OR "google.pubsub.v1.Subscriber.CreateSubscription"')
+  log_filter+=('OR "google.pubsub.v1.Publisher.CreateTopic"')
+  log_filter+=(')')
+
+  # Create or update a sink at org level
+  if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
+    gcloud logging sinks create "$LOG_SINK" \
+      pubsub.googleapis.com/projects/"$PROJECTID"/topics/"$LOGS_TOPIC" \
+      --organization="$ORGID" --include-children \
+      --log-filter="${log_filter[*]}" --quiet
+  else
+    gcloud logging sinks update "$LOG_SINK" \
+      pubsub.googleapis.com/projects/"$PROJECTID"/topics/"$LOGS_TOPIC" \
+      --organization="$ORGID" \
+      --log-filter="${log_filter[*]}" --quiet
+  fi
+
+  # Extract service account from sink configuration.
+  # This is the service account that publishes to PubSub
+  svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |
+    grep writerIdentity | awk '{print $2}')
+
+  # Assign a publisher role to the extracted service account
+  gcloud projects add-iam-policy-binding "$PROJECTID" \
+    --member="$svcaccount" --role=roles/pubsub.publisher --quiet
+
 fi
-
-# Extract service account from sink configuration.
-# This is the service account that publishes to PubSub
-svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |
-  grep writerIdentity | awk '{print $2}')
-
-# Assign a publisher role to the extracted service account
-gcloud projects add-iam-policy-binding "$PROJECTID" \
-  --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 
 # Deploy to App Engine
 gcloud app deploy -q app.yaml cron.yaml

@@ -3,13 +3,16 @@ from test_scripts.utils_for_tests import label_one
 import os
 
 """
-This integration test is useful in development.
+This integration test simulates the action that happens when the log sink generates
+a PubSub message, when a resource is created.
+
+It is useful in development.
 * Create resources that you want to test, for example a BigQuery Table table-1 in dataset-1.
-* run main.py in debug mode.
-* Run  test_label_one with environment variables 
-    - "project" where the resource is deployed
-    - "instance" for the name of the resource (in this example table-1)
-    -  and "parent" for the name of the parent if relevant (in this case dataset-1). 
+* Run main.py in debug mode.
+* Run  test_label_one.py with environment variables 
+    - `project` where the resource is deployed
+    - `instance` for the name of the resource (in this example table-1)
+    -  and `parent` for the name of the parent if relevant (in this case dataset-1). 
         The parent is needed only with BigQuery Tables and PubSub Subscriptions.
   
 """
@@ -31,18 +34,24 @@ def __instance_name():
             "BigTable Instance, BigQuery Table or Dataset, "
             "Cloud Storage Bucket, or CloudSQL Instance"
         )
-    return instance
+    if os.environ.get("use_base_name"):
+        return instance
+    else:
+      return instance+__project()
 
 
 def __parent_name():
-    instance = os.environ.get("parent")
-    if not instance:
+    parent = os.environ.get("parent")
+    if not parent:
         raise ValueError(
             "Must specify 'parent' key in environment for name of parent of the "
             "resource under test, e.g. BigQuery Dataset name for a BigQuery table, "
             "or PubSub Topic for a Subscription"
         )
-    return instance
+    if os.environ.get("use_base_name"):
+        return parent
+    else:
+      return parent+__project()
 
 
 def test_buckets():
