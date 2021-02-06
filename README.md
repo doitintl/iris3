@@ -82,8 +82,13 @@ pip install -r requirements-test.txt
 
 To add a new label to an existing resource type, just create 
 a method `_gcp_<LABEL_NAME>` on the example of the existing ones.
-(For example, you might want to add a label dentifying
-the creator of a resource.)
+
+For example, you might want to add a label identifying
+the creator of a resource, or add the name the topic to its
+subscription.
+
+But don't add too many: The reason that not all
+fields are in the  billing  data is that there are a lot of them!
 
 ##  New resource types
 
@@ -119,8 +124,8 @@ See the file for instructions.
 These integration tests are useful in development. See the files for instructions.
 
 ### Testing the scheduled labeling
-This is difficult to test, as the event-based labeling will add labels long before cron is
-likely to kick in (except for Cloud SQL). 
+Deploy with the `-c` switch  to disable event-based labeling,
+then trigger cron from the App Engine GUI.
 
 To test this manually:
 * Launch some resources. The script `run_test.sh` will do this for you so long as you remove the 

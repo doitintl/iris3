@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 # This is an integration test with a deployed app and deployed cloud resources.
 # * Deploys to the cloud with a unique run-id
@@ -15,13 +15,16 @@ set -x
 START_TEST=$(date "+%s")
 
 if [[ $# -lt 2 ]]; then
-  echo >&2 "Usage: integration_test.sh deployment-project project-under-test [execution-id]\n" \
-    "- The project to which Iris is deployed\n" \
-    "- The project where resources will be labeled\n" \
-    "- An optional lower-case alphanumerical string to identify this run,\n" \
-    "     used as a prefix on Iris labels and as part of the name of launched resources. \n"\
-    "     If omitted, one will be generated.\n\n" \
-    "Returns exit code 0 on test-success, non-zero on test-failure"
+
+  cat >&2 <<EOF
+ Usage: integration_test.sh deployment-project project-under-test [execution-id]
+    - The project to which Iris is deployed
+    - The project where resources will be labeled
+    - An optional lower-case alphanumerical string to identify this run,
+         used as a prefix on Iris labels and as part of the name of launched resources.
+         If omitted, one will be generated.
+    Returns exit code 0 on test-success, non-zero on test-failure
+EOF
   exit
 fi
 
@@ -47,9 +50,12 @@ done
 gcloud config set project "$TEST_PROJECT"
 
 if [ -n "$(echo "$RUN_ID" | grep '[_-]')" ]; then
-  echo >&2 "Illegal run id $RUN_ID. No dashes or underlines permitted because " \
-    "underlines are illegal in snapshot (and other) names " \
-    "and dashes are illegal in BigQuery names."
+
+  cat >&2 <<EOF
+     Illegal run id $RUN_ID. No dashes or underlines permitted because
+    underlines are illegal in snapshot (and other) names
+    and dashes are illegal in BigQuery names.
+EOF
   exit 1
 fi
 
@@ -112,7 +118,7 @@ gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
 #
 # jq -e generates exit code 1 on failure. Since we set -e, the script will fail appropriately if the value is not found
 
-DESCRIBE_FLAGS=( --project "$TEST_PROJECT" --format json )
+DESCRIBE_FLAGS=(--project "$TEST_PROJECT" --format json)
 JQ=(jq -e ".labels.${RUN_ID}_name")
 
 gcloud compute instances describe "instance${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
@@ -120,13 +126,10 @@ gcloud compute disks describe "disk${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}
 gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-gcloud bigtable instances describe "bigtable${RUN_ID}"  "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+gcloud bigtable instances describe "bigtable${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
 # For buckets, JSON shows labels without the label:{} wrapper seen in  the others
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".${RUN_ID}_name"
 
 #clean up and exit in clean_resources, which is called on exit
-
-
-

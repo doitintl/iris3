@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 set -x
 set -u
@@ -57,7 +57,8 @@ PUBSUB_VERIFICATION_TOKEN=$(grep " PUBSUB_VERIFICATION_TOKEN:" app.yaml | awk '{
 LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
 DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
-declare -A enabled_services
+# zsh uses read -A and bash uses read -a
+declare -a enabled_services
 while read -r svc _; do
   # Using the associative array as a set. The value does not matter, just that we can check that a key is in it.
   enabled_services["$svc"]=yes
@@ -135,7 +136,7 @@ else
     or_=""
 
     # shellcheck disable=SC2207
-    # because  zsh uses read -A and bash used read -a
+    # because  zsh uses read -A and bash uses read -a
     supported_projects_arr=($(echo "${included_projects_line}"))
     for p in "${supported_projects_arr[@]}"; do
       log_filter+=("${or_}\"projects/${p}/logs/\"")
@@ -168,11 +169,11 @@ else
   fi
 
   # Extract service account from sink configuration.
-  # This is the service account that publishes to PubSub
+  # This is the service account that publishes to PubSub.
   svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |
     grep writerIdentity | awk '{print $2}')
 
-  # Assign a publisher role to the extracted service account
+  # Assign a publisher role to the extracted service account.
   gcloud projects add-iam-policy-binding "$PROJECTID" \
     --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 
