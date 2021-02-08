@@ -7,20 +7,20 @@ She was the handmaiden to Hera.
 ## Iris3 vs Iris
 
 This is a complete rewrite of [Iris](https://github.com/doitintl/iris), replatforming it to AppEngine Python 3, 
-adding functionality, and fixing bugs. Change logs [below](#change-log).
+adding functionality, and fixing bugs. See the change logs [below](#change-log).
 
 ## What it does for you
 
 Iris automatically assigns labels to Google Cloud resources for manageability and easier billing reporting. 
 
-Each resource in Google Cloud in the GCP organization will get automatically generated labels
+Each resource in a Google Cloud Platform Organization will get automatically generated labels
 with a key like `iris3_zone` (the prefix is configurable), and the relevant value.
 For example, a Google Compute Engine instance would get labels like
-with `[iris3_name:nginx]`, `[iris3_region:us-central1]` and `[iris3_zone:us-central1-a]`.
+`[iris3_name:nginx]`, `[iris3_region:us-central1]` and `[iris3_zone:us-central1-a]`.
 
 ## When it does it
 Iris does this in two ways:
-* On the creation event, by listening to Operations (Stackdriver) Logs.
+* On resource creation, by listening to Operations (Stackdriver) Logs.
 * On schedule, using a cron job, now scheduled to run every 12 hours. (See `cron.yaml`.) Some types
 of resources only get labeled on schedule.
 
