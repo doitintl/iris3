@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 
+set -x
+set -u
+set -e
+echo $SHELL
+if [[ -n $(ps -p $$ ) ]]
+then
+  >&2 echo "Need Bash. Was $SHELL"
+    exit 1
+fi
+
 if [[ "$BASH_VERSION" == 3. ]]
 then
     >&2 echo "Need Bash version 4 and up. Now $BASH_VERSION"
     exit 1
 fi
-
-set -x
-set -u
-set -e
 
 START=$(date "+%s")
 ROLEID=iris3
@@ -63,8 +69,7 @@ PUBSUB_VERIFICATION_TOKEN=$(grep " PUBSUB_VERIFICATION_TOKEN:" app.yaml | awk '{
 LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
 DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
-# zsh uses read -A and bash uses read -a
-declare -a enabled_services
+declare -A enabled_services
 while read -r svc _; do
   # Using the associative array as a set. The value does not matter, just that we can check that a key is in it.
   enabled_services["$svc"]=yes
