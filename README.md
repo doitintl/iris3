@@ -14,9 +14,9 @@ adding functionality, and fixing bugs. See the change logs [below](#change-log).
 Iris automatically assigns labels to Google Cloud resources for manageability and easier billing reporting. 
 
 Each resource in a Google Cloud Platform Organization will get automatically generated labels
-with a key like `iris3_zone` (the prefix is configurable), and the relevant value.
+with a key like `iris_zone` (the prefix is configurable), and the relevant value.
 For example, a Google Compute Engine instance would get labels like
-`[iris3_name:nginx]`, `[iris3_region:us-central1]` and `[iris3_zone:us-central1-a]`.
+`[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`.
 
 ## When it does it
 Iris does this in two ways:
@@ -45,23 +45,28 @@ We recommend deploying Iris in a
 [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project)
 within your Google Cloud organization. 
 
-You will need the following IAM permissions on your Google Cloud _organization_ (not just the project) 
-to complete the deployment: 
+To deploy, you will need to have these roles on the the *organization* where Iris is deployed.
+* *Organization Role Administrator* to create a custom IAM role for Iris that allows to get and set labels on the services.
+   (Note that this is different from *Organization Administrator* and from Organization *Owner*.)
+ * *Security Admin* OR *Organization Administrator*  to allow Iris app engine service account to use the above role
+ * *Logs Configuration Writer* to create an organization log sink that sends logs to PubSub
 
- * App Engine Admin
- * Logs Configuration Writer
+On the project where Iris3 is deployed, you will need Owner or these roles:
+ * Project IAM Admin
+ * App Engine Admin 
  * Pub/Sub Admin
+
 
 ## Deploy
 * Optionally edit `app.yaml`, changing the secret token for PubSub.
-* Run  `./deploy.sh <PROJECT_ID>`. 
-   * Add option `-c` to use only cron, without labeling on demand, to save costs on the log sink.
+* Run `./deploy.sh <PROJECT_ID>`. 
+   * Add option `-c` to use only cron, without labeling on-demand, to save costs on the log sink.
 
 ## Configuration
 
 * See  `config.yaml` for documentation of these options:
   - What projects to include. (The default is all projects in the organization.)
-  - A prefix for all label keys (so, if the prefix is `iris3`, labels will look like `iris3_name` etc.)
+  - A prefix for all label keys (so, if the prefix is `iris`, labels will look like `iris_name` etc.)
   - Whether to copy all labels from the project into resources in the project.
 * See [above](#deploy) for disabling the on-event labeling
 * `cron.yaml` lets you change the scheduled labelings.

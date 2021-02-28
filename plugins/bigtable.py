@@ -8,6 +8,8 @@ from plugin import Plugin
 from util import gcp_utils
 
 PROJECTS = "projects/"
+
+
 class Bigtable(Plugin):
     @classmethod
     def discovery_api(cls) -> typing.Tuple[str, str]:

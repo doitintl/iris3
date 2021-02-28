@@ -14,7 +14,6 @@ Comment or uncomment resource types in test_do_label() to focus the testing.
 """
 
 
-
 def test_do_label():
     project = __project()
     plugins = [
@@ -33,12 +32,12 @@ def test_do_label():
         contents = json.dumps({"project_id": project, "plugin": plugin})
         do_local_http("do_label", contents)
 
+
 def __project():
     proj = os.environ.get("project")
     if not proj:
         raise ValueError("Must specify 'project' key in environment.")
     return proj
-
 
 
 if __name__ == "__main__":

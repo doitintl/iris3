@@ -37,7 +37,7 @@ def __instance_name():
     if os.environ.get("use_base_name"):
         return instance
     else:
-      return instance+__project()
+        return instance + __project()
 
 
 def __parent_name():
@@ -51,7 +51,7 @@ def __parent_name():
     if os.environ.get("use_base_name"):
         return parent
     else:
-      return parent+__project()
+        return parent + __project()
 
 
 def test_buckets():

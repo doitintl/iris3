@@ -39,15 +39,14 @@ class Plugin(object, metaclass=ABCMeta):
 
     def __project_labels(self, project_id) -> typing.Dict:
 
-        assert 6 <= len(project_id) <= 30
         assert self.__proj_regex.match(project_id), project_id
 
         request = self.__project_access_client.projects().get(projectId=project_id)
         try:
             response = request.execute()
-            return response["labels"]
+            return response.get("labels", {})  # Handle case where project has no labels
         except errors.HttpError as e:
-            logging.exception(f"Failing to get labels for project {project_id}", e)
+            logging.exception(f"Failing to get labels for project {project_id}: {e}")
             return {}
 
     def __iris_labels(self, gcp_object) -> typing.Dict[str, str]:

@@ -1,4 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+if [[ "$BASH_VERSION" == 3. ]]
+then
+    >&2 echo "Need Bash version 4 and up. Now $BASH_VERSION"
+    exit 1
+fi
 
 set -x
 set -u
@@ -100,7 +106,8 @@ fi
 # Assign default iris app engine service account with role on organization level
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" \
-  --role "organizations/$ORGID/roles/$ROLEID"
+  --role "organizations/$ORGID/roles/$ROLEID" \
+   --condition=None
 
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
 gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" ||
@@ -184,5 +191,5 @@ gcloud app deploy -q app.yaml cron.yaml
 
 FINISH=$(date "+%s")
 ELAPSED_SEC=$((FINISH - START))
-echo "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
+>&2 echo "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
 

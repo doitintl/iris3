@@ -33,7 +33,6 @@ __init_flaskapp()
 
 @app.route("/")
 def index():
-    logging.info("environ: %s", os.environ)
     return f"I'm {iris_prefix().title()}, pleased to meet you!", 200
 
 
@@ -143,7 +142,10 @@ def __check_pubsub_verification_token():
     """ Token verifying that only PubSub accesses PubSub push endpoints"""
     known_token = util.gcp_utils.pubsub_token()
     if not known_token:
-        raise FlaskException(f"Should define token in env {os.environ}", 400)
+        raise FlaskException(
+            f"Should define expected token in env. Keys were {list(os.environ.keys())}",
+            400,
+        )
 
     token_from_args = flask.request.args.get("token", "")
     if known_token != token_from_args:
