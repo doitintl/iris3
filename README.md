@@ -60,7 +60,7 @@ On the project where Iris3 is deployed, you will need Owner or these roles:
 ## Deploy
 * Optionally edit `app.yaml`, changing the secret token for PubSub.
 * Run `./deploy.sh <PROJECT_ID>`. 
-   * Add option `-c` to use only cron, without labeling on-demand, to save costs on the log sink.
+   * Add `-c` at the end to use only cron, without labeling on-demand, to save costs on the log sink.
 
 ## Configuration
 

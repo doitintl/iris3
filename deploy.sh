@@ -3,12 +3,6 @@
 set -x
 set -u
 set -e
-echo $SHELL
-if [[ -n $(ps -p $$ ) ]]
-then
-  >&2 echo "Need Bash. Was $SHELL"
-    exit 1
-fi
 
 if [[ "$BASH_VERSION" == 3. ]]
 then
@@ -87,7 +81,6 @@ required_svcs=(
 )
 for svc in "${required_svcs[@]}"; do
   if ! [ ${enabled_services["$svc"]+_} ]; then
-    echo "Enabling $svc"
     gcloud services enable "$svc"
   fi
 done
@@ -126,6 +119,7 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
 
 if [[ "$CRON_ONLY" == "true" ]]; then
   gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" 2>/dev/null || true
+  #TODO Could delete topics and subscriptions
 else
   # Create PubSub topic for receiving logs about new GCP objects
   gcloud pubsub topics describe "$LOGS_TOPIC" ||
