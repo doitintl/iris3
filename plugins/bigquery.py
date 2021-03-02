@@ -170,6 +170,16 @@ class Bigquery(Plugin):
     @sleep_and_retry
     @limits(calls=35, period=60)
     def __label_one_table(self, gcp_object, project_id):
+        """
+        This often produces the following error. Hard to avoid, given that we are using batch operations. But
+        that is why we sleep_and_retry, above.
+
+        Error in Request Id: None Response: 72edf87e-d6fe-46b5-831a-e7b7bcd51cb0
+        Exception: <HttpError 403 when
+        requesting https://bigquery.googleapis.com/bigquery/v2/projects/fnx-poc-2020/datasets/monitoring/tables/10_most_%20expensive_jobs_today?alt=json
+        returned "Exceeded rate limits: too many table update operations for this table.
+        For more information, see https://cloud.google.com/bigquery/troubleshooting-errors".
+        """
         labels = self._build_labels(gcp_object, project_id)
         if labels is None:
             return

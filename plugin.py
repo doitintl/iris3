@@ -3,6 +3,7 @@ import pkgutil
 import re
 import typing
 from abc import ABCMeta, abstractmethod
+from functools import lru_cache
 
 from googleapiclient import discovery
 from googleapiclient import errors
@@ -37,7 +38,8 @@ class Plugin(object, metaclass=ABCMeta):
         """
         return True
 
-    def __project_labels(self, project_id) -> typing.Dict:
+    @lru_cache(maxsize=256)
+    def _project_labels(self, project_id) -> typing.Dict:
 
         assert self.__proj_regex.match(project_id), project_id
 
@@ -60,8 +62,8 @@ class Plugin(object, metaclass=ABCMeta):
             label_chars = re.compile(r"[\w\d_-]")  # cached
             return "".join(c if label_chars.match(c) else "_" for c in s).lower()[:62]
 
-        def value(func, gcp_object):
-            return legalize_value(func(gcp_object))
+        def value(func, gcp_obj):
+            return legalize_value(func(gcp_obj))
 
         def key(func) -> str:
             return iris_prefix() + "_" + func.__name__[len(pfx) :]
@@ -142,9 +144,7 @@ class Plugin(object, metaclass=ABCMeta):
 
         original_labels = gcp_object["labels"] if "labels" in gcp_object else {}
         project_labels = (
-            self.__project_labels(project_id)
-            if is_copying_labels_from_project()
-            else {}
+            self._project_labels(project_id) if is_copying_labels_from_project() else {}
         )
         iris_labels = self.__iris_labels(gcp_object)
         all_labels = {**iris_labels, **project_labels, **original_labels}

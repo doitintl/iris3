@@ -29,7 +29,6 @@ def included_projects():
     return projects
 
 
-# Py3.9 has functools.cache
 @functools.lru_cache
 def __load_config() -> typing.Dict:
     with open("config.yaml", "r") as config_file:

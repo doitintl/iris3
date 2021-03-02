@@ -1,6 +1,7 @@
+import os
+
 from plugins.snapshots import Snapshots
 from test_scripts.utils_for_tests import label_one
-import os
 
 """
 This integration test simulates the action that happens when the log sink generates

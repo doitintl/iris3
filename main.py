@@ -22,9 +22,10 @@ gcp_utils.set_env()
 
 app = flask.Flask(__name__)
 
+
 def __init_plugins():
-    logging.info("Initializing Iris Plugins in process %s", os.getpid())
     Plugin.init()
+    logging.info("Initialized Iris Plugins in process %s", os.getpid())
 
 
 __init_plugins()
@@ -90,6 +91,7 @@ def label_one():
     except Exception as e:
         logging.exception(f"In do_label(): {e}")
         return "OK", 200
+
 
 def __label_one_0(data, plugin):
     gcp_object = plugin.get_gcp_object(data)

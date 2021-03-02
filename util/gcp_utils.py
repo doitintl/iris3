@@ -1,10 +1,10 @@
 import os
 import uuid
 
+from google.cloud import resource_manager
+
 from util import localdev_config, config_utils
 from util.localdev_config import localdev_pubsub_token
-
-from google.cloud import resource_manager
 
 resource_manager_client = resource_manager.Client()
 
