@@ -17,18 +17,17 @@ logging.basicConfig(
     level=logging.INFO,
 )
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
-
+print("Initialized logger")
 gcp_utils.set_env()
 
 app = flask.Flask(__name__)
 
-
-def __init_flaskapp():
-    logging.info("Initializing Iris in process %s", os.getpid())
+def __init_plugins():
+    logging.info("Initializing Iris Plugins in process %s", os.getpid())
     Plugin.init()
 
 
-__init_flaskapp()
+__init_plugins()
 
 
 @app.route("/")
@@ -90,7 +89,7 @@ def label_one():
         return "OK", 200
     except Exception as e:
         logging.exception(f"In do_label(): {e}")
-
+        return "OK", 200
 
 def __label_one_0(data, plugin):
     gcp_object = plugin.get_gcp_object(data)
@@ -139,6 +138,7 @@ def do_label():
         project_id = data["project_id"]
         logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
         plugin.do_label(project_id)
+        return "OK", 200
     except Exception as e:
         logging.exception(f"In do_label(): {e}")
         return "OK", 200

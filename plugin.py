@@ -74,9 +74,7 @@ class Plugin(object, metaclass=ABCMeta):
 
         if exception is not None:
             logging.error(
-                "Error in Request Id: %s Response: %s Exception: %s",
-                response,
-                request_id,
+                "in __batch_callback(), %s",
                 exception,
             )
 

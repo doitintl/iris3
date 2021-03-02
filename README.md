@@ -22,7 +22,7 @@ For example, a Google Compute Engine instance would get labels like
 Iris does this in two ways:
 * On resource creation, by listening to Operations (Stackdriver) Logs. 
 (You can disable this, see ["Deploy"](#deploy).)
-* On schedule, using a cron job, now scheduled to run every 12 hours. (Configurable in `cron.yaml`.) 
+* On schedule, using a cron job. (Configurable in `cron.yaml`.) 
 Some types of resources only get labeled on schedule.
 
 ## Supported Google Cloud Products
