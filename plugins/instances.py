@@ -45,6 +45,7 @@ class Instances(GceZonalBase):
                     more_results = False
             except errors.HttpError as e:
                 logging.exception(e)
+                more_results = False
 
         return instances
 

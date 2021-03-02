@@ -70,6 +70,7 @@ class Subscriptions(Plugin):
                     break
             except errors.HttpError as e:
                 logging.exception(e)
+                break
 
         return subscriptions
 

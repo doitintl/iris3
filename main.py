@@ -65,28 +65,31 @@ def schedule():
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
-    """
-    PubSub push endpoint for messages from the Log Sink
-    """
-    # Performance question: There are multiple messages for each object-creation, for example
-    # one for request and one for response. So, we may be labeling each object multiple times,
-    # which is a waste of resources.
-    #
-    # Or maybe the first PubSub-triggered action fails, because the resource is not initialized, and
-    # then the second one succeeds; need to check that.
+    try:
+        """
+        PubSub push endpoint for messages from the Log Sink
+        """
+        # Performance question: There are multiple messages for each object-creation, for example
+        # one for request and one for response. So, we may be labeling each object multiple times,
+        # which is a waste of resources.
+        #
+        # Or maybe the first PubSub-triggered action fails, because the resource is not initialized, and
+        # then the second one succeeds; need to check that.
 
-    data = __extract_pubsub_content()
+        data = __extract_pubsub_content()
 
-    method_from_log = data["protoPayload"]["methodName"]
+        method_from_log = data["protoPayload"]["methodName"]
 
-    for plugin_cls in Plugin.subclasses:
-        if plugin_cls.is_labeled_on_creation():
-            plugin = plugin_cls()
-            for supported_method in plugin.method_names():
-                if supported_method.lower() in method_from_log.lower():
-                    __label_one_0(data, plugin)
+        for plugin_cls in Plugin.subclasses:
+            if plugin_cls.is_labeled_on_creation():
+                plugin = plugin_cls()
+                for supported_method in plugin.method_names():
+                    if supported_method.lower() in method_from_log.lower():
+                        __label_one_0(data, plugin)
 
-    return "OK", 200
+        return "OK", 200
+    except Exception as e:
+        logging.exception(f"In do_label(): {e}")
 
 
 def __label_one_0(data, plugin):
@@ -125,17 +128,20 @@ def __extract_pubsub_content() -> typing.Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
-    """Receive a push message from PubSub, sent from schedule() above,
-    with instructions to label all objects of a given plugin and project_id.
-    """
-    data = __extract_pubsub_content()
+    try:
+        """Receive a push message from PubSub, sent from schedule() above,
+        with instructions to label all objects of a given plugin and project_id.
+        """
+        data = __extract_pubsub_content()
 
-    plugin_class_localname = data["plugin"]
-    plugin = Plugin.create_plugin(plugin_class_localname)
-    project_id = data["project_id"]
-    logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
-    plugin.do_label(project_id)
-    return "OK", 200
+        plugin_class_localname = data["plugin"]
+        plugin = Plugin.create_plugin(plugin_class_localname)
+        project_id = data["project_id"]
+        logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
+        plugin.do_label(project_id)
+    except Exception as e:
+        logging.exception(f"In do_label(): {e}")
+        return "OK", 200
 
 
 def __check_pubsub_verification_token():

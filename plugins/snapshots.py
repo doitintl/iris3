@@ -33,6 +33,7 @@ class Snapshots(GceBase):
                     more_results = False
             except errors.HttpError as e:
                 logging.exception(e)
+                more_results = False
 
         return snapshots
 

@@ -70,8 +70,7 @@ class Cloudsql(Plugin):
 
     def do_label(self, project_id):
         page_token = None
-        more_results = True
-        while more_results:
+        while True:
             try:
                 response = (
                     self._google_client.instances()
@@ -93,7 +92,7 @@ class Cloudsql(Plugin):
             if "nextPageToken" in response:
                 page_token = response["nextPageToken"]
             else:
-                more_results = False
+                return
 
     def label_one(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
