@@ -113,11 +113,10 @@ bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
 bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
 gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
 
-# It takes about 3 seconds before  labels are available to be read by "describe".
-# However, by creating several types of objects in sequence, we allow for  that time to pass.
+# It takes about time seconds before  labels are available to be read by "describe".
 #
 # jq -e generates exit code 1 on failure. Since we set -e, the script will fail appropriately if the value is not found
-
+sleep 5
 DESCRIBE_FLAGS=(--project "$TEST_PROJECT" --format json)
 JQ=(jq -e ".labels.${RUN_ID}_name")
 

@@ -27,4 +27,4 @@ env.bak/
 killserver.sh
 pytest.ini
 
-
+config.yaml.original
