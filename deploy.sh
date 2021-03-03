@@ -4,10 +4,9 @@ set -x
 set -u
 set -e
 
-if [[ "$BASH_VERSION" == 3. ]]
-then
-    >&2 echo "Need Bash version 4 and up. Now $BASH_VERSION"
-    exit 1
+if [[ "$BASH_VERSION" == 3. ]]; then
+  echo >&2 "Need Bash version 4 and up. Now $BASH_VERSION"
+  exit 1
 fi
 
 START=$(date "+%s")
@@ -20,7 +19,6 @@ DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
 REGION=us-central
 GAE_REGION_ABBREV=uc
-
 
 if [[ $# -eq 0 ]]; then
   echo Missing project id argument
@@ -105,7 +103,7 @@ fi
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" \
   --role "organizations/$ORGID/roles/$ROLEID" \
-   --condition=None
+  --condition=None
 
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
 gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" ||
@@ -120,10 +118,12 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
 
 if [[ "$CRON_ONLY" == "true" ]]; then
   gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" 2>/dev/null || true
-  #TODO Could delete topics and subscriptions
+  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" 2>/dev/null || true
+  gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECTID" 2>/dev/null || true
+
 else
   # Create PubSub topic for receiving logs about new GCP objects
-  gcloud pubsub topics describe "$LOGS_TOPIC" ||
+  gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECTID" ||
     gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECTID" --quiet >/dev/null
 
   # Create PubSub subscription for receiving log about new GCP objects
@@ -192,5 +192,4 @@ gcloud app deploy -q app.yaml cron.yaml
 
 FINISH=$(date "+%s")
 ELAPSED_SEC=$((FINISH - START))
->&2 echo "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
-
+echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"
