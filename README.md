@@ -59,6 +59,7 @@ On the project where Iris3 is deployed, you will need Owner or these roles:
 
 ## Deploy
 * Optionally edit `app.yaml`, changing the secret token for PubSub.
+* Check you have Python 3.8+ as your default `python3`.
 * Run `./deploy.sh <PROJECT_ID>`. 
    * Add `-c` at the end to use only cron, without labeling on-demand, to save costs on the log sink.
 

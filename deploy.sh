@@ -9,6 +9,10 @@ if [[ "$BASH_VERSION" == 3. ]]; then
   exit 1
 fi
 
+export PYTHONPATH="."
+python3  ./util/check_version.py
+
+
 START=$(date "+%s")
 ROLEID=iris3
 

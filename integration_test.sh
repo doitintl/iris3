@@ -116,7 +116,9 @@ gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
 # It takes about time seconds before  labels are available to be read by "describe".
 #
 # jq -e generates exit code 1 on failure. Since we set -e, the script will fail appropriately if the value is not found
-sleep 5
+
+sleep 20
+
 DESCRIBE_FLAGS=(--project "$TEST_PROJECT" --format json)
 JQ=(jq -e ".labels.${RUN_ID}_name")
 

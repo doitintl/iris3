@@ -149,7 +149,7 @@ class Plugin(object, metaclass=ABCMeta):
         iris_labels = self.__iris_labels(gcp_object)
         all_labels = {**iris_labels, **project_labels, **original_labels}
         if all_labels == original_labels:
-            #Skip labeling  because no change
+            # Skip labeling  because no change
             return None
         else:
             labels = {"labels": all_labels}
