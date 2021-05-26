@@ -40,7 +40,7 @@ Right now, there are plugins for the following types of resources.
 * CloudSQL (These receive a label only on the cron schedule, not on creation.)
 
 ## Installation
-
+### Before deploying
 We recommend deploying Iris in a
 [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project)
 within your Google Cloud organization. 
@@ -57,13 +57,13 @@ On the project where Iris3 is deployed, you will need Owner or these roles:
  * Pub/Sub Admin
 
 
-## Deploy
+###Deployment
 * Optionally edit `app.yaml`, changing the secret token for PubSub.
 * Check you have Python 3.8+ as your default `python3`.
 * Run `./deploy.sh <PROJECT_ID>`. 
    * Add `-c` at the end to use only cron, without labeling on-demand, to save costs on the log sink.
 
-## Configuration
+### Optional Configuration
 
 * See  `config.yaml` for documentation of these options:
   - What projects to include. (The default is all projects in the organization.)
@@ -73,9 +73,9 @@ On the project where Iris3 is deployed, you will need Owner or these roles:
 * `cron.yaml` lets you change the scheduled labelings.
 
 ## Local Development
-For local development, run `main.py` as an ordinary Flask application, either by running the module,
-or with `export FLASK_ENV=development;export FLASK_DEBUG=1; python -m flask run --port 8000`
-
+For local development, run `main.py` as an ordinary Flask application, with
+`export FLASK_ENV=development;export FLASK_RUN_PORT=8000;export FLASK_DEBUG=1;FLASK_APP=main.py python -m flask run`
+(In an interactive development environment, run main.py, first setting these environment variables.)
 ### Prerequisites for developing and building
 * In development
 ```
@@ -128,7 +128,7 @@ update (add labels to) your resources.
 with resources that you pre-deploy. See the files for instructions.
 
 ####  Integration test
-`integration_test.sh` tests agaist a deployed app and deployed cloud resources.
+`integration_test.sh` tests against a deployed app and deployed cloud resources.
 See the file for instructions.
 
 #### Testing the scheduled labeling
