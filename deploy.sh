@@ -4,6 +4,16 @@ set -x
 set -u
 set -e
 
+
+SHELL_DETECTION=$(ps -p $$ -oargs= )
+
+if [[ ! "$SHELL_DETECTION" == *bash* ]]; then
+  echo >&2 "Need Bash. Found \"$SHELL_DETECTION\""
+  exit 1
+else
+  echo ""
+fi
+
 if [[ "$BASH_VERSION" == 3. ]]; then
   echo >&2 "Need Bash version 4 and up. Now $BASH_VERSION"
   exit 1
