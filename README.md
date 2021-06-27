@@ -20,9 +20,9 @@ For example, a Google Compute Engine instance would get labels like
 
 ## When it does it
 Iris does this in two ways:
-* On resource creation, by listening to Operations (Stackdriver) Logs. 
+* On resource creation, by listening to Google Cloud Operations (Stackdriver) Logs. 
 (You can disable this, see ["Deploy"](#deploy).)
-* On schedule, using a cron job. (Configurable in `cron.yaml`.) 
+* On schedule, using a cron job. (Disable or configure ths in `cron.yaml`.) 
 Some types of resources only get labeled on schedule.
 
 ## Supported Google Cloud Products
@@ -41,9 +41,8 @@ Right now, there are plugins for the following types of resources.
 
 ## Installation
 ### Before deploying
-We recommend deploying Iris in a
+You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
 [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project)
-within your Google Cloud organization. 
 
 To deploy, you will need to have these roles on the the *organization* where Iris is deployed.
 * *Organization Role Administrator* to create a custom IAM role for Iris that allows to get and set labels on the services.
@@ -61,7 +60,8 @@ On the project where Iris3 is deployed, you will need Owner or these roles:
 * Optionally edit `app.yaml`, changing the secret token for PubSub.
 * Check you have Python 3.8+ as your default `python3`.
 * Run `./deploy.sh <PROJECT_ID>`. 
-   * Add `-c` at the end to use only cron, without labeling on-demand, to save costs on the log sink.
+   * Add `-c` at the end to use only cron (i.e., without labeling on-demand). All resources will get
+     labeled this way, though with a delay. This saves costs on the log sink.
 
 ### Optional Configuration
 
@@ -132,8 +132,8 @@ with resources that you pre-deploy. See the files for instructions.
 See the file for instructions.
 
 #### Testing the scheduled labeling
-Deploy some resources, deploy  the app with the `-c` switch  to disable event-based labeling,
-then trigger cron from the App Engine GUI, and check that labels were added. 
+Deploy some resources, deploy the app with the `-c` switch  (after the project ID) 
+to disable event-based labeling, then trigger cron from the App Engine GUI, and check that labels were added. 
 
 ## Change log 
 (Iris 3 as compared to Iris)

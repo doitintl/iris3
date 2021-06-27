@@ -93,7 +93,7 @@ class Disks(GceZonalBase):
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1
-            if self.counter == 1000:
+            if self.counter == self._BATCH_SIZE:
                 self.do_batch()
 
         except errors.HttpError as e:

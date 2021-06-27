@@ -1,5 +1,5 @@
 import sys
-
+"""Called from deploy.sh"""
 if __name__ == "__main__":
     major_min, minor_min = 3, 8
     if not (

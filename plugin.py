@@ -17,14 +17,19 @@ PLUGINS_MODULE = "plugins"
 class Plugin(object, metaclass=ABCMeta):
     __project_access_client = discovery.build("cloudresourcemanager", "v1")
     __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
+    # Underlying API  max is 1000; avoid off-by-one errors
+    _BATCH_SIZE = 990
+
+    # For a class to know its subclasses is generally bad.
+    # Here, the Plugin class also serves as a manager of its subclasses.
+    # We could create a separate PluginManager but let's not get too Java-ish.
     subclasses = []
 
     def __init__(self):
-        self.counter = 0
+
         self._google_client = discovery.build(*self.discovery_api())
-        self._batch = self._google_client.new_batch_http_request(
-            callback=self.__batch_callback
-        )
+        self.__init_batch_req()
+
 
     @classmethod
     @abstractmethod
@@ -83,12 +88,13 @@ class Plugin(object, metaclass=ABCMeta):
     def do_batch(self):
         """In do_label, we loop over all objects. But for efficienccy, we do not process
         then all at once, but rather gather objects and process them in batches of
-        1000 as we loop; then parse the remaining at the end of the loop"""
+        self._BATCH_SIZE as we loop; then parse the remaining at the end of the loop"""
         try:
             self._batch.execute()
         except Exception as e:
             logging.exception(e)
-        self.counter = 0
+
+        self.__init_batch_req()
 
     @abstractmethod
     def do_label(self, project_id):
@@ -148,7 +154,11 @@ class Plugin(object, metaclass=ABCMeta):
         )
         iris_labels = self.__iris_labels(gcp_object)
         all_labels = {**iris_labels, **project_labels, **original_labels}
-        if all_labels == original_labels:
+        if "goog-gke-node" in original_labels:
+            # Do not label GKE resources. (This is really just instances and disks, and so should be pushed to a hook method)
+            logging.info(f"{self.__class__.__name__}, skip labeling GKE object {gcp_object.get('name')}")
+            return None
+        elif all_labels == original_labels:
             # Skip labeling  because no change
             return None
         else:
@@ -175,3 +185,8 @@ class Plugin(object, metaclass=ABCMeta):
         except KeyError as e:
             logging.exception(e)
             return None
+
+    def __init_batch_req(self):
+        self.counter = 0
+        self._batch = self._google_client.new_batch_http_request(
+            callback=self.__batch_callback)
