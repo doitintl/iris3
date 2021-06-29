@@ -144,7 +144,7 @@ class Bigtable(Plugin):
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1
-            if self.counter == self._BATCH_SIZE:
+            if self.counter >= self._BATCH_SIZE:
                 self.do_batch()
         except Exception as e:
             logging.exception(e)

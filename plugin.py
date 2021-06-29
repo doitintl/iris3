@@ -5,6 +5,7 @@ import typing
 from abc import ABCMeta, abstractmethod
 from functools import lru_cache
 
+from google.cloud import resource_manager
 from googleapiclient import discovery
 from googleapiclient import errors
 
@@ -15,9 +16,9 @@ PLUGINS_MODULE = "plugins"
 
 
 class Plugin(object, metaclass=ABCMeta):
-    __project_access_client = discovery.build("cloudresourcemanager", "v1")
     __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     # Underlying API  max is 1000; avoid off-by-one errors
+    # We send a batch when  _BATCH_SIZE or more tasks are in it.
     _BATCH_SIZE = 990
 
     # For a class to know its subclasses is generally bad.
@@ -26,10 +27,8 @@ class Plugin(object, metaclass=ABCMeta):
     subclasses = []
 
     def __init__(self):
-
         self._google_client = discovery.build(*self.discovery_api())
         self.__init_batch_req()
-
 
     @classmethod
     @abstractmethod
@@ -46,12 +45,14 @@ class Plugin(object, metaclass=ABCMeta):
     @lru_cache(maxsize=256)
     def _project_labels(self, project_id) -> typing.Dict:
 
-        assert self.__proj_regex.match(project_id), project_id
-
-        request = self.__project_access_client.projects().get(projectId=project_id)
+        assert self.__proj_regex.match(
+            project_id
+        ), f"Project ID is illegal: {project_id}"
         try:
-            response = request.execute()
-            return response.get("labels", {})  # Handle case where project has no labels
+            client = resource_manager.Client()
+            proj = client.fetch_project(project_id)
+            labels = proj.labels or {} # Will be {} if emptu but playing it safe
+            return labels
         except errors.HttpError as e:
             logging.exception(f"Failing to get labels for project {project_id}: {e}")
             return {}
@@ -156,7 +157,9 @@ class Plugin(object, metaclass=ABCMeta):
         all_labels = {**iris_labels, **project_labels, **original_labels}
         if "goog-gke-node" in original_labels:
             # Do not label GKE resources. (This is really just instances and disks, and so should be pushed to a hook method)
-            logging.info(f"{self.__class__.__name__}, skip labeling GKE object {gcp_object.get('name')}")
+            logging.info(
+                f"{self.__class__.__name__}, skip labeling GKE object {gcp_object.get('name')}"
+            )
             return None
         elif all_labels == original_labels:
             # Skip labeling  because no change
@@ -189,4 +192,5 @@ class Plugin(object, metaclass=ABCMeta):
     def __init_batch_req(self):
         self.counter = 0
         self._batch = self._google_client.new_batch_http_request(
-            callback=self.__batch_callback)
+            callback=self.__batch_callback
+        )

@@ -147,7 +147,7 @@ def do_label():
 
 
 def __check_pubsub_verification_token():
-    """ Token verifying that only PubSub accesses PubSub push endpoints"""
+    """Token verifying that only PubSub accesses PubSub push endpoints"""
     known_token = util.gcp_utils.pubsub_token()
     if not known_token:
         raise FlaskException(
