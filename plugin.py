@@ -156,7 +156,7 @@ class Plugin(object, metaclass=ABCMeta):
         iris_labels = self.__iris_labels(gcp_object)
         all_labels = {**iris_labels, **project_labels, **original_labels}
         if "goog-gke-node" in original_labels:
-            # Do not label GKE resources. (This is really just instances and disks, and so should be pushed to a hook method)
+            # We do not label GKE resources. (TODO This is really just instances and disks, and so should be pushed to a hook method)
             logging.info(
                 f"{self.__class__.__name__}, skip labeling GKE object {gcp_object.get('name')}"
             )

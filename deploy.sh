@@ -55,7 +55,8 @@ while getopts c opt; do
           Argument:
                   The project to which Iris 3 will be deployed
           Options:
-                  -c (After project ID) Use cron only  to add labels. Do not add labels on resource creation
+                  -c (at end of line, after project ID):
+                      Use only cron to add labels; do not add labels on resource creation.
 EOF
     exit 1
     ;;

@@ -3,7 +3,6 @@ See the [blog post about Iris 3](https://blog.doit-intl.com/iris-3-automatic-lab
 
 In Greek mythology, Iris (/ˈaɪɹɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. 
 She was the handmaiden to Hera.
-
 ## Iris3 vs Iris
 
 This is a complete rewrite of [Iris](https://github.com/doitintl/iris), replatforming it to AppEngine Python 3, 
@@ -28,8 +27,11 @@ Some types of resources only get labeled on schedule.
 ## Supported Google Cloud Products
 
 Right now, there are plugins for the following types of resources.
-* Compute Engine Instances (including  preemptible instances or instances created by Managed Instnace Groups.)
+* Compute Engine Instances 
+  * Including  preemptible instances or instances created by Managed Instance Groups.
+  * But: GKE Nodes are not labeled, as doing so recreates them.
 * Compute Engine Disks
+  * But: GKE Disks (Volumes) are not labeled. See above.
 * Compute Engine Snapshots
 * Cloud Storage
 * BigQuery Datasets
