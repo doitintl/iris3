@@ -6,7 +6,7 @@ from test_scripts.utils_for_tests import do_local_http
 """
 This integration test simulates the action that happens in response to a cron
 call to /schedule.
- 
+
 It is useful in development. Run main.py in debug mode, then run 
 test_do_label.py, specifying the project in the environment.
 
@@ -17,7 +17,15 @@ Comment or uncomment resource types in test_do_label() to focus the testing.
 def test_do_label():
     project = __project()
     plugins = [
+        "Buckets",
+        "Bigquery",
         "Instances",
+        "Disks",
+        "Snapshots",
+        "Topics",
+        "Subscriptions",
+        "Cloudsql",
+        "Bigtable",
     ]
 
     for plugin in plugins:

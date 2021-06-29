@@ -51,7 +51,7 @@ class Plugin(object, metaclass=ABCMeta):
         try:
             client = resource_manager.Client()
             proj = client.fetch_project(project_id)
-            labels = proj.labels or {} # Will be {} if emptu but playing it safe
+            labels = proj.labels or {}  # Will be {} if emptu but playing it safe
             return labels
         except errors.HttpError as e:
             logging.exception(f"Failing to get labels for project {project_id}: {e}")
