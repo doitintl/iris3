@@ -27,19 +27,24 @@ Some types of resources only get labeled on schedule.
 ## Supported Google Cloud Products
 
 Right now, there are plugins for the following types of resources.
-* Compute Engine Instances 
+To learn what label keys are added, search for `def _gcp_`, i.e., functions
+whose names start `_gcp_`. The function name is used for the key. 
+These are also listed below.
+* Compute Engine Instances (Labels name, zone, region, instance type) 
   * Including  preemptible instances or instances created by Managed Instance Groups.
   * But: GKE Nodes are not labeled, as doing so recreates them.
-* Compute Engine Disks
+* Compute Engine Disks (Labels name, zone, region)
   * But: GKE Disks (Volumes) are not labeled. See above.
-* Compute Engine Snapshots
-* Cloud Storage
-* BigQuery Datasets
-* BigQuery Tables
-* BigTable Instances
-* PubSub Subscriptions
-* PubSub Topics
-* CloudSQL (These receive a label only on the cron schedule, not on creation.)
+* Compute Engine Snapshots  (Labels name, zone, region)
+* Cloud Storage  (Labels name, zone, region)
+* BigQuery Datasets (Labels name, zone, region)
+* BigQuery Tables (Labels name, zone, region)
+* BigTable Instances (Labels name, zone, region)
+* PubSub Subscriptions (Labels name)
+* PubSub Topics (Labels name, zone)
+* CloudSQL (Labels name, zone, region)
+  * These receive a label only on the cron schedule, not on creation.
+* Google Cloud Storage buckets  (Labels name, location)
 
 ## Installation
 ### Before deploying
