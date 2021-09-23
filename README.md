@@ -45,6 +45,8 @@ These are also listed below.
 * CloudSQL (Labels name, zone, region)
   * These receive a label only on the cron schedule, not on creation.
 * Google Cloud Storage buckets  (Labels name, location)
+* In addition to these, project labels may be copied into each resource,
+  if you have configured that in `config.yaml`
 
 ## Installation
 ### Before deploying
@@ -148,7 +150,7 @@ to disable event-based labeling, then trigger cron from the App Engine GUI, and 
 (The Python 2 version is long since obsolete, not well-supported, and some necessary
 APIs cannot be used with it.)
 1. Labeling for PubSub Topics and Subscriptions
-1. Project labels can be automatically copied into each resource in the project.
+1. Project labels can be automatically copied into each resource in the project. See `config.yaml`
 1. Option to choose the projects in which resources that will be labeled;
 or to label across the entire organization.
 1. Option to save costs by using only cron, without labeling on demand.
