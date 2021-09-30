@@ -109,6 +109,3 @@ def test_bigtable():
     from plugins.bigtable import Bigtable
 
     label_one(__project(), __resource_name(), Bigtable().method_names()[0])
-
-
-test_disks()
