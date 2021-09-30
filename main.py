@@ -33,7 +33,7 @@ __init_plugins()
 
 @app.route("/")
 def index():
-    return f"I'm {iris_prefix().title()}, pleased to meet you!", 200
+    return f"I'm {iris_prefix().capitalize()}, pleased to meet you!", 200
 
 
 @app.route("/schedule", methods=["GET"])

@@ -21,3 +21,4 @@ README.md
 *.sh
 *.template
 pytest.ini
+venv/
