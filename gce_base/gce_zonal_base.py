@@ -33,7 +33,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
 
     def block_labeling(self, gcp_object, original_labels):
         if "goog-gke-node" in original_labels:
-            # We do not label GKE resources. 
+            # We do not label GKE resources.
             logging.info(
                 f"{self.__class__.__name__}, skip labeling GKE object {gcp_object.get('name')}"
             )
