@@ -111,9 +111,9 @@ class Subscriptions(Plugin):
             return "Error", 500
         return "OK", 200
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
-            subscription_path = data["protoPayload"]["request"]["name"]
+            subscription_path = log_data["protoPayload"]["request"]["name"]
             subscription = self.__get_subscription(subscription_path)
             return subscription
         except Exception as e:

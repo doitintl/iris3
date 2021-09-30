@@ -19,7 +19,7 @@ if [[ $# -lt 2 ]]; then
   cat >&2 <<EOF
  Usage: integration_test.sh deployment-project project-under-test [execution-id]
     - The project to which Iris is deployed
-    - The project where resources will be labeled
+    - The project where resources will be labeled (can be the same project)
     - An optional lower-case alphanumerical string to identify this run,
          used as a prefix on Iris labels and as part of the name of launched resources.
          If omitted, one will be generated.

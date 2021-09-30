@@ -102,9 +102,9 @@ class Topics(Plugin):
             return "Error", 500
         return "OK", 200
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
-            topic_path = data["protoPayload"]["request"]["name"]
+            topic_path = log_data["protoPayload"]["request"]["name"]
             topic = self.__get_topic(topic_path)
             return topic
         except Exception as e:

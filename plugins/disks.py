@@ -64,12 +64,12 @@ class Disks(GceZonalBase):
             self.do_batch()
         return "OK", 200
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
-            disk_name = data["protoPayload"]["resourceName"]
+            disk_name = log_data["protoPayload"]["resourceName"]
             ind = disk_name.rfind("/")
             disk_name = disk_name[ind + 1 :]
-            labels = data["resource"]["labels"]
+            labels = log_data["resource"]["labels"]
             disk = self.__get_disk(labels["project_id"], labels["zone"], disk_name)
             return disk
         except Exception as e:
@@ -100,3 +100,8 @@ class Disks(GceZonalBase):
             logging.exception(e)
             return "Error", 500
         return "OK", 200
+
+    def _gcp_pd_attached(self, gcp_object):
+        """Method dynamically called in generating labels, so don't change name"""
+        users = gcp_object.get("users")
+        return "true" if users else "false"

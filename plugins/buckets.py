@@ -41,9 +41,9 @@ class Buckets(Plugin):
             logging.exception(e)
             return None
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
-            bucket = self.__get_bucket(data["resource"]["labels"]["bucket_name"])
+            bucket = self.__get_bucket(log_data["resource"]["labels"]["bucket_name"])
             return bucket
         except Exception as e:
             logging.exception(e)

@@ -12,7 +12,7 @@ It is useful in development.
 * Run main.py in debug mode.
 * Run  test_label_one.py with environment variables 
     - `project` where the resource is deployed
-    - `instance` for the name of the resource (in this example table-1)
+    - `resource` for the name of the resource (in this example table-1)
     -  and `parent` for the name of the parent if relevant (in this case dataset-1). 
         The parent is needed only with BigQuery Tables and PubSub Subscriptions.
   
@@ -26,19 +26,16 @@ def __project():
     return proj
 
 
-def __instance_name():
-    instance = os.environ.get("instance")
-    if not instance:
+def __resource_name():
+    resource = os.environ.get("resource")
+    if not resource:
         raise ValueError(
-            "Must specify 'instance' key in environment for name of "
-            "resource, e.g. GCE VM Instance, Disk, Subscription, Topic, "
+            "Must specify 'resource' key in environment for name of "
+            "resource, e.g. the name of the VM Instance, Disk, Subscription, Topic, "
             "BigTable Instance, BigQuery Table or Dataset, "
             "Cloud Storage Bucket, or CloudSQL Instance"
         )
-    if os.environ.get("use_base_name"):
-        return instance
-    else:
-        return instance + __project()
+    return resource
 
 
 def __parent_name():
@@ -49,39 +46,36 @@ def __parent_name():
             "resource under test, e.g. BigQuery Dataset name for a BigQuery table, "
             "or PubSub Topic for a Subscription"
         )
-    if os.environ.get("use_base_name"):
-        return parent
-    else:
-        return parent + __project()
+
+    return parent
 
 
 def test_buckets():
-
     from plugins.buckets import Buckets
 
-    label_one(__project(), __instance_name(), Buckets().method_names()[0])
+    label_one(__project(), __resource_name(), Buckets().method_names()[0])
 
 
 def test_cloudsql():
     from plugins.cloudsql import Cloudsql
 
-    label_one(__project(), __instance_name(), Cloudsql().method_names()[0])
+    label_one(__project(), __resource_name(), Cloudsql().method_names()[0])
 
 
 def test_dataset():
-    label_one(__project(), __instance_name(), "datasetservice.insert")
+    label_one(__project(), __resource_name(), "datasetservice.insert")
 
 
 def test_table():
-    label_one(__project(), __instance_name(), "tableservice.insert", __parent_name())
+    label_one(__project(), __resource_name(), "tableservice.insert", __parent_name())
 
 
 def test_instances():
-    label_one(__project(), __instance_name(), "compute.instances.insert")
+    label_one(__project(), __resource_name(), "compute.instances.insert")
 
 
 def test_snapshots():
-    label_one(__project(), __instance_name(), Snapshots().method_names()[0])
+    label_one(__project(), __resource_name(), Snapshots().method_names()[0])
 
 
 def test_disks():
@@ -89,7 +83,7 @@ def test_disks():
 
     label_one(
         __project(),
-        __instance_name(),
+        __resource_name(),
         Disks().method_names()[0],
     )
 
@@ -97,7 +91,7 @@ def test_disks():
 def test_topics():
     from plugins.topics import Topics
 
-    label_one(__project(), __instance_name(), Topics().method_names()[0])
+    label_one(__project(), __resource_name(), Topics().method_names()[0])
 
 
 def test_subscriptions():
@@ -105,7 +99,7 @@ def test_subscriptions():
 
     label_one(
         __project(),
-        __instance_name(),
+        __resource_name(),
         Subscriptions().method_names()[0],
         __parent_name(),
     )
@@ -114,4 +108,7 @@ def test_subscriptions():
 def test_bigtable():
     from plugins.bigtable import Bigtable
 
-    label_one(__project(), __instance_name(), Bigtable().method_names()[0])
+    label_one(__project(), __resource_name(), Bigtable().method_names()[0])
+
+
+test_disks()

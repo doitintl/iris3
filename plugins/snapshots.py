@@ -57,14 +57,14 @@ class Snapshots(GceBase):
             self.do_batch()
         return "OK", 200
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
-            if "response" not in data["protoPayload"]:
+            if "response" not in log_data["protoPayload"]:
                 return None
-            request = data["protoPayload"]["request"]
+            request = log_data["protoPayload"]["request"]
             snap_name = request["name"]
             snapshot = self.__get_snapshot(
-                data["resource"]["labels"]["project_id"], snap_name
+                log_data["resource"]["labels"]["project_id"], snap_name
             )
             return snapshot
         except Exception as e:

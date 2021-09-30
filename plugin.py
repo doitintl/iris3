@@ -10,7 +10,7 @@ from googleapiclient import discovery
 from googleapiclient import errors
 
 from util.config_utils import is_copying_labels_from_project, iris_prefix
-from util.utils import cls_by_name, shorten, methods
+from util.utils import cls_by_name, methods
 
 PLUGINS_MODULE = "plugins"
 
@@ -79,7 +79,6 @@ class Plugin(object, metaclass=ABCMeta):
         return ret
 
     def __batch_callback(self, request_id, response, exception):
-
         if exception is not None:
             logging.error(
                 "in __batch_callback(), %s",
@@ -148,18 +147,13 @@ class Plugin(object, metaclass=ABCMeta):
         :return dict including original labels, project labels (if the system is configured to add those)
         and new labels. But if that would result in no change, return None
         """
-
         original_labels = gcp_object["labels"] if "labels" in gcp_object else {}
         project_labels = (
             self._project_labels(project_id) if is_copying_labels_from_project() else {}
         )
         iris_labels = self.__iris_labels(gcp_object)
         all_labels = {**iris_labels, **project_labels, **original_labels}
-        if "goog-gke-node" in original_labels:
-            # We do not label GKE resources. (TODO This is really just instances and disks, and so should be pushed to a hook method)
-            logging.info(
-                f"{self.__class__.__name__}, skip labeling GKE object {gcp_object.get('name')}"
-            )
+        if self.block_labeling(gcp_object, original_labels):
             return None
         elif all_labels == original_labels:
             # Skip labeling  because no change
@@ -194,3 +188,6 @@ class Plugin(object, metaclass=ABCMeta):
         self._batch = self._google_client.new_batch_http_request(
             callback=self.__batch_callback
         )
+
+    def block_labeling(self, block_labeling, original_labels):
+        return False

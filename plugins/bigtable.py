@@ -80,11 +80,11 @@ class Bigtable(Plugin):
             logging.exception(e)
             return None
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
             instance = self.__get_instance(
-                data["resource"]["labels"]["project_id"],
-                data["protoPayload"]["request"]["instanceId"],
+                log_data["resource"]["labels"]["project_id"],
+                log_data["protoPayload"]["request"]["instanceId"],
             )
             return instance
         except Exception as e:

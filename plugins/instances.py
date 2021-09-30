@@ -70,14 +70,14 @@ class Instances(GceZonalBase):
             self.do_batch()
         return "OK", 200
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
-            inst = data["protoPayload"]["resourceName"]
+            inst = log_data["protoPayload"]["resourceName"]
             ind = inst.rfind("/")
             inst = inst[ind + 1 :]
-            lab = data["resource"]["labels"]
+            lab = log_data["resource"]["labels"]
             instance = self.__get_instance(
-                lab["project_id"], data["resource"]["labels"]["zone"], inst
+                lab["project_id"], log_data["resource"]["labels"]["zone"], inst
             )
             return instance
         except Exception as e:

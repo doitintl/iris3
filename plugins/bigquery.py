@@ -70,11 +70,11 @@ class Bigquery(Plugin):
             logging.exception(e)
             return None
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
-            dataset_name = data["protoPayload"]["serviceData"]["datasetInsertRequest"][
-                "resource"
-            ]["datasetName"]
+            dataset_name = log_data["protoPayload"]["serviceData"][
+                "datasetInsertRequest"
+            ]["resource"]["datasetName"]
             datasetid = dataset_name["datasetId"]
             projectid = dataset_name["projectId"]
             dataset = self.__get_dataset(projectid, datasetid)
@@ -83,7 +83,7 @@ class Bigquery(Plugin):
             # No such dataset; hoping for table
             pass
         try:
-            table = data["protoPayload"]["serviceData"]["tableInsertRequest"][
+            table = log_data["protoPayload"]["serviceData"]["tableInsertRequest"][
                 "resource"
             ]["tableName"]
             tableid = table["tableId"]

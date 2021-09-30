@@ -55,11 +55,11 @@ class Cloudsql(Plugin):
             logging.exception(e)
             return None
 
-    def get_gcp_object(self, data):
+    def get_gcp_object(self, log_data):
         try:
-            if "response" not in data["protoPayload"]:
+            if "response" not in log_data["protoPayload"]:
                 return None
-            labels_ = data["resource"]["labels"]
+            labels_ = log_data["resource"]["labels"]
             ind = labels_["database_id"].rfind(":")
             instance = labels_["database_id"][ind + 1 :]
             instance = self.__get_instance(labels_["project_id"], instance)
