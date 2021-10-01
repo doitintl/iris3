@@ -74,12 +74,15 @@ trap "revert_config" EXIT
 
 envsubst <config.yaml.test.template >config.yaml
 
+# TODO Deploy a service with a name that is NOT iris3, to cleanly separate test from existing infrastructure.
+# But that is not high-priority, since the test will be run in a test environment anyway.
+
 ./deploy.sh $DEPLOYMENT_PROJECT
 
 # Cleanup on exit
 function clean_resources() {
   EXIT_CODE=$?
-  # cleanup should not stop on error
+  # Cleanup should not stop on error
   set +e
   # Include the earlier on-exit code inside this one.
   revert_config
@@ -93,6 +96,9 @@ function clean_resources() {
   bq rm -f --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
+
+  gcloud app services delete -q iris3 --project $DEPLOYMENT_PROJECT
+
   FINISH_TEST=$(date "+%s")
   ELAPSED_SEC_TEST=$((FINISH_TEST - START_TEST))
   echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC_TEST} s; exiting with $EXIT_CODE"
