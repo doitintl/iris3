@@ -32,7 +32,7 @@ class Disks(GceZonalBase):
                     .execute()
                 )
                 if "items" in result:
-                    disks = disks + result["items"]
+                    qdisks = disks + result["items"]
                 if "nextPageToken" in result:
                     page_token = result["nextPageToken"]
                 else:
@@ -62,7 +62,7 @@ class Disks(GceZonalBase):
                 self.label_one(disk, project_id)
         if self.counter > 0:
             self.do_batch()
-        return "OK", 200
+        # return "OK", 200
 
     def get_gcp_object(self, log_data):
         try:

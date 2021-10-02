@@ -19,8 +19,8 @@ def test_do_label():
     plugins = [
         # "Buckets",
         # "Bigquery",
-        # "Instances",
-        "Disks",
+        "Instances",
+        # "Disks",
         # "Snapshots",
         # "Topics",
         # "Subscriptions",
