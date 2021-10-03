@@ -20,6 +20,7 @@ coverage.xml
 .env
 .venv
 venv/
+virtenv*/
 env.bak/
 
 *.bak
