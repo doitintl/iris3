@@ -74,9 +74,6 @@ trap "revert_config" EXIT
 
 envsubst <config.yaml.test.template >config.yaml
 
-# TODO Deploy a service with a name that is NOT iris3, to cleanly separate test from existing infrastructure.
-# But that is not high-priority, since the test will be run in a test environment anyway.
-
 ./deploy.sh $DEPLOYMENT_PROJECT
 
 # Cleanup on exit
@@ -96,7 +93,6 @@ function clean_resources() {
   bq rm -f --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
-  #TODO delete only the version, not the service. Still, I assume this is a test praject and we can clean up fullyt.
   gcloud app services delete -q iris3 --project $DEPLOYMENT_PROJECT
 
   FINISH_TEST=$(date "+%s")
