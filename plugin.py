@@ -152,7 +152,7 @@ class Plugin(object, metaclass=ABCMeta):
             self._project_labels(project_id) if is_copying_labels_from_project() else {}
         )
         iris_labels = self.__iris_labels(gcp_object)
-        all_labels = {**iris_labels, **project_labels, **original_labels}
+        all_labels = original_labels | project_labels | iris_labels
         if self.block_labeling(gcp_object, original_labels):
             return None
         elif all_labels == original_labels:

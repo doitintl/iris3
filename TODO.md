@@ -29,12 +29,10 @@
   in `_batch_callback`, which occurs intermittently, especially with disks. Solutions:
   - Retry - Ignore and let the cron do it - Implement Cloud Task with a delay. (Not clear if that will help.)
 * P3 Rethink the need for title case in class names. This is clumsy for `Bigtable` and `Cloudsql`.
-* P3 See the `TODO` in the code re not labeling GKE nodes.
 * P4 Implement new labels, for example using ideas from
   the [GCP Auto Tag project](https://github.com/doitintl/gcp-auto-tag/)
   But **don't add too many**: There are *a lot* of fields on resources.
     - Add a label with the email of the creator of the resource
-    - For disks, add a label with the name of the instance to which they are attached.
     - Immediately label boot disks that are created with their instance.
         * (This seems not to work now in Iris3, though that needs to be double-checked.)
         * As shown in [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), do this by pulling a

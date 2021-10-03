@@ -26,13 +26,12 @@ class Disks(GceZonalBase):
                     .list(
                         project=project_id,
                         zone=zone,
-                        filter=self._filter_already_labeled,
                         pageToken=page_token,
                     )
                     .execute()
                 )
                 if "items" in result:
-                    qdisks = disks + result["items"]
+                    disks = disks + result["items"]
                 if "nextPageToken" in result:
                     page_token = result["nextPageToken"]
                 else:

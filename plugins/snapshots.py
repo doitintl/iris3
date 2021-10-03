@@ -20,7 +20,6 @@ class Snapshots(GceBase):
                     self._google_client.snapshots()
                     .list(
                         project=project_id,
-                        filter=self._filter_already_labeled,
                         pageToken=page_token,
                     )
                     .execute()

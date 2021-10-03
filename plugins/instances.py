@@ -32,7 +32,6 @@ class Instances(GceZonalBase):
                     .list(
                         project=project_id,
                         zone=zone,
-                        filter=self._filter_already_labeled,
                         pageToken=page_token,
                     )
                     .execute()

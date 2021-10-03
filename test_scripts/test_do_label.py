@@ -17,15 +17,15 @@ Comment or uncomment resource types in test_do_label() to focus the testing.
 def test_do_label():
     project = __project()
     plugins = [
-        # "Buckets",
-        # "Bigquery",
+        "Buckets",
+        "Bigquery",
         "Instances",
-        # "Disks",
-        # "Snapshots",
-        # "Topics",
-        # "Subscriptions",
-        # "Cloudsql",
-        # "Bigtable",
+        "Disks",
+        "Snapshots",
+        "Topics",
+        "Subscriptions",
+        "Cloudsql",
+        "Bigtable",
     ]
 
     for plugin in plugins:

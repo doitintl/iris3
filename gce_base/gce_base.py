@@ -5,10 +5,6 @@ from plugin import Plugin
 
 
 class GceBase(Plugin, metaclass=ABCMeta):
-
-    #TODO Remove this filter
-    _filter_already_labeled = "-labels.iris_name:*"
-
     @classmethod
     def discovery_api(cls) -> typing.Tuple[str, str]:
         return "compute", "v1"
