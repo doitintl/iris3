@@ -125,6 +125,8 @@ gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" |
   gcloud pubsub topics create "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
 
 # Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
+# If the subscription exists, it will not be changed.
+# So, if you want to change the PubSub token, you have to manually delete this subscription first.
 gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECTID" ||
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
@@ -142,6 +144,8 @@ else
     gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECTID" --quiet >/dev/null
 
   # Create PubSub subscription for receiving log about new GCP objects
+  # If the subscription exists, it will not be changed.
+  # So, if you want to change the PubSub token, you have to manually delete this subscription first.
   gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" ||
     gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
       --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
