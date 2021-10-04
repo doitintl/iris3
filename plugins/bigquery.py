@@ -102,20 +102,16 @@ class Bigquery(Plugin):
         page_token = None
         more_results = True
         while more_results:
-            try:
-                response = (
-                    self._google_client.datasets()
-                    .list(
-                        projectId=project_id,
-                        pageToken=page_token,
-                        # Though filters are supported here, "NOT" filters are
-                        # not
-                    )
-                    .execute()
+            response = (
+                self._google_client.datasets()
+                .list(
+                    projectId=project_id,
+                    pageToken=page_token,
+                    # Though filters are supported here, "NOT" filters are
+                    # not
                 )
-            except errors.HttpError as e:
-                logging.exception(e)
-                return
+                .execute()
+            )
 
             if "datasets" in response:
                 for dataset in response["datasets"]:

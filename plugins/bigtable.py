@@ -95,20 +95,18 @@ class Bigtable(Plugin):
         page_token = None
         more_results = True
         while more_results:
-            try:
-                result = (
-                    self._google_client.projects()
-                    .instances()
-                    .list(
-                        parent=PROJECTS + project_id,
-                        pageToken=page_token,
-                        # Filter not supported
-                    )
-                    .execute()
+
+            result = (
+                self._google_client.projects()
+                .instances()
+                .list(
+                    parent=PROJECTS + project_id,
+                    pageToken=page_token,
+                    # Filter not supported
                 )
-            except errors.HttpError as e:
-                logging.exception(e)
-                return
+                .execute()
+            )
+
             if "instances" in result:
                 for inst in result["instances"]:
                     self.label_one(inst, project_id)

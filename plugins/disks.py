@@ -20,24 +20,20 @@ class Disks(GceZonalBase):
         page_token = None
         more_results = True
         while more_results:
-            try:
-                result = (
-                    self._google_client.disks()
-                    .list(
-                        project=project_id,
-                        zone=zone,
-                        pageToken=page_token,
-                    )
-                    .execute()
+            result = (
+                self._google_client.disks()
+                .list(
+                    project=project_id,
+                    zone=zone,
+                    pageToken=page_token,
                 )
-                if "items" in result:
-                    disks = disks + result["items"]
-                if "nextPageToken" in result:
-                    page_token = result["nextPageToken"]
-                else:
-                    more_results = False
-            except errors.HttpError as e:
-                logging.exception(e)
+                .execute()
+            )
+            if "items" in result:
+                disks = disks + result["items"]
+            if "nextPageToken" in result:
+                page_token = result["nextPageToken"]
+            else:
                 more_results = False
 
         return disks

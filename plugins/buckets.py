@@ -54,19 +54,15 @@ class Buckets(Plugin):
         page_token = None
         more_results = True
         while more_results:
-            try:
-                response = (
-                    self._google_client.buckets()
-                    .list(
-                        project=project_id,
-                        pageToken=page_token,
-                        # filter not supported
-                    )
-                    .execute()
+            response = (
+                self._google_client.buckets()
+                .list(
+                    project=project_id,
+                    pageToken=page_token,
+                    # filter not supported
                 )
-            except errors.HttpError as e:
-                logging.exception(e)
-                return
+                .execute()
+            )
             if "items" in response:
                 for bucket in response["items"]:
                     self.label_one(bucket, project_id)

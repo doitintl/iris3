@@ -45,26 +45,24 @@ class Topics(Plugin):
 
         topics = []
         page_token = None
+
         while True:
-            try:
-                result = (
-                    self._google_client.projects()
-                    .topics()
-                    .list(
-                        project=f"projects/{project_id}",
-                        pageToken=page_token
-                        # No filter param availble
-                    )
-                    .execute()
+            result = (
+                self._google_client.projects()
+                .topics()
+                .list(
+                    project=f"projects/{project_id}",
+                    pageToken=page_token
+                    # No filter param availble
                 )
-                if "topics" in result:
-                    topics += result["topics"]
-                if "nextPageToken" in result:
-                    page_token = result["nextPageToken"]
-                else:
-                    break
-            except errors.HttpError as e:
-                logging.exception(e)
+                .execute()
+            )
+            if "topics" in result:
+                topics += result["topics"]
+            if "nextPageToken" in result:
+                page_token = result["nextPageToken"]
+            else:
+                break
 
         return topics
 

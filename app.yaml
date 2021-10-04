@@ -1,6 +1,7 @@
 runtime: python39
 service: iris3
-
+automatic_scaling:
+  max_instances: 3
 env_variables:
   PUBSUB_VERIFICATION_TOKEN: 2a343f4c1b76512039fe763412756c4fbb30c
 

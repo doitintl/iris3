@@ -71,20 +71,18 @@ class Cloudsql(Plugin):
     def do_label(self, project_id):
         page_token = None
         while True:
-            try:
-                response = (
-                    self._google_client.instances()
-                    .list(
-                        project=project_id,
-                        pageToken=page_token,
-                        # Filter supported, but syntax not OK. We get this message: "Field not found. In
-                        # expression labels.iris_name HAS *, At field labels ."
-                    )
-                    .execute()
+
+            response = (
+                self._google_client.instances()
+                .list(
+                    project=project_id,
+                    pageToken=page_token,
+                    # Filter supported, but syntax not OK. We get this message: "Field not found. In
+                    # expression labels.iris_name HAS *, At field labels ."
                 )
-            except errors.HttpError as e:
-                logging.exception(e)
-                return
+                .execute()
+            )
+
             if "items" not in response:
                 return
             for database_instance in response["items"]:
