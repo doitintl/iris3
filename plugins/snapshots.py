@@ -14,6 +14,7 @@ class Snapshots(GceBase):
         snapshots = []
         page_token = None
         more_results = True
+
         while more_results:
             result = (
                 self._google_client.snapshots()
@@ -47,7 +48,10 @@ class Snapshots(GceBase):
     def do_label(self, project_id):
         snapshots = self.__list_snapshots(project_id)
         for snapshot in snapshots:
-            self.label_one(snapshot, project_id)
+            try:
+                self.label_one(snapshot, project_id)
+            except Exception as e:
+                logging.exception(e)
         if self.counter > 0:
             self.do_batch()
         return "OK", 200

@@ -95,7 +95,6 @@ class Bigtable(Plugin):
         page_token = None
         more_results = True
         while more_results:
-
             result = (
                 self._google_client.projects()
                 .instances()
@@ -109,7 +108,10 @@ class Bigtable(Plugin):
 
             if "instances" in result:
                 for inst in result["instances"]:
-                    self.label_one(inst, project_id)
+                    try:
+                        self.label_one(inst, project_id)
+                    except Exception as e:
+                        logging.exception(e)
             if "nextPageToken" in result:
                 page_token = result["nextPageToken"]
             else:

@@ -65,7 +65,10 @@ class Buckets(Plugin):
             )
             if "items" in response:
                 for bucket in response["items"]:
-                    self.label_one(bucket, project_id)
+                    try:
+                        self.label_one(bucket, project_id)
+                    except Exception as e:
+                        logging.exception(e)
             if "nextPageToken" in response:
                 page_token = response["nextPageToken"]
             else:

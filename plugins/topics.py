@@ -26,7 +26,10 @@ class Topics(Plugin):
     def do_label(self, project_id):
         topics = self.__list_topics(project_id)
         for topics in topics:
-            self.label_one(topics, project_id)
+            try:
+                self.label_one(topics, project_id)
+            except Exception as e:
+                logging.exception(e)
         return "OK", 200
 
     def __get_topic(self, topic_path):

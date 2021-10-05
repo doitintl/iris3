@@ -86,7 +86,10 @@ class Cloudsql(Plugin):
             if "items" not in response:
                 return
             for database_instance in response["items"]:
-                self.label_one(database_instance, project_id)
+                try:
+                    self.label_one(database_instance, project_id)
+                except Exception as e:
+                    logging.exception(e)
             if "nextPageToken" in response:
                 page_token = response["nextPageToken"]
             else:

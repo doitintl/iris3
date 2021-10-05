@@ -103,8 +103,9 @@ def __label_one_0(data, plugin):
             plugin.do_batch()
         else:
             msg = (
-                f"Skipping %s.label_one({plugin.__class__.__name__}) in unsupported"
-                f" project ${project_id}; (Should not get here in current design.)"
+                f"Skipping label_one({plugin.__class__.__name__}) in unsupported "
+                f"project ${project_id}; (Should not get here in current design, since the Sink filter should only include "
+                f"supported projects). However, if the Sink was not updated, this can happen"
             )
             logging.info(msg)
     else:

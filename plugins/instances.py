@@ -60,7 +60,10 @@ class Instances(GceZonalBase):
         for zone in self._all_zones(project_id):
             instances = self.__list_instances(project_id, zone)
             for instance in instances:
-                self.label_one(instance, project_id)
+                try:
+                    self.label_one(instance, project_id)
+                except Exception as e:
+                    logging.exception(e)
         if self.counter > 0:
             self.do_batch()
         return "OK", 200

@@ -54,7 +54,10 @@ class Disks(GceZonalBase):
         for zone in self._all_zones(project_id):
             disks = self.__list_disks(project_id, zone)
             for disk in disks:
-                self.label_one(disk, project_id)
+                try:
+                    self.label_one(disk, project_id)
+                except Exception as e:
+                    logging.exception(e)
         if self.counter > 0:
             self.do_batch()
         # return "OK", 200
@@ -100,3 +103,5 @@ class Disks(GceZonalBase):
         """Method dynamically called in generating labels, so don't change name"""
         users = gcp_object.get("users")
         return "true" if users else "false"
+
+

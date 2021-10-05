@@ -133,9 +133,7 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --ack-deadline 300 \
     --quiet >/dev/null
 
-if [[ "$CRON_ONLY" == "true" ]]; then
-  gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" 2>/dev/null || true
-  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" 2>/dev/null || true
+if [[ "$CRON_ONLY" == "true" ]]; then  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" 2>/dev/null || true
   gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECTID" 2>/dev/null || true
 
 else
