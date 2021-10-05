@@ -3,6 +3,4 @@ iris_prefix: iris
 # If from_project enabled, then for each resource we are labeling, copy in the labels from its project.
 from_project: True
 #  Only these projects are included, but if empty, all projects in the organization are included.
-projects:
-  - joshua-playground
-  - doit-iris-production
+projects: {}
