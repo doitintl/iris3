@@ -11,9 +11,10 @@ It simulates the action that happens in response to a Cloud Scheduler call to /s
 To use it.
 1. Run main.py in debug mode
 2, Comment out any of the plugins that you do not want to test (see below)
-3. Then run this file, test_do_label.py, specifying the project in the environment,
-and optionally a comma-separated list of  resource types selected from PLUGINS (below to focus the testing
-on these types.
+3. Then run this file, test_do_label.py, specifying in the environment,
+  - key `project` with the project where the reousrces are
+  - optionally key `plugins` with a comma-separated list selected from PLUGINS (below) to focus the testing
+  on just these types.
 """
 PLUGINS = [
     "Buckets",
@@ -46,18 +47,20 @@ def __project():
 def main():
     if len(sys.argv) > 1 and (sys.argv[1] == "-h" or sys.argv[1] == "--help"):
         print(
-            f"""Usage: {os.path.basename(sys.argv[0])} [<RESOURCE_TYPES> ]
-             where <RESOURCE_TYPES> is a comma-separated list selected from {",".join(PLUGINS)} 
-             Also set environment key project with GCP project-ID
+            f"""Usage: {os.path.basename(sys.argv[0])} 
+             Set environment with
+             - required key project with GCP project-ID 
+             - optional resource_types =  a comma-separated list selected from {",".join(PLUGINS)} 
+             
              """
         )
         exit(1)
     msg = ""
-    if len(sys.argv) == 1:
+    plugins_s=os.environ.get("plugins")
+    if not plugins_s:
         chosen_plugins = PLUGINS
         msg = " all plugins"
     else:
-        plugins_s = sys.argv[1]
         chosen_plugins = plugins_s.split(",")
         chosen_plugins = [s.strip() for s in chosen_plugins]
         unsupported = [p for p in chosen_plugins if p not in PLUGINS]

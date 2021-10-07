@@ -6,15 +6,14 @@ import yaml
 
 def is_copying_labels_from_project():
     config = __load_config()
-    from_project_ = config.get("from_project")
-    assert isinstance(from_project_, bool)
-    return from_project_
+    from_project = config.get("from_project")
+    assert isinstance(from_project, bool), from_project
+    return from_project
 
 
 def iris_prefix():
     config = __load_config()
     ret = config["iris_prefix"]
-    assert ret, ret
     return ret
 
 

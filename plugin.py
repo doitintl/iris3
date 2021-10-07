@@ -58,7 +58,7 @@ class Plugin(object, metaclass=ABCMeta):
             return {}
 
     def __iris_labels(self, gcp_object) -> typing.Dict[str, str]:
-        pfx = "_gcp_"
+        func_name_pfx = "_gcp_"
 
         def legalize_value(s):
             """
@@ -72,9 +72,11 @@ class Plugin(object, metaclass=ABCMeta):
             return legalize_value(func(gcp_obj))
 
         def key(func) -> str:
-            return iris_prefix() + "_" + func.__name__[len(pfx) :]
+            iris_pfx = iris_prefix()
+            iris_pfx_full = iris_pfx + "_" if iris_pfx else ""
+            return iris_pfx_full + func.__name__[len(func_name_pfx):]
 
-        ret = {key(f): value(f, gcp_object) for f in methods(self, pfx)}
+        ret = {key(f): value(f, gcp_object) for f in methods(self, func_name_pfx)}
 
         return ret
 

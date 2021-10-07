@@ -72,7 +72,6 @@ class Subscriptions(Plugin):
         return subscriptions
 
     def label_one(self, gcp_object: typing.Dict, project_id):
-        assert isinstance(gcp_object, dict), type(gcp_object)
         labels_outer = self._build_labels(gcp_object, project_id)
         if labels_outer is None:
             return

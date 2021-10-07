@@ -70,9 +70,7 @@ class Topics(Plugin):
         return topics
 
     def label_one(self, gcp_object: typing.Dict, project_id):
-        assert isinstance(gcp_object, dict), type(gcp_object)
-        # THis new API does not accept label-fingerprint, so extracting just
-        # labels
+        # This API does not accept label-fingerprint, so extracting just labels
         labels_outer = self._build_labels(gcp_object, project_id)
         if labels_outer is None:
             return

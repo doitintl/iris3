@@ -52,17 +52,17 @@ gcloud config set project "$TEST_PROJECT"
 if [ -n "$(echo "$RUN_ID" | grep '[_-]')" ]; then
 
   cat >&2 <<EOF
-     Illegal run id $RUN_ID. No dashes or underlines permitted because
+    Illegal run id $RUN_ID. No dashes or underlines permitted because
     underlines are illegal in snapshot (and other) names
     and dashes are illegal in BigQuery names.
 EOF
   exit 1
 fi
 
-# Set up the config file for the deployment
+# Move aside the config file while we use a temporary one
 mv config.yaml config.yaml.original
 
-# Prepare to revert that on exit
+# Prepare to revert config on exit
 function revert_config() {
   # Cleanup should not stop on error
   set +e

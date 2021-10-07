@@ -89,6 +89,7 @@ def label_one():
 
         return "OK", 200
     except Exception as e:
+        # Return 200 so that PubSub doesn't keep trying indefinitely
         logging.exception(f"In do_label(): {e}")
         return "OK", 200
 
@@ -105,7 +106,8 @@ def __label_one_0(data, plugin):
             msg = (
                 f"Skipping label_one({plugin.__class__.__name__}) in unsupported "
                 f"project ${project_id}; (Should not get here in current design, since the Sink filter should only include "
-                f"supported projects). However, if the Sink was not updated, this can happen"
+                f"supported projects). However, if the Sink filter was not updated to match config.yaml, or in local development"
+                f"if a command is given to label an arbirary project that is not in config.yaml, this can happen"
             )
             logging.info(msg)
     else:
@@ -143,6 +145,7 @@ def do_label():
         plugin.do_label(project_id)
         return "OK", 200
     except Exception as e:
+        # Return 200 so that PubSub doesn't keep trying indefinitely
         logging.exception(f"In do_label(): {e}")
         return "OK", 200
 

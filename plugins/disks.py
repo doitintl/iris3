@@ -54,6 +54,7 @@ class Disks(GceZonalBase):
         for zone in self._all_zones(project_id):
             disks = self.__list_disks(project_id, zone)
             for disk in disks:
+
                 try:
                     self.label_one(disk, project_id)
                 except Exception as e:
@@ -75,8 +76,10 @@ class Disks(GceZonalBase):
             return None
 
     def label_one(self, gcp_object, project_id):
+
         labels = self._build_labels(gcp_object, project_id)
         if labels is None:
+
             return
         try:
             zone = self._gcp_zone(gcp_object)
