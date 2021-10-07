@@ -56,7 +56,7 @@ def main():
         )
         exit(1)
     msg = ""
-    plugins_s=os.environ.get("plugins")
+    plugins_s = os.environ.get("plugins")
     if not plugins_s:
         chosen_plugins = PLUGINS
         msg = " all plugins"

@@ -122,11 +122,16 @@ def test_bigtable():
 def main():
     dir_ = dir(sys.modules[__name__])
     test_func = [f for f in dir_ if f.startswith("test_")]
-    resource_types=[f[len("test_"):] for f in test_func]
+    resource_types = [f[len("test_") :] for f in test_func]
     resource_types_s = ", ".join(sorted(resource_types))
-    resource_type = os.environ.get("resource_type","")
+    resource_type = os.environ.get("resource_type", "")
     func_name = "test_" + resource_type
-    if func_name not in dir_ or not resource_type or len(sys.argv)>1 and (sys.argv[1] == "-h" or sys.argv[1] == "--help"):
+    if (
+        func_name not in dir_
+        or not resource_type
+        or len(sys.argv) > 1
+        and (sys.argv[1] == "-h" or sys.argv[1] == "--help")
+    ):
         print(
             f"""Usage: {os.path.basename(sys.argv[0])}  
              
@@ -141,7 +146,10 @@ def main():
         )
         exit(1)
 
-    f = getattr( sys.modules[__name__], func_name, )
+    f = getattr(
+        sys.modules[__name__],
+        func_name,
+    )
     f()
 
 
