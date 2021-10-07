@@ -121,11 +121,12 @@ def test_bigtable():
 
 def main():
     dir_ = dir(sys.modules[__name__])
-    test_func = [f for f in dir_ if f.startswith("test_")]
-    resource_types = [f[len("test_") :] for f in test_func]
+    test_="test_"
+    test_func = [f for f in dir_ if f.startswith(test_)]
+    resource_types = [f[len(test_) :] for f in test_func]
     resource_types_s = ", ".join(sorted(resource_types))
     resource_type = os.environ.get("resource_type", "")
-    func_name = "test_" + resource_type
+    func_name =test_ + resource_type
     if (
         func_name not in dir_
         or not resource_type
@@ -134,7 +135,6 @@ def main():
     ):
         print(
             f"""Usage: {os.path.basename(sys.argv[0])}  
-             
              Environment variables are needed:
              - resource_type, selected from {resource_types_s} 
              - project where the resource is deployed
