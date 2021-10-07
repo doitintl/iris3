@@ -1,8 +1,8 @@
-# This is prefixed to the key of each label that is added.
+# iris_prefix is prefixed to the key of each label that is added.
 iris_prefix: iris
 # If from_project enabled, then for each resource we are labeling, copy in the labels from its project.
 from_project: True
-#  If  projects empty, all projects in the organization are included. If projects are listed, only they are included.
+#  Only these projects are included. If empty, all projects in the organization are included.
 projects:
   - joshua-playground2
   - joshua-playground-host-vpc

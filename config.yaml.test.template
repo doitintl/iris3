@@ -1,11 +1,10 @@
-# config.yaml.test.template is automatically used in the integration_test.sh
+# If you see this comment, you are using a config file that was temporarily
+# generated for a test.
 #
+# config.yaml.test.template is automatically onverted to a temporary config.yaml in  integration_test.sh
 #
-# This is prefixed to the key of each label that is added.
 iris_prefix: ${RUN_ID}
-# If from_project enabled, then for each resource we are labeling, copy in the labels from its project.
 from_project: True
-#  Only these projects are included. If empty, all projects in the organization are included.
 projects:
   - ${DEPLOYMENT_PROJECT}
   - ${TEST_PROJECT}
