@@ -26,18 +26,23 @@
       1. Modify cron to run 1 minute after the deployment is launched (and restore it at the end of the test.)
       1. Call `deploy.sh` using with the `-c` switch to disable event-based labeling 1. Wait 1.5 minutes after deploy
       before checking that the labels are there
-    - For the test, Deploy a service with a name that is *not* iris3, to cleanly separate test from existing infrastructure.
-      But that is not high-priority, since the test will be run in a test environment anyway. In any case, the test
-      will not be completely "clean", because it will tag any resources that are created in the test project
-      during the test, even if these were not created for the test.
-    - Likewise, in cleaning up after the test, delete only the version, not the service. Still, I assume this is a test 
-      project and it's OK to delete the whole service. 
-
-
+    - For the integration test, deploy a service with a name that is *not* iris3, to cleanly separate test 
+      from existing infrastructure.
+        - But that is not high-priority, since the test will be run in a test environment anyway. 
+        - In any case, the test will not be completely "clean", because it will tag any resources that are 
+            created in the test project during the test, even if these were not created for the test.
+    - Likewise, in cleaning up after the test, delete only the version, not the service. 
+        - Still, we assume that we are operating in a test project and it's OK to 
+          delete the whole `iris3` service. 
+          
 * P3 Immediately label, rather than waiting for the cron job
    * Cloud SQL Instances
    * Boot disks that are created with the instance
-   * Disks that are attached or detached (and so one of their labels need to change from false to true or vice versa) 
+     * As shown in [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), do this by pulling a
+      list of disks from the information about the instance.
+
+   * The fact that disks that are attached or detached (and so one of their labels need to change 
+     from false to true or vice versa) 
 
 * P3 Address the error *"Labels fingerprint either invalid or resource labels have changed",* printed
   in `_batch_callback`, which occurs intermittently, especially with disks. Solutions:
@@ -49,9 +54,4 @@
   the [GCP Auto Tag project](https://github.com/doitintl/gcp-auto-tag/)
   But **don't add too many**: There are *a lot* of fields on resources.
     - Add a label with the email of the creator of the resource
-    - Immediately label boot disks that are created with their instance.
-        * (This seems not to work now in Iris3, though that needs to be double-checked.)
-        * As shown in [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), do this by pulling a
-          list of disks from the information about the instance.
-
-
+    

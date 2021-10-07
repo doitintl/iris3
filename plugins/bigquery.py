@@ -171,8 +171,8 @@ class Bigquery(Plugin):
         that is why we sleep_and_retry, above.
 
         Error in Request Id: None Response: 72edf87e-d6fe-46b5-831a-e7b7bcd51cb0
-        Exception: <HttpError 403 when
-        requesting https://bigquery.googleapis.com/bigquery/v2/projects/fnx-poc-2020/datasets/monitoring/tables/10_most_%20expensive_jobs_today?alt=json
+        Exception: <HttpError 403 when requesting
+        https://bigquery.googleapis.com/bigquery/v2/projects/fnx-poc-2020/datasets/monitoring/tables/10_most_%20expensive_jobs_today?alt=json
         returned "Exceeded rate limits: too many table update operations for this table.
         For more information, see https://cloud.google.com/bigquery/troubleshooting-errors".
         """

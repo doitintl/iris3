@@ -1,3 +1,4 @@
+# Documented in Google App Engine https://cloud.google.com/appengine/docs/standard/python3/scheduling-jobs-with-cron-yaml
 cron:
   - description: "The code at /schedule sends out  messages triggering do_label per project/plugin."
     url: /schedule

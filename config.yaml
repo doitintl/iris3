@@ -2,5 +2,7 @@
 iris_prefix: iris
 # If from_project enabled, then for each resource we are labeling, copy in the labels from its project.
 from_project: True
-#  Only these projects are included, but if empty, all projects in the organization are included.
-projects: {}
+#  If  projects empty, all projects in the organization are included. If projects are listed, only they are included.
+projects:
+  - joshua-playground2
+  - joshua-playground-host-vpc

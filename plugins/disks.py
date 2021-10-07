@@ -103,5 +103,3 @@ class Disks(GceZonalBase):
         """Method dynamically called in generating labels, so don't change name"""
         users = gcp_object.get("users")
         return "true" if users else "false"
-
-

@@ -4,7 +4,6 @@ set -x
 set -u
 set -e
 
-
 SHELL_DETECTION=$(ps -p $$ -oargs= )
 
 if [[ ! "$SHELL_DETECTION" == *bash* ]]; then
@@ -20,7 +19,7 @@ if [[ "$BASH_VERSION" == 3. ]]; then
 fi
 
 export PYTHONPATH="."
-python3  ./util/check_version.py
+python3 ./util/check_version.py
 
 
 START=$(date "+%s")
