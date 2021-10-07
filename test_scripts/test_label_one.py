@@ -131,10 +131,10 @@ def main():
             f"""Usage: {os.path.basename(sys.argv[0])}  
              
              Environment variables are needed:
-             - `resource_type`, selected from {resource_types_s} 
-             - `project` where the resource is deployed
-             - `resource` for the name of the resource (for example, a BigQuery table called table-1 )
-             - `parent` for the name of the parent if relevant (in the BigQuery example, dataset-1). 
+             - resource_type, selected from {resource_types_s} 
+             - project where the resource is deployed
+             - resource for the name of the resource (for example, a BigQuery table called table-1 )
+             - parent for the name of the parent if relevant (in the BigQuery example, dataset-1). 
                 The parent is needed only with BigQuery Tables and PubSub Subscriptions.
                       
              Messages will remind you of required values."""
