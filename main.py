@@ -12,6 +12,14 @@ from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils
 from util.config_utils import iris_prefix, is_project_included
 
+import googlecloudprofiler
+
+# Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
+try:
+    googlecloudprofiler.start(verbose=3)
+except (ValueError, NotImplementedError) as exc:
+    print("Exception in initializing the Cloud Profiler", exc)  #
+
 logging.basicConfig(
     format=f"%(levelname)s [{iris_prefix()}]: %(message)s",
     level=logging.INFO,
