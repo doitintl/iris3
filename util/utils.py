@@ -2,6 +2,8 @@ import logging
 import textwrap
 import typing
 
+from util.config_utils import iris_prefix
+
 
 def cls_by_name(fully_qualified_classname):
     parts = fully_qualified_classname.split(".")
@@ -34,3 +36,22 @@ def methods(o, pfx="") -> typing.List[typing.Callable]:
         if callable(getattr(o.__class__, name)) and name.startswith(pfx)
     )
     return [getattr(o, name) for name in names]
+
+
+def init_logging():
+    logging.basicConfig(
+        format=f"%(levelname)s [{iris_prefix()}]: %(message)s",
+        level=logging.INFO,
+    )
+
+
+def truncate_mid(s, desired_len):
+    if len(s) <= desired_len:
+        return s
+
+    elipsis = " ... "
+
+    second_half_start = int(desired_len / 2 - len(elipsis))
+
+    first_half_len = desired_len - second_half_start - len(elipsis)
+    return f"{s[:first_half_len]}{elipsis}{s[-second_half_start:]}"

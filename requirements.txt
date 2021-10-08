@@ -1,4 +1,3 @@
-google-cloud-profiler
 Flask==1.1.2
 google-api-python-client==1.12.8
 google-cloud-pubsub==2.2.0
@@ -7,3 +6,4 @@ ratelimit==2.2.1
 google-cloud-resource-manager==0.30.3
 google-cloud-tasks==2.1.0
 black
+google-cloud-profiler

@@ -1,7 +1,7 @@
 # If you see this comment, you are using a config file that was temporarily
 # generated for a test.
 #
-# config.yaml.test.template is automatically onverted to a temporary config.yaml in  integration_test.sh
+# In integration_test.sh, config.yaml.test.template is automatically converted to a temporary config.yaml, then reverted.
 #
 iris_prefix: ${RUN_ID}
 from_project: True

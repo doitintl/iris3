@@ -11,7 +11,7 @@ It simulates the action that happens in response to a Cloud Scheduler call to /s
 To use it.
 1. Run main.py in debug mode
 2, Comment out any of the plugins that you do not want to test (see below)
-3. Then run this file, test_do_label.py, specifying in the environment,
+3. Then run this file (in project root), test_do_label.py, specifying in the environment,
   - key `project` with the project where the reousrces are
   - optionally key `plugins` with a comma-separated list selected from PLUGINS (below) to focus the testing
   on just these types.

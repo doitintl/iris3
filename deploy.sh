@@ -129,7 +129,7 @@ gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" |
 gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECTID" ||
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
-    --ack-deadline 300 \
+    --ack-deadline 60 \
     --quiet >/dev/null
 
 if [[ "$CRON_ONLY" == "true" ]]; then  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" 2>/dev/null || true
@@ -146,7 +146,7 @@ else
   gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" ||
     gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
       --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
-      --ack-deadline 300 \
+      --ack-deadline 60 \
       --quiet >/dev/null
 
   log_filter=("")

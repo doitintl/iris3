@@ -14,7 +14,7 @@ a PubSub message, when a resource is created.
 To use this:
 1. Create resources that you want to test, for example a BigQuery Table table-1 in dataset-1.
 2. Run main.py in debug mode.
-3. Then run this file, test_label_one.py. Error messages will tell you what input it needs, but in summary:
+3. Then run this file (in project root), test_label_one.py. Error messages will tell you what input it needs, but in summary:
    
   * Give it the environment variables
     - `resource_type` selected from "buckets", "cloudsql", or any other of the 
@@ -121,12 +121,12 @@ def test_bigtable():
 
 def main():
     dir_ = dir(sys.modules[__name__])
-    test_="test_"
+    test_ = "test_"
     test_func = [f for f in dir_ if f.startswith(test_)]
     resource_types = [f[len(test_) :] for f in test_func]
     resource_types_s = ", ".join(sorted(resource_types))
     resource_type = os.environ.get("resource_type", "")
-    func_name =test_ + resource_type
+    func_name = test_ + resource_type
     if (
         func_name not in dir_
         or not resource_type

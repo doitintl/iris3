@@ -10,22 +10,34 @@ import flask
 import util.gcp_utils
 from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils
+from util.gcp_utils import detect_gae
+
 from util.config_utils import iris_prefix, is_project_included
+from util.utils import init_logging, truncate_mid
 
 import googlecloudprofiler
 
-# Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
-try:
-    googlecloudprofiler.start(verbose=3)
-except (ValueError, NotImplementedError) as exc:
-    print("Exception in initializing the Cloud Profiler", exc)  #
+# Must init logging before any library code writes logs (which would overwide our config)
 
-logging.basicConfig(
-    format=f"%(levelname)s [{iris_prefix()}]: %(message)s",
-    level=logging.INFO,
-)
+init_logging()
+
+# Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
+if detect_gae():
+    try:
+        googlecloudprofiler.start(verbose=3)
+    except (ValueError, NotImplementedError) as exc:
+        msg = (
+            ". This is not needed in local development, unless you want to experiment with the cloud debugger"
+            if "Service name must be provided" in str(exc)
+            else ""
+        )
+
+    print("Exception initializing the Cloud Profiler", exc, msg)  #
+
+
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
-print("Initialized logger")
+logging.info("logging: Initialized logger")
+
 gcp_utils.set_env()
 
 app = flask.Flask(__name__)
@@ -41,7 +53,9 @@ __init_plugins()
 
 @app.route("/")
 def index():
-    return f"I'm {iris_prefix().capitalize()}, pleased to meet you!", 200
+    msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
+    logging.info(msg)
+    return msg, 200
 
 
 @app.route("/schedule", methods=["GET"])
@@ -51,14 +65,20 @@ def schedule():
     """
     is_cron = flask.request.headers.get("X-Appengine-Cron")
     if not is_cron:
-        return "Access Denied: No Cron header found", 403
+         return "Access Denied: No Cron header found", 403
 
     skipped_projects = list(
         filter(lambda p: not is_project_included(p), gcp_utils.all_projects())
     )
-    logging.info("schedule() not processing: %s", skipped_projects)
+    if skipped_projects:
+        logging.info("schedule() not processing: %s", skipped_projects)
     included_projects = gcp_utils.all_included_projects()
-    logging.info("schedule() processing: %s", included_projects)
+    logging.info(
+        "schedule() processing %d projects: %s",
+        len(included_projects),
+        ", ".join(included_projects),
+    )
+    msg_count = 0
     for project_id in included_projects:
         for plugin_cls in Plugin.subclasses:
             pubsub_utils.publish(
@@ -67,10 +87,15 @@ def schedule():
                 ),
                 topic_id=pubsub_utils.schedulelabeling_topic(),
             )
-
+            msg_count += 1
+    logging.info(
+        "schedule() send messages to label %d projects, %d messages",
+        len(included_projects),
+        msg_count,
+    )
     return "OK", 200
 
-
+g
 @app.route("/label_one", methods=["POST"])
 def label_one():
     try:
@@ -98,7 +123,7 @@ def label_one():
         return "OK", 200
     except Exception as e:
         # Return 200 so that PubSub doesn't keep trying indefinitely
-        logging.exception(f"In do_label(): {e}")
+        logging.exception(f"In label_one(): {e}")
         return "OK", 200
 
 
@@ -140,14 +165,15 @@ def __extract_pubsub_content() -> typing.Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
+
     try:
         """Receive a push message from PubSub, sent from schedule() above,
         with instructions to label all objects of a given plugin and project_id.
         """
         data = __extract_pubsub_content()
 
-        plugin_class_localname = data["plugin"]
-        plugin = Plugin.create_plugin(plugin_class_localname)
+        plugin_class_name = data["plugin"]
+        plugin = Plugin.create_plugin(plugin_class_name)
         project_id = data["project_id"]
         logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
         plugin.do_label(project_id)

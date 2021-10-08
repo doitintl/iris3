@@ -26,7 +26,7 @@ def __datastruct_for_pubsub_message(contents: str) -> bytes:
 
 def do_local_http(
     path: str,
-    contents: typing.Optional[str],
+    contents: typing.Optional[str] = None,
     method="POST",
     headers: typing.Optional[typing.Dict[str, str]] = None,
     extra_args=None,

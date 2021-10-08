@@ -50,7 +50,8 @@ def pubsub_token():
 
 
 def all_projects():
-    return sorted([p.project_id for p in resource_manager_client.list_projects()])
+    all_proj= resource_manager_client.list_projects()
+    return sorted([p.project_id for p in all_proj])
 
 
 def all_included_projects():
