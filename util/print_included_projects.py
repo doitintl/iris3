@@ -1,10 +1,10 @@
-from util.config_utils import included_projects
+from util.config_utils import configured_projects
 
 """Used from deploy.sh"""
 
 
 def print_included_projects():
-    projects = included_projects()
+    projects = configured_projects()
     print(" ".join(projects))
 
 

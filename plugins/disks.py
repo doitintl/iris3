@@ -15,6 +15,15 @@ class Disks(GceZonalBase):
     def method_names(self):
         return ["v1.compute.disks.insert"]
 
+    @classmethod
+    def relabel_on_cron(cls) -> bool:
+        """
+        Unattached disks are in fact labeled on creation.
+        But an attached disk is not.
+        Also, a disk that changes attachment status does not get relabeled on-event
+        """
+        return True
+
     def __list_disks(self, project_id, zone):
         disks = []
         page_token = None

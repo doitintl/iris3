@@ -3,17 +3,18 @@ import base64
 import json
 import logging
 import os
+import re
 import typing
 
 import flask
 
 import util.gcp_utils
 from plugin import Plugin
-from util import pubsub_utils, gcp_utils, utils
+from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import detect_gae
 
-from util.config_utils import iris_prefix, is_project_included
-from util.utils import init_logging, truncate_mid
+from util.config_utils import iris_prefix, configured_project
+from util.utils import init_logging
 
 import googlecloudprofiler
 
@@ -32,7 +33,7 @@ if detect_gae():
             else ""
         )
 
-    print("Exception initializing the Cloud Profiler", exc, msg)  #
+        print("Exception initializing the Cloud Profiler", exc, msg)
 
 
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
@@ -65,37 +66,73 @@ def schedule():
     """
     is_cron = flask.request.headers.get("X-Appengine-Cron")
     if not is_cron:
-         return "Access Denied: No Cron header found", 403
+        return "Access Denied: No Cron header found", 403
 
-    skipped_projects = list(
-        filter(lambda p: not is_project_included(p), gcp_utils.all_projects())
+    all_projects = gcp_utils.all_projects()
+
+    appscript_projects = [p for p in all_projects if gcp_utils.is_appscript(p)]
+
+    nonappscript_projects = [p for p in all_projects if p not in appscript_projects]
+
+    configured_projects = [
+        p for p in nonappscript_projects if config_utils.configured_project(p)
+    ]
+    skipped_nonappscript_projects = [
+        p for p in nonappscript_projects if p not in configured_projects
+    ]
+
+    logging.info("schedule() skipping %d appscript projects", len(appscript_projects))
+
+    logging.info(
+        "schedule() skipping %d non-appscript projects: %s",
+        len(skipped_nonappscript_projects),
+        ", ".join(skipped_nonappscript_projects),
     )
-    if skipped_projects:
-        logging.info("schedule() not processing: %s", skipped_projects)
-    included_projects = gcp_utils.all_included_projects()
+
     logging.info(
         "schedule() processing %d projects: %s",
-        len(included_projects),
-        ", ".join(included_projects),
+        len(configured_projects),
+        ", ".join(configured_projects),
     )
     msg_count = 0
-    for project_id in included_projects:
+    if not gcp_utils.detect_gae():
+        max = 3
+        if len(configured_projects)>max:
+            msg="""In development, we support no more than %d projects to avoid overwhelming system in development. 
+                   One motivation for this safety measure is that if you are using your personal credentials, 
+                   the system has access to *ALL* the projects that you have access to; was %d projects""" % ( max, len(configured_projects))
+            logging.error(msg)
+            raise Exception(msg)
+
+    for project_id in configured_projects:
         for plugin_cls in Plugin.subclasses:
-            pubsub_utils.publish(
-                msg=json.dumps(
-                    {"project_id": project_id, "plugin": plugin_cls.__name__}
-                ),
-                topic_id=pubsub_utils.schedulelabeling_topic(),
-            )
+            if (
+                not plugin_cls.is_labeled_on_creation()
+                or plugin_cls.relabel_on_cron()
+                or config_utils.label_all_on_cron()
+            ):
+
+                pubsub_utils.publish(
+                    msg=json.dumps(
+                        {"project_id": project_id, "plugin": plugin_cls.__name__}
+                    ),
+                    topic_id=pubsub_utils.schedulelabeling_topic(),
+                )
+                logging.info(
+                    "Sent do_label message for %s , %s", project_id, plugin_cls.__name__
+                )
             msg_count += 1
     logging.info(
         "schedule() send messages to label %d projects, %d messages",
-        len(included_projects),
+        len(configured_projects),
         msg_count,
     )
     return "OK", 200
 
-g
+
+
+
+
 @app.route("/label_one", methods=["POST"])
 def label_one():
     try:
@@ -131,7 +168,7 @@ def __label_one_0(data, plugin):
     gcp_object = plugin.get_gcp_object(data)
     if gcp_object is not None:
         project_id = data["resource"]["labels"]["project_id"]
-        if is_project_included(project_id):
+        if configured_project(project_id):
             logging.info("Will label_one() in %s, %s", project_id, gcp_object)
             plugin.label_one(gcp_object, project_id)
             plugin.do_batch()

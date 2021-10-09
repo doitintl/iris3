@@ -43,15 +43,3 @@ def init_logging():
         format=f"%(levelname)s [{iris_prefix()}]: %(message)s",
         level=logging.INFO,
     )
-
-
-def truncate_mid(s, desired_len):
-    if len(s) <= desired_len:
-        return s
-
-    elipsis = " ... "
-
-    second_half_start = int(desired_len / 2 - len(elipsis))
-
-    first_half_len = desired_len - second_half_start - len(elipsis)
-    return f"{s[:first_half_len]}{elipsis}{s[-second_half_start:]}"

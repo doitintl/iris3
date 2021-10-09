@@ -36,6 +36,15 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @classmethod
+    def relabel_on_cron(cls) -> bool:
+        """
+        We must minimize labeling on cron because it is costly.
+        Return  True if that is needed.
+        When is_labeled_on_creation is False, we also label on cron
+        """
+        return False
+
+    @classmethod
     def is_labeled_on_creation(cls) -> bool:
         """
         Only a few classes are  labeled on creation, and these classes should override this method.

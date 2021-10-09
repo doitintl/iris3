@@ -1,5 +1,7 @@
 import os
+import re
 import uuid
+from typing import List
 
 from google.cloud import resource_manager
 
@@ -49,12 +51,10 @@ def pubsub_token():
         return localdev_pubsub_token()
 
 
-def all_projects():
-    all_proj= resource_manager_client.list_projects()
+def all_projects() -> List[str]:
+    all_proj = resource_manager_client.list_projects()
     return sorted([p.project_id for p in all_proj])
 
 
-def all_included_projects():
-    all_proj = all_projects()
-    ret = [p for p in all_proj if config_utils.is_project_included(p)]
-    return ret
+def is_appscript(p) -> bool:
+    return bool(re.match(r"sys-\d{26}", p))

@@ -27,6 +27,4 @@ env.bak/
 .DS_Store
 killserver.sh
 pytest.ini
-
-config.yaml.original
 TEMP*
