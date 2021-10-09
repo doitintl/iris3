@@ -97,10 +97,13 @@ def schedule():
     msg_count = 0
     if not gcp_utils.detect_gae():
         max = 3
-        if len(configured_projects)>max:
-            msg="""In development, we support no more than %d projects to avoid overwhelming system in development. 
+        if len(configured_projects) > max:
+            msg = """In development, we support no more than %d projects to avoid overwhelming system in development. 
                    One motivation for this safety measure is that if you are using your personal credentials, 
-                   the system has access to *ALL* the projects that you have access to; was %d projects""" % ( max, len(configured_projects))
+                   the system has access to *ALL* the projects that you have access to; was %d projects""" % (
+                max,
+                len(configured_projects),
+            )
             logging.error(msg)
             raise Exception(msg)
 
@@ -128,9 +131,6 @@ def schedule():
         msg_count,
     )
     return "OK", 200
-
-
-
 
 
 @app.route("/label_one", methods=["POST"])

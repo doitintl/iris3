@@ -40,4 +40,3 @@ def __load_config() -> typing.Dict:
     with open("config.yaml", "r") as config_file:
         config = yaml.full_load(config_file)
     return config
-

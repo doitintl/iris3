@@ -12,4 +12,4 @@ It calls the same endpoint which would be called by Cloud Scheduler in runtime.
 
 Run in project root.
 """
-do_local_http("schedule", method="GET", headers={"X-Appengine-Cron":"true"})
+do_local_http("schedule", method="GET", headers={"X-Appengine-Cron": "true"})
