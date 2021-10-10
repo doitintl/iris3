@@ -16,6 +16,9 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+.pytest_cache
+requirements-test.txt
+
 # Environments
 .env
 .venv
@@ -24,7 +27,14 @@ virtenv*/
 env.bak/
 
 *.bak
+
 .DS_Store
-killserver.sh
+
 pytest.ini
 TEMP*
+test_scripts/
+sample_data/
+README.md
+*.sh
+*.template
+

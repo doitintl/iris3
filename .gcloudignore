@@ -1,24 +1,40 @@
-# This file specifies files that are *not* uploaded to Google Cloud Platform
-# using gcloud. It follows the same syntax as .gitignore, with the addition of
-# "#!include" directives (which insert the entries of the given .gitignore-style
-# file at that point).
-#
-# For more information, run:
-#   $ gcloud topic gcloudignore
-#
-.gcloudignore
-# If you would like to upload your .git directory, .gitignore file or files
-# from your .gitignore file, remove the corresponding line
-# below:
-.git
-.gitignore
+# Installer logs
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+./idea
+.idea/
 __pycache__/
-test_scripts/
-sample_data/
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
 .pytest_cache
 requirements-test.txt
+
+# Environments
+.env
+.venv
+venv/
+
+virtenv*/
+env.bak/
+
+*.bak
+
+.DS_Store
+
+pytest.ini
+test_scripts/
+sample_data/
 README.md
 *.sh
 *.template
-pytest.ini
-venv/
+
