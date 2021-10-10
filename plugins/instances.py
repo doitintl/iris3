@@ -27,16 +27,15 @@ class Instances(GceZonalBase):
         page_token = None
         more_results = True
         while more_results:
-            with timing(f"list instances {zone}"):
-                result = (
-                    self._google_client.instances()
-                    .list(
-                        project=project_id,
-                        zone=zone,
-                        pageToken=page_token,
-                    )
-                    .execute()
+            result = (
+                self._google_client.instances()
+                .list(
+                    project=project_id,
+                    zone=zone,
+                    pageToken=page_token,
                 )
+                .execute()
+            )
             if "items" in result:
                 instances = instances + result["items"]
             if "nextPageToken" in result:
@@ -60,8 +59,11 @@ class Instances(GceZonalBase):
 
     @log_time
     def label_all(self, project_id):
-        for zone in self._all_zones(project_id):
-            instances = self.__list_instances(project_id, zone)
+        zones = self._all_zones(project_id)
+        for zone in zones:
+            with timing(f"list instances in {len(zones)} zones"):
+                instances = self.__list_instances(project_id, zone)
+
             for instance in instances:
                 try:
                     self.label_resource(instance, project_id)

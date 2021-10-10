@@ -133,16 +133,19 @@ gcloud pubsub topics describe "$DEADLETTER_TOPIC" --project="$PROJECTID" ||
 # If the subscription exists, it will not be changed.
 # So, if you want to change the PubSub token, you have to manually delete this subscription first.
 gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECTID" ||
-  gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
+  gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" \
+    --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --ack-deadline 60 \
-    --max-delivery-attempts=3 \
-    --dead-letter-topic-project=$DEADLETTER_TOPIC \
+    --max-delivery-attempts=7 \
+    --dead-letter-topic=$DEADLETTER_TOPIC \
+    --min-retry-delay=30s \
+    --max-retry-delay=600s \
     --quiet >/dev/null
 
-if [[ "$CRON_ONLY" == "true" ]]; then  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" 2>/dev/null || true
+if [[ "$CRON_ONLY" == "true" ]]; then
+  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" 2>/dev/null || true
   gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECTID" 2>/dev/null || true
-
 else
   # Create PubSub topic for receiving logs about new GCP objects
   gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECTID" ||
@@ -155,8 +158,10 @@ else
     gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
       --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
       --ack-deadline 60 \
-      --max-delivery-attempts=3 \
-      --dead-letter-topic-project=$DEADLETTER_TOPIC \
+      --max-delivery-attempts=7 \
+      --dead-letter-topic=$DEADLETTER_TOPIC \
+      --min-retry-delay=30s \
+      --max-retry-delay=600s \
       --quiet >/dev/null
 
   log_filter=("")

@@ -1,4 +1,6 @@
 import logging
+import typing
+
 from util.utils import log_time
 from googleapiclient import errors
 
@@ -25,21 +27,20 @@ class Disks(GceZonalBase):
         """
         return True
 
-    def __list_disks(self, project_id, zone):
+    def __list_disks(self, project_id, zone) -> typing.List[str]:
         disks = []
         page_token = None
         more_results = True
         while more_results:
-            with timing(f"list disks {zone}"):
-                result = (
-                    self._google_client.disks()
-                    .list(
-                        project=project_id,
-                        zone=zone,
-                        pageToken=page_token,
-                    )
-                    .execute()
+            result = (
+                self._google_client.disks()
+                .list(
+                    project=project_id,
+                    zone=zone,
+                    pageToken=page_token,
                 )
+                .execute()
+            )
             if "items" in result:
                 disks = disks + result["items"]
             if "nextPageToken" in result:
@@ -63,13 +64,17 @@ class Disks(GceZonalBase):
 
     @log_time
     def label_all(self, project_id):
-        for zone in self._all_zones(project_id):
-            disks = self.__list_disks(project_id, zone)
+        zones = self._all_zones(project_id)
+        for zone in zones:
+            with timing(f"list disks in {len(zones)} zones"):
+                disks = self.__list_disks(project_id, zone)
+
             for disk in disks:
                 try:
                     self.label_resource(disk, project_id)
                 except Exception as e:
                     logging.exception(e)
+
         if self.counter > 0:
             self.do_batch()
 

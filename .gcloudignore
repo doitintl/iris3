@@ -1,8 +1,7 @@
 # Installer logs
 # Installer logs
-pip-log.txt
 pip-delete-this-directory.txt
-./idea
+idea
 .idea/
 __pycache__/
 # Unit test / coverage reports

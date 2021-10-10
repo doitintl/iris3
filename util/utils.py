@@ -47,7 +47,6 @@ def init_logging():
         level=logging.INFO,
     )
     logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
-    logging.getLogger("googlecloudprofiler.client").setLevel(logging.ERROR)
 
 
 def __log_end_timer(tag, start):
@@ -61,14 +60,18 @@ def log_time(func):
         try:
             return func(*args, **kwargs)
         finally:
-            f = func.__name__
-
             if args:
                 arg = args[0]
-                arg_s = arg.__name__ if hasattr(arg, "__name__") else type(arg).__name__
+                arg_s = (
+                    arg.__name__
+                    if hasattr(arg, "__name__")
+                    else type(arg).__name__
+                    if args
+                    else ""
+                )
             else:
                 arg_s = ""
-            __log_end_timer(f"{f}({arg_s})", start)
+            __log_end_timer(f"{func.__name__}({arg_s})", start)
 
     return _time_it
 
@@ -79,3 +82,26 @@ def timing(tag: str) -> None:
     yield
     elapsed_ms = int((time.time() - start) * 1000)
     logging.getLogger("Time").info("%s: %d ms", tag, elapsed_ms)
+
+
+from functools import lru_cache, wraps
+from datetime import datetime, timedelta
+
+
+def timed_lru_cache(seconds: int, maxsize: int = 128):
+    def wrapper_cache(func):
+        func = lru_cache(maxsize=maxsize)(func)
+        func.lifetime = timedelta(seconds=seconds)
+        func.expiration = datetime.utcnow() + func.lifetime
+
+        @wraps(func)
+        def wrapped_func(*args, **kwargs):
+            if datetime.utcnow() >= func.expiration:
+                func.cache_clear()
+                func.expiration = datetime.utcnow() + func.lifetime
+
+            return func(*args, **kwargs)
+
+        return wrapped_func
+
+    return wrapper_cache

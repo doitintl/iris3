@@ -60,14 +60,14 @@ EOF
 fi
 
 # Move aside the config file while we use a temporary one
-mv config.yaml config.yaml.original
+mv config.yaml config.yaml.pretest
 
 # Prepare to revert config on exit
 function revert_config() {
   # Cleanup should not stop on error
   set +e
   echo >&2 "Reverting"
-  mv config.yaml.original config.yaml
+  mv config.yaml.pretest config.yaml
 }
 
 trap "revert_config" EXIT

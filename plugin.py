@@ -10,7 +10,7 @@ from googleapiclient import discovery
 from googleapiclient import errors
 
 from util.config_utils import is_copying_labels_from_project, iris_prefix
-from util.utils import methods, cls_by_name, timing, log_time
+from util.utils import methods, cls_by_name, timing, log_time, timed_lru_cache
 
 PLUGINS_MODULE = "plugins"
 
@@ -51,7 +51,7 @@ class Plugin(object, metaclass=ABCMeta):
         """
         return True
 
-    @lru_cache(maxsize=256)
+    @timed_lru_cache(seconds=600, maxsize=512)
     def _project_labels(self, project_id) -> typing.Dict:
 
         assert self.__proj_regex.match(

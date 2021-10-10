@@ -27,16 +27,15 @@ init_logging()
 # Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
 if detect_gae():
     try:
-        googlecloudprofiler.start(verbose=3)
+        googlecloudprofiler.start()
     except (ValueError, NotImplementedError) as exc:
-        msg = (
+        err_msg = (
             ". This is not needed in local development, unless you want to experiment with the cloud debugger"
             if "Service name must be provided" in str(exc)
             else ""
         )
 
-        print("Exception initializing the Cloud Profiler", exc, msg)
-
+        print("Exception initializing the Cloud Profiler", exc, err_msg)
 
 logging.info("logging: Initialized logger")
 
@@ -81,13 +80,14 @@ def schedule():
         configured_projects = [
             p for p in nonappscript_projects if config_utils.configured_project(p)
         ]
+
         skipped_nonappscript_projects = [
             p for p in nonappscript_projects if p not in configured_projects
         ]
-
-        logging.info(
-            "schedule() skipping %d appscript projects", len(appscript_projects)
-        )
+        if appscript_projects:
+            logging.info(
+                "schedule() skipping %d appscript projects", len(appscript_projects)
+            )
 
         logging.info(
             "schedule() skipping %d non-appscript projects: %s",
@@ -116,22 +116,22 @@ def schedule():
                 raise Exception(msg)
 
         for project_id in configured_projects:
-            for plugin_cls in Plugin.subclasses:
+            for _, plugin_ in Plugin.instances.items():
                 if (
-                    not plugin_cls.is_labeled_on_creation()
-                    or plugin_cls.relabel_on_cron()
+                    not plugin_.is_labeled_on_creation()
+                    or plugin_.relabel_on_cron()
                     or config_utils.label_all_on_cron()
                 ):
                     pubsub_utils.publish(
                         msg=json.dumps(
-                            {"project_id": project_id, "plugin": plugin_cls.__name__}
+                            {"project_id": project_id, "plugin": type(plugin_).__name__}
                         ),
                         topic_id=pubsub_utils.schedulelabeling_topic(),
                     )
                     logging.info(
                         "Sent do_label message for %s , %s",
                         project_id,
-                        plugin_cls.__name__,
+                        type(plugin_).__name__,
                     )
                 msg_count += 1
         logging.info(
@@ -171,12 +171,7 @@ def label_one():
                         plugins_found.append(plugin_name)
 
         if len(plugins_found) != 1:
-            logging.warning(
-                f"Warning: plugins found {plugins_found} for {supported_method}"
-            )
-            logging.error(
-                f"Error: plugins found {plugins_found} for {supported_method}"
-            )
+            logging.error(f"Error: plugins found {plugins_found} for {method_from_log}")
         return "OK", 200
     except Exception as e:
         logging.exception(f"In label_one(): {e}")
