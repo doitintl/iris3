@@ -90,7 +90,7 @@ def schedule():
             )
 
         logging.info(
-            "schedule() skipping %d non-appscript projects: %s",
+            "schedule() skipping %d non-appscript projects per config.yaml: %s",
             len(skipped_nonappscript_projects),
             ", ".join(skipped_nonappscript_projects),
         )
