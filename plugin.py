@@ -10,7 +10,7 @@ from googleapiclient import discovery
 from googleapiclient import errors
 
 from util.config_utils import is_copying_labels_from_project, iris_prefix
-from util.utils import cls_by_name, methods
+from util.utils import methods, cls_by_name, timing, log_time
 
 PLUGINS_MODULE = "plugins"
 
@@ -21,10 +21,10 @@ class Plugin(object, metaclass=ABCMeta):
     # We send a batch when  _BATCH_SIZE or more tasks are in it.
     _BATCH_SIZE = 990
 
-    # For a class to know its subclasses is generally bad.
-    # Here, the Plugin class also serves as a manager of its subclasses.
+    # For a class to know its subclasses and their instances is generally bad.
     # We could create a separate PluginManager but let's not get too Java-ish.
-    subclasses = []
+    instances: typing.Dict[str, "Plugin"]
+    instances = {}
 
     def __init__(self):
         self._google_client = discovery.build(*self.discovery_api())
@@ -108,7 +108,7 @@ class Plugin(object, metaclass=ABCMeta):
         self.__init_batch_req()
 
     @abstractmethod
-    def do_label(self, project_id):
+    def label_all(self, project_id):
         """Label all objects of a type in a given project"""
         pass
 
@@ -118,7 +118,7 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def label_one(self, gcp_object: typing.Dict, project_id: str):
+    def label_resource(self, gcp_object: typing.Dict, project_id: str):
         """Tag a single new object based on its description that comes from alog-line"""
         pass
 
@@ -131,8 +131,9 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @classmethod
+    @log_time
     def init(cls):
-        def load_plugin_class(name):
+        def load_plugin_class(name)->typing.Type:
             module_name = PLUGINS_MODULE + "." + name
             __import__(module_name)
             assert name == name.lower(), name
@@ -141,17 +142,15 @@ class Plugin(object, metaclass=ABCMeta):
 
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
             plugin_class = load_plugin_class(module)
-            Plugin.subclasses.append(plugin_class)
+            instance = plugin_class()
+            Plugin.instances[plugin_class.__name__]= instance
 
-        assert Plugin.subclasses, "No plugins defined"
+        assert Plugin.instances, "No plugins defined"
 
     @staticmethod
-    def create_plugin(plugin_name: str) -> "Plugin":
-        cls = cls_by_name(
-            PLUGINS_MODULE + "." + plugin_name.lower() + "." + plugin_name
-        )
-        plugin = cls()
-        return plugin
+    def get_plugin(plugin_name: str) -> "Plugin":
+        return Plugin.instances[plugin_name]
+
 
     def _build_labels(self, gcp_object, project_id):
         """
@@ -200,5 +199,6 @@ class Plugin(object, metaclass=ABCMeta):
             callback=self.__batch_callback
         )
 
+    # Override and return True if this object must not be labeled (for example, GKE objects)
     def block_labeling(self, block_labeling, original_labels):
         return False

@@ -1,9 +1,10 @@
 import logging
-
+from util.utils import log_time
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
+from util.utils import timing
 
 
 class Instances(GceZonalBase):
@@ -26,15 +27,16 @@ class Instances(GceZonalBase):
         page_token = None
         more_results = True
         while more_results:
-            result = (
-                self._google_client.instances()
-                .list(
-                    project=project_id,
-                    zone=zone,
-                    pageToken=page_token,
+            with timing(f"list instances {zone}"):
+                result = (
+                    self._google_client.instances()
+                    .list(
+                        project=project_id,
+                        zone=zone,
+                        pageToken=page_token,
+                    )
+                    .execute()
                 )
-                .execute()
-            )
             if "items" in result:
                 instances = instances + result["items"]
             if "nextPageToken" in result:
@@ -56,17 +58,17 @@ class Instances(GceZonalBase):
             logging.exception(e)
             return None
 
-    def do_label(self, project_id):
+    @log_time
+    def label_all(self, project_id):
         for zone in self._all_zones(project_id):
             instances = self.__list_instances(project_id, zone)
             for instance in instances:
                 try:
-                    self.label_one(instance, project_id)
+                    self.label_resource(instance, project_id)
                 except Exception as e:
                     logging.exception(e)
         if self.counter > 0:
             self.do_batch()
-        return "OK", 200
 
     def get_gcp_object(self, log_data):
         try:
@@ -82,28 +84,22 @@ class Instances(GceZonalBase):
             logging.exception(e)
             return None
 
-    def label_one(self, gcp_object, project_id):
+    @log_time
+    def label_resource(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
         if labels is None:
             return
 
-        try:
-            zone = self._gcp_zone(gcp_object)
-            self._batch.add(
-                self._google_client.instances().setLabels(
-                    project=project_id,
-                    zone=zone,
-                    instance=gcp_object["name"],
-                    body=labels,
-                ),
-                request_id=gcp_utils.generate_uuid(),
-            )
-            self.counter += 1
-            if self.counter >= self._BATCH_SIZE:
-                self.do_batch()
-
-        except errors.HttpError as e:
-            logging.exception(e)
-            return "Error", 500
-
-        return "OK", 200
+        zone = self._gcp_zone(gcp_object)
+        self._batch.add(
+            self._google_client.instances().setLabels(
+                project=project_id,
+                zone=zone,
+                instance=gcp_object["name"],
+                body=labels,
+            ),
+            request_id=gcp_utils.generate_uuid(),
+        )
+        self.counter += 1
+        if self.counter >= self._BATCH_SIZE:
+            self.do_batch()

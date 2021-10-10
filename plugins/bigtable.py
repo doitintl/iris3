@@ -6,6 +6,7 @@ from googleapiclient import errors
 import util.gcp_utils
 from plugin import Plugin
 from util import gcp_utils
+from util.utils import log_time
 
 PROJECTS = "projects/"
 
@@ -91,7 +92,8 @@ class Bigtable(Plugin):
             logging.exception(e)
             return None
 
-    def do_label(self, project_id):
+    @log_time
+    def label_all(self, project_id):
         page_token = None
         more_results = True
         while more_results:
@@ -109,7 +111,7 @@ class Bigtable(Plugin):
             if "instances" in result:
                 for inst in result["instances"]:
                     try:
-                        self.label_one(inst, project_id)
+                        self.label_resource(inst, project_id)
                     except Exception as e:
                         logging.exception(e)
             if "nextPageToken" in result:
@@ -119,7 +121,8 @@ class Bigtable(Plugin):
             if self.counter > 0:
                 self.do_batch()
 
-    def label_one(self, gcp_object, project_id):
+    @log_time
+    def label_resource(self, gcp_object, project_id):
         # This line, plus two lines down, are needed so that _gcp_region
         # can get the project_id
         gcp_object["project_id"] = project_id
@@ -148,4 +151,3 @@ class Bigtable(Plugin):
                 self.do_batch()
         except Exception as e:
             logging.exception(e)
-        return "OK", 200

@@ -14,7 +14,7 @@ To use it.
 3. Then run this file (in project root), test_do_label.py, specifying in the environment,
   - key `project` with the project where the reousrces are
   - optionally key `plugins` with a comma-separated list selected from PLUGINS (below) to focus the testing
-  on just these types.
+  on just these types. (If `plugins` not provided, will do all plugins.)
 """
 PLUGINS = [
     "Buckets",

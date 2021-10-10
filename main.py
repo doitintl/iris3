@@ -1,9 +1,11 @@
 """Entry point for Iris."""
+import time
+
+cold_start_begin = time.time()
 import base64
 import json
 import logging
 import os
-import re
 import typing
 
 import flask
@@ -13,8 +15,8 @@ from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import detect_gae
 
-from util.config_utils import iris_prefix, configured_project
-from util.utils import init_logging
+from util.config_utils import iris_prefix, configured_project, get_config
+from util.utils import init_logging, log_time, timing
 
 import googlecloudprofiler
 
@@ -36,101 +38,112 @@ if detect_gae():
         print("Exception initializing the Cloud Profiler", exc, msg)
 
 
-logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
+
 logging.info("logging: Initialized logger")
 
 gcp_utils.set_env()
 
 app = flask.Flask(__name__)
 
-
-def __init_plugins():
-    Plugin.init()
-    logging.info("Initialized Iris Plugins in process %s", os.getpid())
-
-
-__init_plugins()
+Plugin.init()
 
 
 @app.route("/")
+@log_time
 def index():
     msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
-    logging.info(msg)
+    logging.info("index() called;config is %s", get_config())
     return msg, 200
 
 
+@app.route('/_ah/warmup')
+def warmup():
+    logging.info("warmup() called")
+    return '', 200, {}
+
+
 @app.route("/schedule", methods=["GET"])
+@log_time
 def schedule():
-    """
-    Send out a message per-plugin per-project to label all objects of that type and project.
-    """
-    is_cron = flask.request.headers.get("X-Appengine-Cron")
-    if not is_cron:
-        return "Access Denied: No Cron header found", 403
+    try:
+        """
+        Send out a message per-plugin per-project to label all objects of that type and project.
+        """
+        is_cron = flask.request.headers.get("X-Appengine-Cron")
+        if not is_cron:
+            return "Access Denied: No Cron header found", 403
 
-    all_projects = gcp_utils.all_projects()
+        all_projects = gcp_utils.all_projects()
 
-    appscript_projects = [p for p in all_projects if gcp_utils.is_appscript(p)]
+        appscript_projects = [p for p in all_projects if gcp_utils.is_appscript(p)]
 
-    nonappscript_projects = [p for p in all_projects if p not in appscript_projects]
+        nonappscript_projects = [p for p in all_projects if p not in appscript_projects]
 
-    configured_projects = [
-        p for p in nonappscript_projects if config_utils.configured_project(p)
-    ]
-    skipped_nonappscript_projects = [
-        p for p in nonappscript_projects if p not in configured_projects
-    ]
+        configured_projects = [
+            p for p in nonappscript_projects if config_utils.configured_project(p)
+        ]
+        skipped_nonappscript_projects = [
+            p for p in nonappscript_projects if p not in configured_projects
+        ]
 
-    logging.info("schedule() skipping %d appscript projects", len(appscript_projects))
+        logging.info(
+            "schedule() skipping %d appscript projects", len(appscript_projects)
+        )
 
-    logging.info(
-        "schedule() skipping %d non-appscript projects: %s",
-        len(skipped_nonappscript_projects),
-        ", ".join(skipped_nonappscript_projects),
-    )
+        logging.info(
+            "schedule() skipping %d non-appscript projects: %s",
+            len(skipped_nonappscript_projects),
+            ", ".join(skipped_nonappscript_projects),
+        )
 
-    logging.info(
-        "schedule() processing %d projects: %s",
-        len(configured_projects),
-        ", ".join(configured_projects),
-    )
-    msg_count = 0
-    if not gcp_utils.detect_gae():
-        max = 3
-        if len(configured_projects) > max:
-            msg = """In development, we support no more than %d projects to avoid overwhelming system in development. 
+        logging.info(
+            "schedule() processing %d projects: %s",
+            len(configured_projects),
+            ", ".join(configured_projects),
+        )
+        msg_count = 0
+        if not gcp_utils.detect_gae():
+            max_project_in_localdev = 3
+            if len(configured_projects) > max_project_in_localdev:
+                msg = """In development, we support no more than %d projects to avoid overwhelming system in development. 
                    One motivation for this safety measure is that if you are using your personal credentials, 
-                   the system has access to *ALL* the projects that you have access to; was %d projects""" % (
-                max,
-                len(configured_projects),
-            )
-            logging.error(msg)
-            raise Exception(msg)
-
-    for project_id in configured_projects:
-        for plugin_cls in Plugin.subclasses:
-            if (
-                not plugin_cls.is_labeled_on_creation()
-                or plugin_cls.relabel_on_cron()
-                or config_utils.label_all_on_cron()
-            ):
-
-                pubsub_utils.publish(
-                    msg=json.dumps(
-                        {"project_id": project_id, "plugin": plugin_cls.__name__}
-                    ),
-                    topic_id=pubsub_utils.schedulelabeling_topic(),
+                   the system has access to *ALL* the projects that you have access to.
+                   But you can increase max_project_in_localdev to a very large number if you do want to do this.
+                   Was %d projects""" % (
+                    max_project_in_localdev,
+                    len(configured_projects),
                 )
-                logging.info(
-                    "Sent do_label message for %s , %s", project_id, plugin_cls.__name__
-                )
-            msg_count += 1
-    logging.info(
-        "schedule() send messages to label %d projects, %d messages",
-        len(configured_projects),
-        msg_count,
-    )
-    return "OK", 200
+                logging.error(msg)
+                raise Exception(msg)
+
+        for project_id in configured_projects:
+            for plugin_cls in Plugin.subclasses:
+                if (
+                        not plugin_cls.is_labeled_on_creation()
+                        or plugin_cls.relabel_on_cron()
+                        or config_utils.label_all_on_cron()
+                ):
+                    pubsub_utils.publish(
+                        msg=json.dumps(
+                            {"project_id": project_id, "plugin": plugin_cls.__name__}
+                        ),
+                        topic_id=pubsub_utils.schedulelabeling_topic(),
+                    )
+                    logging.info(
+                        "Sent do_label message for %s , %s",
+                        project_id,
+                        plugin_cls.__name__,
+                    )
+                msg_count += 1
+        logging.info(
+            "schedule() send messages to label %d projects, %d messages",
+            len(configured_projects),
+            msg_count,
+        )
+        return "OK", 200
+    except Exception as e:
+        logging.exception(f"In label_one(): {e}")
+        return "Error", 500
 
 
 @app.route("/label_one", methods=["POST"])
@@ -150,18 +163,25 @@ def label_one():
 
         method_from_log = data["protoPayload"]["methodName"]
 
-        for plugin_cls in Plugin.subclasses:
-            if plugin_cls.is_labeled_on_creation():
-                plugin = plugin_cls()
+        plugins_found = []
+        for plugin_name, plugin in Plugin.instances.items():
+            if plugin.is_labeled_on_creation():
                 for supported_method in plugin.method_names():
                     if supported_method.lower() in method_from_log.lower():
                         __label_one_0(data, plugin)
+                        plugins_found.append(plugin_name)
 
+        if len(plugins_found) != 1:
+            logging.warning(
+                f"Warning: plugins found {plugins_found} for {supported_method}"
+            )
+            logging.error(
+                f"Error: plugins found {plugins_found} for {supported_method}"
+            )
         return "OK", 200
     except Exception as e:
-        # Return 200 so that PubSub doesn't keep trying indefinitely
         logging.exception(f"In label_one(): {e}")
-        return "OK", 200
+        return "Error", 500
 
 
 def __label_one_0(data, plugin):
@@ -170,12 +190,12 @@ def __label_one_0(data, plugin):
         project_id = data["resource"]["labels"]["project_id"]
         if configured_project(project_id):
             logging.info("Will label_one() in %s, %s", project_id, gcp_object)
-            plugin.label_one(gcp_object, project_id)
+            plugin.label_resource(gcp_object, project_id)
             plugin.do_batch()
         else:
             msg = (
                 f"Skipping label_one({plugin.__class__.__name__}) in unsupported "
-                f"project ${project_id}; (Should not get here in current design, since the Sink filter should only include "
+                f"project {project_id}; (Should not get here in current design, since the Sink filter should only include "
                 f"supported projects). However, if the Sink filter was not updated to match config.yaml, or in local development"
                 f"if a command is given to label an arbirary project that is not in config.yaml, this can happen"
             )
@@ -202,23 +222,17 @@ def __extract_pubsub_content() -> typing.Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
-
-    try:
-        """Receive a push message from PubSub, sent from schedule() above,
-        with instructions to label all objects of a given plugin and project_id.
-        """
-        data = __extract_pubsub_content()
-
-        plugin_class_name = data["plugin"]
-        plugin = Plugin.create_plugin(plugin_class_name)
+    """Receive a push message from PubSub, sent from schedule() above,
+    with instructions to label all objects of a given plugin and project_id.
+    """
+    data = __extract_pubsub_content()
+    plugin_class_name = data["plugin"]
+    with timing(f"do_label {plugin_class_name}"):
+        plugin = Plugin.get_plugin(plugin_class_name)
         project_id = data["project_id"]
         logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
-        plugin.do_label(project_id)
-        return "OK", 200
-    except Exception as e:
-        # Return 200 so that PubSub doesn't keep trying indefinitely
-        logging.exception(f"In do_label(): {e}")
-        return "OK", 200
+        plugin.label_all(project_id)
+    return "OK", 200
 
 
 def __check_pubsub_verification_token():
@@ -266,3 +280,5 @@ if __name__ in ["__main__"]:
     port = os.environ.get("PORT", 8000)
     logging.info("Running __main__ for main.py, port %s", port)
     app.run(host="127.0.0.1", port=port, debug=True)
+
+logging.info(f"Coldstart took {int((time.time() - cold_start_begin) * 1000)} ms")

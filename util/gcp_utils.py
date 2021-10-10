@@ -5,7 +5,7 @@ from typing import List
 
 from google.cloud import resource_manager
 
-from util import localdev_config, config_utils
+from util import localdev_config
 from util.localdev_config import localdev_pubsub_token
 
 resource_manager_client = resource_manager.Client()

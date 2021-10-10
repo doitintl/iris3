@@ -1,4 +1,3 @@
-import os
 import sys
 
 from plugins.snapshots import Snapshots
@@ -141,8 +140,7 @@ def main():
              - resource for the name of the resource (for example, a BigQuery table called table-1 )
              - parent for the name of the parent if relevant (in the BigQuery example, dataset-1). 
                 The parent is needed only with BigQuery Tables and PubSub Subscriptions.
-                      
-             Messages will remind you of required values."""
+            """
         )
         exit(1)
 

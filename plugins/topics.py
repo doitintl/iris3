@@ -6,6 +6,7 @@ from google.cloud import pubsub_v1
 from googleapiclient import errors
 
 from plugin import Plugin
+from util.utils import log_time, timing
 
 
 class Topics(Plugin):
@@ -23,14 +24,14 @@ class Topics(Plugin):
         # Actually longer name, but substring is allowed
         return ["Publisher.CreateTopic"]
 
-    def do_label(self, project_id):
+    @log_time
+    def label_all(self, project_id):
         topics = self.__list_topics(project_id)
         for topics in topics:
             try:
-                self.label_one(topics, project_id)
+                self.label_resource(topics, project_id)
             except Exception as e:
                 logging.exception(e)
-        return "OK", 200
 
     def __get_topic(self, topic_path):
 
@@ -50,43 +51,46 @@ class Topics(Plugin):
         page_token = None
 
         while True:
-            result = (
-                self._google_client.projects()
-                .topics()
-                .list(
-                    project=f"projects/{project_id}",
-                    pageToken=page_token
-                    # No filter param availble
+            with timing("list topics"):
+                result = (
+                    self._google_client.projects()
+                    .topics()
+                    .list(
+                        project=f"projects/{project_id}",
+                        pageToken=page_token
+                        # No filter param availble
+                    )
+                    .execute()
                 )
-                .execute()
-            )
-            if "topics" in result:
-                topics += result["topics"]
-            if "nextPageToken" in result:
-                page_token = result["nextPageToken"]
-            else:
-                break
+                if "topics" in result:
+                    topics += result["topics"]
+                if "nextPageToken" in result:
+                    page_token = result["nextPageToken"]
+                else:
+                    break
 
         return topics
 
-    def label_one(self, gcp_object: typing.Dict, project_id):
+    @log_time
+    def label_resource(self, gcp_object: typing.Dict, project_id):
         # This API does not accept label-fingerprint, so extracting just labels
         labels_outer = self._build_labels(gcp_object, project_id)
         if labels_outer is None:
             return
         labels = labels_outer["labels"]
-        try:
-            topic_name = self._gcp_name(gcp_object)
-            topic_path = self.__topic_client.topic_path(project_id, topic_name)
-            # Use the Google Cloud Library instead of the Google Client API used
-            # elsewhere because the latter does not seem to support changing the label,
-            # or at least I could not figure it out.
-            topic_object_holding_update = pubsub_v1.types.Topic(
-                name=topic_path, labels=labels
-            )
 
-            update_mask = {"paths": {"labels"}}
+        topic_name = self._gcp_name(gcp_object)
+        topic_path = self.__topic_client.topic_path(project_id, topic_name)
+        # We use the Google Cloud Library instead of the Google Client API used
+        # elsewhere because the latter does not seem to support changing the label,
+        # or at least I could not figure it out.
+        topic_object_holding_update = pubsub_v1.types.Topic(
+            name=topic_path, labels=labels
+        )
 
+        update_mask = {"paths": {"labels"}}
+
+        with timing("update topic"):
             _ = self.__topic_client.update_topic(
                 request={
                     "topic": topic_object_holding_update,
@@ -94,12 +98,7 @@ class Topics(Plugin):
                 }
             )
 
-            logging.info(f"Topic updated: {topic_path}")
-
-        except errors.HttpError as e:
-            logging.exception(e)
-            return "Error", 500
-        return "OK", 200
+        logging.info(f"Topic updated: {topic_path}")
 
     def get_gcp_object(self, log_data):
         try:

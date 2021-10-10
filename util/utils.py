@@ -1,6 +1,9 @@
 import logging
 import textwrap
+import time
 import typing
+from contextlib import contextmanager
+from functools import wraps
 
 from util.config_utils import iris_prefix
 
@@ -43,3 +46,36 @@ def init_logging():
         format=f"%(levelname)s [{iris_prefix()}]: %(message)s",
         level=logging.INFO,
     )
+    logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
+    logging.getLogger("googlecloudprofiler.client").setLevel(logging.ERROR)
+
+
+def __log_end_timer(tag, start):
+    logging.info(f"Time {tag}: {int((time.time() - start) * 1000)} ms")
+
+
+def log_time(func):
+    @wraps(func)
+    def _time_it(*args, **kwargs):
+        start = time.time()
+        try:
+            return func(*args, **kwargs)
+        finally:
+            f = func.__name__
+
+            if args:
+                arg = args[0]
+                arg_s = arg.__name__ if hasattr(arg, "__name__") else type(arg).__name__
+            else:
+                arg_s = ""
+            __log_end_timer(f"{f}({arg_s})", start)
+
+    return _time_it
+
+
+@contextmanager
+def timing(tag: str) -> None:
+    start = time.time()
+    yield
+    elapsed_ms = int((time.time() - start) * 1000)
+    logging.getLogger("Time").info("%s: %d ms", tag, elapsed_ms)

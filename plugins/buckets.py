@@ -1,10 +1,9 @@
 import logging
 import typing
 
-from googleapiclient import errors
-
 from plugin import Plugin
 from util import gcp_utils
+from util.utils import log_time
 
 
 class Buckets(Plugin):
@@ -49,7 +48,8 @@ class Buckets(Plugin):
             logging.exception(e)
             return None
 
-    def do_label(self, project_id):
+    @log_time
+    def label_all(self, project_id):
 
         page_token = None
         more_results = True
@@ -66,7 +66,7 @@ class Buckets(Plugin):
             if "items" in response:
                 for bucket in response["items"]:
                     try:
-                        self.label_one(bucket, project_id)
+                        self.label_resource(bucket, project_id)
                     except Exception as e:
                         logging.exception(e)
             if "nextPageToken" in response:
@@ -76,7 +76,8 @@ class Buckets(Plugin):
         if self.counter > 0:
             self.do_batch()
 
-    def label_one(self, gcp_object, project_id):
+    @log_time
+    def label_resource(self, gcp_object, project_id):
 
         labels = self._build_labels(gcp_object, project_id)
         if labels is None:
@@ -94,4 +95,3 @@ class Buckets(Plugin):
                 self.do_batch()
         except Exception as e:
             logging.exception(e)
-        return "OK", 200

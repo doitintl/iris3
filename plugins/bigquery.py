@@ -9,6 +9,7 @@ from ratelimit import limits, sleep_and_retry
 
 from plugin import Plugin
 from util import gcp_utils
+from util.utils import log_time
 
 
 class Bigquery(Plugin):
@@ -95,7 +96,8 @@ class Bigquery(Plugin):
             logging.exception(e)
             return None
 
-    def do_label(self, project_id):
+    @log_time
+    def label_all(self, project_id):
         """
         Label both tables and data sets
         """
@@ -198,7 +200,8 @@ class Bigquery(Plugin):
         if self.counter > 0:
             self.do_batch()
 
-    def label_one(self, gcp_object, project_id):
+    @log_time
+    def label_resource(self, gcp_object, project_id):
         try:
             if gcp_object["kind"] == "bigquery#dataset":
                 self.__label_one_dataset(gcp_object, project_id)

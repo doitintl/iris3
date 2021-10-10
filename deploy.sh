@@ -28,6 +28,7 @@ ROLEID=iris3
 LOGS_TOPIC=iris_logs_topic
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
 LOG_SINK=iris_log
+DEADLETTER_TOPIC=iris_deadletter_topic
 DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
 REGION=us-central
@@ -123,6 +124,11 @@ gcloud organizations add-iam-policy-binding "$ORGID" \
 gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" ||
   gcloud pubsub topics create "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
 
+# Create PubSub topic for receiving dead messages
+gcloud pubsub topics describe "$DEADLETTER_TOPIC" --project="$PROJECTID" ||
+  gcloud pubsub topics create "$DEADLETTER_TOPIC" --project="$PROJECTID" --quiet >/dev/null
+
+
 # Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
 # If the subscription exists, it will not be changed.
 # So, if you want to change the PubSub token, you have to manually delete this subscription first.
@@ -130,6 +136,8 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --ack-deadline 60 \
+    --max-delivery-attempts=3 \
+    --dead-letter-topic-project=$DEADLETTER_TOPIC \
     --quiet >/dev/null
 
 if [[ "$CRON_ONLY" == "true" ]]; then  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" 2>/dev/null || true
@@ -147,6 +155,8 @@ else
     gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
       --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
       --ack-deadline 60 \
+      --max-delivery-attempts=3 \
+      --dead-letter-topic-project=$DEADLETTER_TOPIC \
       --quiet >/dev/null
 
   log_filter=("")

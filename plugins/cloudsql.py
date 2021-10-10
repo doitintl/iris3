@@ -3,6 +3,7 @@ import logging
 from googleapiclient import errors
 
 from plugin import Plugin
+from util.utils import log_time
 
 
 class Cloudsql(Plugin):
@@ -68,7 +69,8 @@ class Cloudsql(Plugin):
             logging.exception(e)
             return None
 
-    def do_label(self, project_id):
+    @log_time
+    def label_all(self, project_id):
         page_token = None
         while True:
 
@@ -87,7 +89,7 @@ class Cloudsql(Plugin):
                 return
             for database_instance in response["items"]:
                 try:
-                    self.label_one(database_instance, project_id)
+                    self.label_resource(database_instance, project_id)
                 except Exception as e:
                     logging.exception(e)
             if "nextPageToken" in response:
@@ -95,7 +97,8 @@ class Cloudsql(Plugin):
             else:
                 return
 
-    def label_one(self, gcp_object, project_id):
+    @log_time
+    def label_resource(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
         if labels is None:
             return
@@ -115,6 +118,5 @@ class Cloudsql(Plugin):
                     "we do not label it on-demand in the usual way",
                     exc_info=e,
                 )
-            else:
-                logging.exception(e)
-        return "OK", 200
+
+            raise e

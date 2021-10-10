@@ -5,6 +5,8 @@ from googleapiclient import errors
 from gce_base.gce_base import GceBase
 from util import gcp_utils
 
+from util.utils import log_time
+
 
 class Snapshots(GceBase):
     def method_names(self):
@@ -45,16 +47,16 @@ class Snapshots(GceBase):
             logging.exception(e)
             return None
 
-    def do_label(self, project_id):
+    @log_time
+    def label_all(self, project_id):
         snapshots = self.__list_snapshots(project_id)
         for snapshot in snapshots:
             try:
-                self.label_one(snapshot, project_id)
+                self.label_resource(snapshot, project_id)
             except Exception as e:
                 logging.exception(e)
         if self.counter > 0:
             self.do_batch()
-        return "OK", 200
 
     def get_gcp_object(self, log_data):
         try:
@@ -70,19 +72,16 @@ class Snapshots(GceBase):
             logging.exception(e)
             return None
 
-    def label_one(self, gcp_object, project_id):
+    @log_time
+    def label_resource(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
-        try:
-            self._batch.add(
-                self._google_client.snapshots().setLabels(
-                    project=project_id, resource=gcp_object["name"], body=labels
-                ),
-                request_id=gcp_utils.generate_uuid(),
-            )
-            self.counter += 1
-            if self.counter >= self._BATCH_SIZE:
-                self.do_batch()
-        except Exception as e:
-            logging.exception(e)
-            return "Error", 500
-        return "OK", 200
+
+        self._batch.add(
+            self._google_client.snapshots().setLabels(
+                project=project_id, resource=gcp_object["name"], body=labels
+            ),
+            request_id=gcp_utils.generate_uuid(),
+        )
+        self.counter += 1
+        if self.counter >= self._BATCH_SIZE:
+            self.do_batch()

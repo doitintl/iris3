@@ -1,9 +1,10 @@
 import logging
-
+from util.utils import log_time
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
+from util.utils import timing
 
 
 class Disks(GceZonalBase):
@@ -29,15 +30,16 @@ class Disks(GceZonalBase):
         page_token = None
         more_results = True
         while more_results:
-            result = (
-                self._google_client.disks()
-                .list(
-                    project=project_id,
-                    zone=zone,
-                    pageToken=page_token,
+            with timing(f"list disks {zone}"):
+                result = (
+                    self._google_client.disks()
+                    .list(
+                        project=project_id,
+                        zone=zone,
+                        pageToken=page_token,
+                    )
+                    .execute()
                 )
-                .execute()
-            )
             if "items" in result:
                 disks = disks + result["items"]
             if "nextPageToken" in result:
@@ -59,18 +61,17 @@ class Disks(GceZonalBase):
             logging.exception(e)
             return None
 
-    def do_label(self, project_id):
+    @log_time
+    def label_all(self, project_id):
         for zone in self._all_zones(project_id):
             disks = self.__list_disks(project_id, zone)
             for disk in disks:
-
                 try:
-                    self.label_one(disk, project_id)
+                    self.label_resource(disk, project_id)
                 except Exception as e:
                     logging.exception(e)
         if self.counter > 0:
             self.do_batch()
-        # return "OK", 200
 
     def get_gcp_object(self, log_data):
         try:
@@ -84,32 +85,27 @@ class Disks(GceZonalBase):
             logging.exception(e)
             return None
 
-    def label_one(self, gcp_object, project_id):
+    @log_time
+    def label_resource(self, gcp_object, project_id):
 
         labels = self._build_labels(gcp_object, project_id)
         if labels is None:
-
             return
-        try:
-            zone = self._gcp_zone(gcp_object)
 
-            self._batch.add(
-                self._google_client.disks().setLabels(
-                    project=project_id,
-                    zone=zone,
-                    resource=gcp_object["name"],
-                    body=labels,
-                ),
-                request_id=gcp_utils.generate_uuid(),
-            )
-            self.counter += 1
-            if self.counter >= self._BATCH_SIZE:
-                self.do_batch()
+        zone = self._gcp_zone(gcp_object)
 
-        except errors.HttpError as e:
-            logging.exception(e)
-            return "Error", 500
-        return "OK", 200
+        self._batch.add(
+            self._google_client.disks().setLabels(
+                project=project_id,
+                zone=zone,
+                resource=gcp_object["name"],
+                body=labels,
+            ),
+            request_id=gcp_utils.generate_uuid(),
+        )
+        self.counter += 1
+        if self.counter >= self._BATCH_SIZE:
+            self.do_batch()
 
     def _gcp_pd_attached(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
