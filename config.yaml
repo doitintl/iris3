@@ -1,7 +1,6 @@
 # config.yaml.original is a "clean" version that you can refer to after you have edited config.yaml.
 # You can even set up a git pre-commit hook to replace config.yaml with this clean version to avoid commiting an edited version.
-#
-#
+
 # Keys:
 
 # iris_prefix is prefixed to the key of each label that is added.
@@ -16,7 +15,4 @@ from_project: True
 label_all_on_cron: False
 
 #  Only these projects are included. But if empty, *all* projects in the organization are included.
-projects:
-  - joshua-playground2
-  - joshua-playground-host-vpc
-  - joshua-playground
+projects: {}
