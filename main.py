@@ -38,7 +38,6 @@ if detect_gae():
         print("Exception initializing the Cloud Profiler", exc, msg)
 
 
-
 logging.info("logging: Initialized logger")
 
 gcp_utils.set_env()
@@ -56,10 +55,10 @@ def index():
     return msg, 200
 
 
-@app.route('/_ah/warmup')
+@app.route("/_ah/warmup")
 def warmup():
     logging.info("warmup() called")
-    return '', 200, {}
+    return "", 200, {}
 
 
 @app.route("/schedule", methods=["GET"])
@@ -119,9 +118,9 @@ def schedule():
         for project_id in configured_projects:
             for plugin_cls in Plugin.subclasses:
                 if (
-                        not plugin_cls.is_labeled_on_creation()
-                        or plugin_cls.relabel_on_cron()
-                        or config_utils.label_all_on_cron()
+                    not plugin_cls.is_labeled_on_creation()
+                    or plugin_cls.relabel_on_cron()
+                    or config_utils.label_all_on_cron()
                 ):
                     pubsub_utils.publish(
                         msg=json.dumps(

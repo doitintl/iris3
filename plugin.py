@@ -133,7 +133,7 @@ class Plugin(object, metaclass=ABCMeta):
     @classmethod
     @log_time
     def init(cls):
-        def load_plugin_class(name)->typing.Type:
+        def load_plugin_class(name) -> typing.Type:
             module_name = PLUGINS_MODULE + "." + name
             __import__(module_name)
             assert name == name.lower(), name
@@ -143,14 +143,13 @@ class Plugin(object, metaclass=ABCMeta):
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
             plugin_class = load_plugin_class(module)
             instance = plugin_class()
-            Plugin.instances[plugin_class.__name__]= instance
+            Plugin.instances[plugin_class.__name__] = instance
 
         assert Plugin.instances, "No plugins defined"
 
     @staticmethod
     def get_plugin(plugin_name: str) -> "Plugin":
         return Plugin.instances[plugin_name]
-
 
     def _build_labels(self, gcp_object, project_id):
         """
