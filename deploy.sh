@@ -222,15 +222,17 @@ else
     --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 fi
 
+# GAEVERSION might be unbound, so disable this check.
+set +u
+
 # Deploy to App Engine
-if [ -z "$GAEVERSION" ]
+if [[ -n "$GAEVERSION" ]]
 then
-    gcloud app deploy --project $PROJECTID -q app.yaml cron.yaml
-else
     gcloud app deploy --project $PROJECTID --version $GAEVERSION -q app.yaml cron.yaml
+else
+    gcloud app deploy --project $PROJECTID -q app.yaml cron.yaml
 fi
-
-
+set -u
 FINISH=$(date "+%s")
 ELAPSED_SEC=$((FINISH - START))
 echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"

@@ -22,9 +22,10 @@ Importantly, Iris cannot *add* information, only *copy* information. For example
 zone, since this information is known; but it cannot add a "business unit" label because it does not know what business
 unit a resource is launched from.
 
-Iris is open-source: Feel free to add labels, and important, to *disable* functionality that adds certain labels
-(by deleting `_gcp_<LABEL_NAME` functions. The billing analytics in Google Cloud and DoiT International Cloud Management
-Platform work best when they are not swamped by excess labels.
+Iris is open-source: Feel free to add labels, and important, to *remove* functionality, specifically
+to delete certain `_gcp_<LABEL_NAME` functions. Billing analytics 
+work best when they are not swamped by excess labels (which is why these labels are not already
+in the billing data without Iris; and why Iris does not implement all possible labeling).
 
 ## When it does it
 
@@ -32,15 +33,16 @@ Iris adds labels:
 
 * On resource creation, by listening to Google Cloud Operations (Stackdriver) Logs.
     - You can disable this, see ["Deploy"](#deployment).
-* On schedule, using a Cloud Scheduler cron job that the deployer sets up for you. TODO Remove - By default, only some
-  types of resources get labeled on schedule. Some labeling occurs only on schedule.
+* On schedule, using a Cloud Scheduler cron job that the deployer sets up for you. 
     - See  [Configuration section below](#configuration) below for details.
-
+    - By default only some types of resources get labeled on the cron job, but you can 
+    configure that all resources get labeled.
 ## Supported Google Cloud Products
 
 Right now, there are plugins for the following types of resources. To learn what label keys are added, search
 for `def _gcp_<LABEL_NAME>)`, i.e., functions whose names start `_gcp_`. The part of the function name after `_gcp_` is
 used for the label key.  
+
 These are also listed below.
 
 * Compute Engine Instances (Labels name, zone, region, instance type)
@@ -85,16 +87,21 @@ On the project where Iris3 is deployed, you will need Owner or these roles:
 
 ### Deployment
 
-* Optionally edit `app.yaml`, changing the secret token for PubSub.
-* Check you have Python 3.8+ as your default `python3`.
-* Install tools  `envsubst` and `jq`
+* Have Python 3.8+ as your default `python3`.
+* Install tools  `envsubst` and `jq`.
 * Install and initialize `gcloud` to an account with the [above-mentioned](#before-deploying) roles
+* Optionally configure by editing `config.yaml`, `cron.yaml`, or `app.yaml`. See [Configuration](#configuration) below.
 * Run `./deploy.sh <PROJECT_ID>`.
-    * Add `-c` at the end to use only Cloud Scheduler cron (i.e., without labeling on-demand).
-        * With `-c`, resources will get labeled only by cron. This saves costs on the log sink.
+    * Add `-c` at the end to use only Cloud Scheduler cron (i.e., without labeling on-creatio).
+        * With `-c`, resources will get labeled only by cron. This saves costs.
         * By default, only a few types of resource will be labeled by cron. (Cloud SQL and Disks.)
-          You may wish to set `label_all_on_cron` to `True` in `config.yaml` so that everything is labeled by cron.
-
+          You may wish to set `label_all_on_cron` to `True` in `config.yaml` so that everything is labeled by cron,
+          though this does mean that Iris3 has to iterate over *all* your resources.
+* If you redeploy different versions of Iris3 code.
+    * If new plugins were added or some removed, the log sink *will* be updated to reflect this.
+    * If the parameters for subscriptions or topics were changed in a new version of the Iris3 code, the subscriptions
+    or topics will not be updated. You would have to delete them first.
+    
 ### Configuration
 
 * See `config.yaml` for documentation of these options:
@@ -105,6 +112,7 @@ On the project where Iris3 is deployed, you will need Owner or these roles:
       resources in all projects will need to be scanned) or just the types that need it  (Cloud SQL and Disks). Setting
       this to `True` may be useful for a first run, to label existing resources.
 * `app.yaml` lets you configure App Engine. See App Engine documentation.
+  * You can also change the secret token for PubSub here 
 * See the `-c` switch discussed [above](#deployment) for disabling the on-event labeling a and relying on Cloud
   Scheduler cron.
 * `cron.yaml` lets you change the timing for the Cloud Scheduler cron scheduled labelings.
@@ -119,15 +127,16 @@ On the project where Iris3 is deployed, you will need Owner or these roles:
     * One receives the logs from the Log Sink on resource creation.
     * The other receives messages sent by the `/schedule` Cloud Scheduler handler in `main.py`, which is triggered by
       the Cloud Scheduler.
-        * Such messages are an instruction to call `do_label` for each combination of (project, resource-type)
-* PubSub subscriptions, one for each topic
+        * Such messages are an instruction to call `do_label` for each 
+          combination of (project, resource-type).
+* PubSub subscriptions, one for each topic:
     * These direct the messages to `/label_one` and `/do_label` in `main.py`, respectively
 * IAM Roles
     * See [above](#before-deploying)
 
 ## Local Development
 
-For local development,
+### Development tools
 
 * Run the server locally
     * Run `main.py` as an ordinary Flask application as follows:
@@ -135,25 +144,17 @@ For local development,
           use `export FLASK_ENV=development;export FLASK_RUN_PORT=8000;export FLASK_DEBUG=1;FLASK_APP=main.py python -m flask run`
         * In an interactive development environment, run `main.py`, first setting these environment variables.
 * For hands-on debugging
-    * So you may want to do this in a test project and organization. See `config.yaml` for setting projects. You should
-      also set your preferred configuration using `gcloud config set project <PROJECT>`
+    * Set the projects you want to use in  `config.yaml`
+    * Set your preferred project using `gcloud config set project <PROJECT>`
     * `test_do_label` and `test_label_one` and `test_schedule` work against your localhost dev-server, against actual
-      Cloud resources that you pre-deploy. )
-      See these `test_...` files for instructions.
-* Prerequisites for developing and building
-    * In development
-
-```
-pip install -r requirements.txt
-```
-
-* Install and initialize `gcloud`
-* For  `deploy.sh` and `integration_test.sh`
-    * Install tools  `envsubst` and `jq`
+      Cloud resources that you pre-deploy. 
+      * See these `test_...` files for instructions.
+* Prerequisites for developing and building (beyond the prerequisites for the project as a whole: See [Installation](#installation))
+    * In development, set up a virtual env and run `pip3 install -r requirements.txt`
 
 ### Developing new labels for an existing resource type
 
-To add a new label to an existing resource type, just create a method `_gcp_<LABEL_NAME>`, following the example of the
+To add a new label key to an existing resource type, just create a method `_gcp_<LABEL_NAME>`, following the example of the
 existing ones.
 
 For example, you might want to add a label identifying the creator of a resource, or add the name the topic to its
