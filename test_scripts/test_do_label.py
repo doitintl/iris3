@@ -10,22 +10,18 @@ It simulates the action that happens in response to a Cloud Scheduler call to /s
 
 To use it.
 1. Run main.py in debug mode
-2, Comment out any of the plugins that you do not want to test (see below)
-3. Then run this file (in project root), test_do_label.py, specifying in the environment,
-  - key `project` with the project where the reousrces are
-  - optionally key `plugins` with a comma-separated list selected from PLUGINS (below) to focus the testing
-  on just these types. (If `plugins` not provided, will do all plugins.)
+2. Then run this file (in project root). See usage below (test_do_label.py --help)
 """
 PLUGINS = [
     "Buckets",
     "Bigquery",
-    "Instances",
-    "Disks",
-    "Snapshots",
-    "Topics",
-    "Subscriptions",
-    "Cloudsql",
     "Bigtable",
+    "Cloudsql",
+    "Disks",
+    "Instances",
+    "Snapshots",
+    "Subscriptions",
+    "Topics",
 ]
 
 
@@ -50,8 +46,8 @@ def main():
             f"""Usage: {os.path.basename(sys.argv[0])} 
              Set environment with
              - required key project with GCP project-ID 
-             - optional resource_types =  a comma-separated list selected from {",".join(PLUGINS)} 
-             
+             - optional key plugins with a comma-separated list selected from {",".join(PLUGINS)} 
+               (default is to run all plugins)
              """
         )
         exit(1)

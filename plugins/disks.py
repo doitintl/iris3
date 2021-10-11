@@ -27,7 +27,7 @@ class Disks(GceZonalBase):
         """
         return True
 
-    def __list_disks(self, project_id, zone) -> typing.List[str]:
+    def __list_disks(self, project_id, zone) -> typing.List[typing.Dict]:
         disks = []
         page_token = None
         more_results = True
