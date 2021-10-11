@@ -1,8 +1,8 @@
+import os
 import sys
 
 from plugins.snapshots import Snapshots
 from test_scripts.utils_for_tests import label_one
-import os
 
 """
 
@@ -122,15 +122,15 @@ def main():
     dir_ = dir(sys.modules[__name__])
     test_ = "test_"
     test_func = [f for f in dir_ if f.startswith(test_)]
-    resource_types = [f[len(test_) :] for f in test_func]
+    resource_types = [f[len(test_):] for f in test_func]
     resource_types_s = ", ".join(sorted(resource_types))
     resource_type = os.environ.get("resource_type", "")
     func_name = test_ + resource_type
     if (
-        func_name not in dir_
-        or not resource_type
-        or len(sys.argv) > 1
-        and (sys.argv[1] == "-h" or sys.argv[1] == "--help")
+            func_name not in dir_
+            or not resource_type
+            or len(sys.argv) > 1
+            and (sys.argv[1] == "-h" or sys.argv[1] == "--help")
     ):
         print(
             f"""Usage: {os.path.basename(sys.argv[0])}  

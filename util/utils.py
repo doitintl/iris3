@@ -2,8 +2,12 @@ import logging
 import textwrap
 import time
 import typing
+
+from functools import lru_cache, wraps
+from datetime import datetime, timedelta
+
+
 from contextlib import contextmanager
-from functools import wraps
 
 from util.config_utils import iris_prefix
 
@@ -82,10 +86,6 @@ def timing(tag: str) -> None:
     yield
     elapsed_ms = int((time.time() - start) * 1000)
     logging.getLogger("Time").info("%s: %d ms", tag, elapsed_ms)
-
-
-from functools import lru_cache, wraps
-from datetime import datetime, timedelta
 
 
 def timed_lru_cache(seconds: int, maxsize: int = 128):

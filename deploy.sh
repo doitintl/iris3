@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
+# Pass the project as the first command line argument.
+# Optionall set environment variable GAEVERSION to set the Google App Engine Version.
+#
 
 set -x
 set -u
@@ -137,7 +142,7 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --ack-deadline 60 \
-    --max-delivery-attempts=7 \
+    --max-delivery-attempts=5 \
     --dead-letter-topic=$DEADLETTER_TOPIC \
     --min-retry-delay=30s \
     --max-retry-delay=600s \
@@ -158,7 +163,7 @@ else
     gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
       --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
       --ack-deadline 60 \
-      --max-delivery-attempts=7 \
+      --max-delivery-attempts=5 \
       --dead-letter-topic=$DEADLETTER_TOPIC \
       --min-retry-delay=30s \
       --max-retry-delay=600s \
@@ -215,11 +220,16 @@ else
   # Assign a publisher role to the extracted service account.
   gcloud projects add-iam-policy-binding "$PROJECTID" \
     --member="$svcaccount" --role=roles/pubsub.publisher --quiet
-
 fi
 
 # Deploy to App Engine
-gcloud app deploy -q app.yaml cron.yaml
+if [ -z "$GAEVERSION" ]
+then
+    gcloud app deploy --project $PROJECTID -q app.yaml cron.yaml
+else
+    gcloud app deploy --project $PROJECTID --version $GAEVERSION -q app.yaml cron.yaml
+fi
+
 
 FINISH=$(date "+%s")
 ELAPSED_SEC=$((FINISH - START))

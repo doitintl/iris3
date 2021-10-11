@@ -118,9 +118,9 @@ def schedule():
         for project_id in configured_projects:
             for _, plugin_ in Plugin.instances.items():
                 if (
-                    not plugin_.is_labeled_on_creation()
-                    or plugin_.relabel_on_cron()
-                    or config_utils.label_all_on_cron()
+                        not plugin_.is_labeled_on_creation()
+                        or plugin_.relabel_on_cron()
+                        or config_utils.label_all_on_cron()
                 ):
                     pubsub_utils.publish(
                         msg=json.dumps(
@@ -135,18 +135,20 @@ def schedule():
                     )
                 msg_count += 1
         logging.info(
-            "schedule() send messages to label %d projects, %d messages",
+            "schedule() sent messages to label %d projects, %d messages",
             len(configured_projects),
             msg_count,
         )
         return "OK", 200
     except Exception as e:
-        logging.exception(f"In label_one(): {e}")
+        logging.exception("In schedule()", exc_info=e)
         return "Error", 500
 
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
+    plugin_name = ""  # set up variables to allow logging on exception
+    data = {}
     try:
         """
         PubSub push endpoint for messages from the Log Sink
@@ -164,17 +166,23 @@ def label_one():
 
         plugins_found = []
         for plugin_name, plugin in Plugin.instances.items():
-            if plugin.is_labeled_on_creation():
-                for supported_method in plugin.method_names():
-                    if supported_method.lower() in method_from_log.lower():
+            for supported_method in plugin.method_names():
+                if supported_method.lower() in method_from_log.lower():
+                    if plugin.is_labeled_on_creation():
                         __label_one_0(data, plugin)
-                        plugins_found.append(plugin_name)
+
+                    plugins_found.append(
+                        plugin_name
+                    )  # Append it even if not used due to is_labeled_on_creation False
 
         if len(plugins_found) != 1:
             logging.error(f"Error: plugins found {plugins_found} for {method_from_log}")
         return "OK", 200
     except Exception as e:
-        logging.exception(f"In label_one(): {e}")
+        project_id = data.get("resource", {}).get("labels", {}).get("project_id")
+        logging.exception(
+            "Error on do_label %s %s", plugin_name, project_id, exc_info=e
+        )
         return "Error", 500
 
 
@@ -196,7 +204,7 @@ def __label_one_0(data, plugin):
             logging.info(msg)
     else:
         logging.error(
-            "Cannot find gcp_object to label based on %s",
+            "Cannot find gcp_object to label (this sometimes does not result in failure to label, e.g. for BQ datasets), based on %s",
             utils.shorten(str(data.get("resource")), 300),
         )
 
@@ -219,14 +227,25 @@ def do_label():
     """Receive a push message from PubSub, sent from schedule() above,
     with instructions to label all objects of a given plugin and project_id.
     """
-    data = __extract_pubsub_content()
-    plugin_class_name = data["plugin"]
-    with timing(f"do_label {plugin_class_name}"):
-        plugin = Plugin.get_plugin(plugin_class_name)
-        project_id = data["project_id"]
-        logging.info("do_label() for %s in %s", plugin.__class__.__name__, project_id)
-        plugin.label_all(project_id)
-    return "OK", 200
+    project_id = ""  # set up variables to allow logging in Exception block at end
+    plugin_class_name = ""
+    try:
+        data = __extract_pubsub_content()
+        plugin_class_name = data["plugin"]
+        with timing(f"do_label {plugin_class_name}"):
+            plugin = Plugin.get_plugin(plugin_class_name)
+            project_id = data["project_id"]
+            logging.info(
+                "do_label() for %s in %s", plugin.__class__.__name__, project_id
+            )
+            plugin.label_all(project_id)
+        logging.info("OK on do_label %s %s", plugin_class_name, project_id)
+        return "OK", 200
+    except Exception as e:
+        logging.exception(
+            "Error on do_label %s %s", plugin_class_name, project_id, exc_info=e
+        )
+        return "Error", 500
 
 
 def __check_pubsub_verification_token():

@@ -3,7 +3,7 @@
 * P2 Labeling GKE Nodes (VM Instances) and Disks
     * Today, this is not done because it forces recreation of resources.
     * It can be done through specific mechanisms for GKE clusters.
-    
+
 * P2 PubSub push endpoint security:
   Note: The token which is now used is not very secure, though it is an improvement on earlier versions of Iris, and
   Google has at times recommended this approach.
@@ -21,32 +21,22 @@
 * P3 In `integration_test.sh`
     - Test more labels (in addition to `iris3_name` which is now tested)
     - Test the copying of labels from the project.
-    - Support testing of the cron-based labeling, which would also allow testing of Cloud SQL
-      (otherwise difficult because it takes 10 minutes to initialize). In this test:
-      1. Modify cron to run 1 minute after the deployment is launched (and restore it at the end of the test.)
-      1. Call `deploy.sh` using with the `-c` switch to disable event-based labeling 1. Wait 1.5 minutes after deploy
-      before checking that the labels are there
-    - For the integration test, deploy a service with a name that is *not* iris3, to cleanly separate test 
-      from existing infrastructure.
-        - But that is not high-priority, since the test will be run in a test environment anyway. 
-        - In any case, the test will not be completely "clean", because it will tag any resources that are 
-            created in the test project during the test, even if these were not created for the test.
-    - Likewise, in cleaning up after the test, delete only the version, not the service. 
-        - Still, we assume that we are operating in a test project and it's OK to 
-          delete the whole `iris3` service. 
-          
-* P3 Immediately label, rather than waiting for the cron job
-   * Cloud SQL Instances
-   * Boot disks that are created with the instance
-     * As shown in [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), do this by pulling a
-      list of disks from the information about the instance.
+    - Support testing of the cron-based labeling, which would also allow testing of Cloud SQL and of attachment of
+      Disks. In this test:
+        1. Modify cron to run 1 minute after the deployment is launched (and restore it at the end of the test.)
+        1. Call `deploy.sh` using with the `-c` switch to disable event-based labeling 1. Wait 1.5 minutes after deploy
+           before checking that the labels are there
 
-   * The fact that disks that are attached or detached (and so one of their labels need to change 
-     from false to true or vice versa) 
+* P3 Label ASAP, rather than waiting for the cron job
+    * Cloud SQL Instances
+    * Boot disks that are created with the instance
+        * As shown in [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), do this by pulling a
+          list of disks from the information about the instance.
+    * The attachment status of disks (so a label need to change from false to true or vice versa)
 
 * P3 Address the error *"Labels fingerprint either invalid or resource labels have changed",* printed
   in `_batch_callback`, which occurs intermittently, especially with disks. Solutions:
-  - Retry - Ignore and let the cron do it - Implement Cloud Task with a delay. (Not clear if that will help.)
+    - Retry - Ignore and let the cron do it - Implement Cloud Task with a delay. (Not clear if that will help.)
 
 * P3 Rethink the need for title case in class names. This is clumsy for `Bigtable` and `Cloudsql`.
 

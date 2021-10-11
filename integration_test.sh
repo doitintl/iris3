@@ -73,6 +73,7 @@ function revert_config() {
 trap "revert_config" EXIT
 
 envsubst <config.yaml.test.template >config.yaml
+export GAEVERSION=$RUN_ID
 
 ./deploy.sh $DEPLOYMENT_PROJECT
 
@@ -93,7 +94,8 @@ function clean_resources() {
   bq rm -f --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
-  gcloud app services delete -q iris3 --project $DEPLOYMENT_PROJECT
+
+  gcloud app versions delete $GAEVERSION -q --service iris3 --project $DEPLOYMENT_PROJECT
 
   FINISH_TEST=$(date "+%s")
   ELAPSED_SEC_TEST=$((FINISH_TEST - START_TEST))
@@ -115,11 +117,11 @@ bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
 bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
 gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
 
-# It takes about time seconds before  labels are available to be read by "describe".
+# It takes time before labels are available to be read by "describe".
 #
 # jq -e generates exit code 1 on failure. Since we set -e, the script will fail appropriately if the value is not found
 
-sleep 20
+sleep 30
 
 DESCRIBE_FLAGS=(--project "$TEST_PROJECT" --format json)
 JQ=(jq -e ".labels.${RUN_ID}_name")
