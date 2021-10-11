@@ -19,11 +19,11 @@ class Snapshots(GceBase):
         while more_results:
             result = (
                 self._google_client.snapshots()
-                    .list(
+                .list(
                     project=project_id,
                     pageToken=page_token,
                 )
-                    .execute()
+                .execute()
             )
             if "items" in result:
                 snapshots = snapshots + result["items"]
@@ -38,8 +38,8 @@ class Snapshots(GceBase):
         try:
             result = (
                 self._google_client.snapshots()
-                    .get(project=project_id, snapshot=name)
-                    .execute()
+                .get(project=project_id, snapshot=name)
+                .execute()
             )
             return result
         except errors.HttpError as e:

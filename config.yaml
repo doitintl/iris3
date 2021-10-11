@@ -15,4 +15,4 @@ from_project: True
 label_all_on_cron: False
 
 #  Only these projects are included. But if empty, *all* projects in the organization are included.
-projects: { }
+projects: {}

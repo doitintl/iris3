@@ -56,12 +56,12 @@ class Buckets(Plugin):
         while more_results:
             response = (
                 self._google_client.buckets()
-                    .list(
+                .list(
                     project=project_id,
                     pageToken=page_token,
                     # filter not supported
                 )
-                    .execute()
+                .execute()
             )
             if "items" in response:
                 for bucket in response["items"]:

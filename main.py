@@ -118,9 +118,9 @@ def schedule():
         for project_id in configured_projects:
             for _, plugin_ in Plugin.instances.items():
                 if (
-                        not plugin_.is_labeled_on_creation()
-                        or plugin_.relabel_on_cron()
-                        or config_utils.label_all_on_cron()
+                    not plugin_.is_labeled_on_creation()
+                    or plugin_.relabel_on_cron()
+                    or config_utils.label_all_on_cron()
                 ):
                     pubsub_utils.publish(
                         msg=json.dumps(

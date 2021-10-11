@@ -14,7 +14,7 @@ class Instances(GceZonalBase):
         try:
             machine_type = gcp_object["machineType"]
             ind = machine_type.rfind("/")
-            machine_type = machine_type[ind + 1:]
+            machine_type = machine_type[ind + 1 :]
             return machine_type
         except KeyError as e:
             logging.exception(e)
@@ -30,12 +30,12 @@ class Instances(GceZonalBase):
         while more_results:
             result = (
                 self._google_client.instances()
-                    .list(
+                .list(
                     project=project_id,
                     zone=zone,
                     pageToken=page_token,
                 )
-                    .execute()
+                .execute()
             )
             if "items" in result:
                 instances = instances + result["items"]
@@ -50,8 +50,8 @@ class Instances(GceZonalBase):
         try:
             result = (
                 self._google_client.instances()
-                    .get(project=project_id, zone=zone, instance=name)
-                    .execute()
+                .get(project=project_id, zone=zone, instance=name)
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -77,7 +77,7 @@ class Instances(GceZonalBase):
         try:
             inst = log_data["protoPayload"]["resourceName"]
             ind = inst.rfind("/")
-            inst = inst[ind + 1:]
+            inst = inst[ind + 1 :]
             lab = log_data["resource"]["labels"]
             instance = self.__get_instance(
                 lab["project_id"], log_data["resource"]["labels"]["zone"], inst

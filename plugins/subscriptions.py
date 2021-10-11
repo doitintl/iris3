@@ -40,11 +40,11 @@ class Subscriptions(Plugin):
         try:
             result = (
                 self._google_client.projects()
-                    .subscriptions()
-                    .get(
+                .subscriptions()
+                .get(
                     subscription=subscription_path,
                 )
-                    .execute()
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -60,13 +60,13 @@ class Subscriptions(Plugin):
             with timing("list subscriptions"):
                 result = (
                     self._google_client.projects()
-                        .subscriptions()
-                        .list(
+                    .subscriptions()
+                    .list(
                         project=f"projects/{project_id}",
                         pageToken=page_token,
                         # No filter param
                     )
-                        .execute()
+                    .execute()
                 )
             if "subscriptions" in result:
                 subscriptions += result["subscriptions"]
