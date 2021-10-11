@@ -126,8 +126,7 @@ sleep 30
 DESCRIBE_FLAGS=(--project "$TEST_PROJECT" --format json)
 JQ=(jq -e ".labels.${RUN_ID}_name")
 
-gcloud compute instances describe "instance${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-gcloud compute disks describe "disk${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+
 gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
@@ -136,5 +135,10 @@ bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
 # For buckets, JSON shows labels without the label:{} wrapper seen in  the others
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".${RUN_ID}_name"
+# Check GCE instances and disks last because they take longest to set up and because the Google API
+# call to read the disk sometmes fails, causing our test to fail, and we want to see what happens
+# with other resource types
+gcloud compute instances describe "instance${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+gcloud compute disks describe "disk${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 
 #clean up and exit in clean_resources, which is called on exit
