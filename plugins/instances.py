@@ -78,10 +78,9 @@ class Instances(GceZonalBase):
             inst = log_data["protoPayload"]["resourceName"]
             ind = inst.rfind("/")
             inst = inst[ind + 1 :]
-            lab = log_data["resource"]["labels"]
-            instance = self.__get_instance(
-                lab["project_id"], log_data["resource"]["labels"]["zone"], inst
-            )
+            labels = log_data["resource"]["labels"]["project_id"]
+            zone = log_data["resource"]["labels"]["zone"]
+            instance = self.__get_instance(labels, zone, inst)
             return instance
         except Exception as e:
             logging.exception(e)

@@ -37,7 +37,6 @@ if detect_gae():
 
         print("Exception initializing the Cloud Profiler", exc, err_msg)
 
-logging.info("logging: Initialized logger")
 
 gcp_utils.set_env()
 
@@ -47,10 +46,9 @@ Plugin.init()
 
 
 @app.route("/")
-@log_time
 def index():
     msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
-    logging.info("index() called;config is %s", get_config())
+    logging.info("index(); config is %s", get_config())
     return msg, 200
 
 

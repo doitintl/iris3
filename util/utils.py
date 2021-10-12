@@ -1,13 +1,17 @@
 import logging
+import random
+import string
+import sys
 import textwrap
 import time
 import typing
+import uuid
 
 from functools import lru_cache, wraps
 from datetime import datetime, timedelta
-
-
 from contextlib import contextmanager
+
+import flask
 
 from util.config_utils import iris_prefix
 
@@ -45,12 +49,46 @@ def methods(o, pfx="") -> typing.List[typing.Callable]:
     return [getattr(o, name) for name in names]
 
 
+def random_str(length: int):
+    return "".join(
+        random.choices(
+            string.ascii_lowercase + string.digits + string.digits,  # more digits
+            k=length,
+        )
+    )
+
+
 def init_logging():
+    class ContextFilter(logging.Filter):
+        def filter(self, record):
+            try:
+                if hasattr(flask.request, "trace_msg"):
+                    trace_msg = flask.request.trace_msg
+                else:
+                    trace_msg = " [Trace: " + flask.request.headers.get(
+                        "X-Cloud-Trace-Context", random_str(8))+"]"
+                    flask.request.trace_msg = trace_msg
+            except RuntimeError as e:
+                if "outside of request context" in str(e):
+                    trace_msg = ""
+                else:
+                    raise e
+
+            record.trace_msg = trace_msg
+            return True
+
+    f = ContextFilter()
+
+    h1 = logging.StreamHandler(sys.stdout)
+    h1.addFilter(filter=f)
+
     logging.basicConfig(
-        format=f"%(levelname)s [{iris_prefix()}]: %(message)s",
+        handlers=[h1],
+        format=f"%(levelname)s [{iris_prefix()}]%(trace_msg)s %(message)s",
         level=logging.INFO,
     )
     logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
+    logging.info("logging: Initialized logger")
 
 
 def __log_end_timer(tag, start):
@@ -65,16 +103,14 @@ def log_time(func):
             return func(*args, **kwargs)
         finally:
             if args:
-                arg = args[0]
-                arg_s = (
-                    arg.__name__
-                    if hasattr(arg, "__name__")
-                    else type(arg).__name__
-                    if args
-                    else ""
-                )
+                if hasattr(args[0], "__name__"):
+                    name_base = args[0]
+                else:
+                    name_base = type(args[0])
+                arg_s = name_base.__name__
             else:
                 arg_s = ""
+
             __log_end_timer(f"{func.__name__}({arg_s})", start)
 
     return _time_it
@@ -105,3 +141,4 @@ def timed_lru_cache(seconds: int, maxsize: int = 128):
         return wrapped_func
 
     return wrapper_cache
+
