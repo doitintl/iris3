@@ -25,14 +25,14 @@ class Subscriptions(Plugin):
         # substring is allowed
         return ["Subscriber.CreateSubscription"]
 
-    @log_time
     def label_all(self, project_id):
-        subs = self.__list_subscriptions(project_id)
-        for sub in subs:
-            try:
-                self.label_resource(sub, project_id)
-            except Exception as e:
-                logging.exception(e)
+        with timing(f"label_all(Subscription)  in {project_id}"):
+            subs = self.__list_subscriptions(project_id)
+            for sub in subs:
+                try:
+                    self.label_resource(sub, project_id)
+                except Exception as e:
+                    logging.exception(e)
 
     def __get_subscription(self, subscription_path):
 

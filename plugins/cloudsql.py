@@ -3,7 +3,7 @@ import logging
 from googleapiclient import errors
 
 from plugin import Plugin
-from util.utils import log_time
+from util.utils import log_time, timing
 
 
 class Cloudsql(Plugin):
@@ -69,33 +69,33 @@ class Cloudsql(Plugin):
             logging.exception(e)
             return None
 
-    @log_time
     def label_all(self, project_id):
-        page_token = None
-        while True:
+        with timing(f"label_all(CloudSQL) in {project_id}"):
+            page_token = None
+            while True:
 
-            response = (
-                self._google_client.instances()
-                .list(
-                    project=project_id,
-                    pageToken=page_token,
-                    # Filter supported, but syntax not OK. We get this message: "Field not found. In
-                    # expression labels.iris_name HAS *, At field labels ."
+                response = (
+                    self._google_client.instances()
+                    .list(
+                        project=project_id,
+                        pageToken=page_token,
+                        # Filter supported, but syntax not OK. We get this message: "Field not found. In
+                        # expression labels.iris_name HAS *, At field labels ."
+                    )
+                    .execute()
                 )
-                .execute()
-            )
 
-            if "items" not in response:
-                return
-            for database_instance in response["items"]:
-                try:
-                    self.label_resource(database_instance, project_id)
-                except Exception as e:
-                    logging.exception(e)
-            if "nextPageToken" in response:
-                page_token = response["nextPageToken"]
-            else:
-                return
+                if "items" not in response:
+                    return
+                for database_instance in response["items"]:
+                    try:
+                        self.label_resource(database_instance, project_id)
+                    except Exception as e:
+                        logging.exception(e)
+                if "nextPageToken" in response:
+                    page_token = response["nextPageToken"]
+                else:
+                    return
 
     @log_time
     def label_resource(self, gcp_object, project_id):

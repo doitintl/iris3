@@ -24,14 +24,14 @@ class Topics(Plugin):
         # Actually longer name, but substring is allowed
         return ["Publisher.CreateTopic"]
 
-    @log_time
     def label_all(self, project_id):
-        topics = self.__list_topics(project_id)
-        for topics in topics:
-            try:
-                self.label_resource(topics, project_id)
-            except Exception as e:
-                logging.exception(e)
+        with timing(f"label_all(Topic)  in {project_id}"):
+            topics = self.__list_topics(project_id)
+            for topics in topics:
+                try:
+                    self.label_resource(topics, project_id)
+                except Exception as e:
+                    logging.exception(e)
 
     def __get_topic(self, topic_path):
 

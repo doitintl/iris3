@@ -16,7 +16,9 @@ class Disks(GceZonalBase):
     """
 
     def method_names(self):
-        return ["v1.compute.disks.insert"]
+        # As of 2021-1§0-12, the GUI has beta.compute.disks.insert
+        # and CLI has beta.compute.disks.insert
+        return ["compute.disks.insert"]
 
     @classmethod
     def relabel_on_cron(cls) -> bool:
@@ -62,21 +64,21 @@ class Disks(GceZonalBase):
             logging.exception(e)
             return None
 
-    @log_time
     def label_all(self, project_id):
-        zones = self._all_zones(project_id)
-        for zone in zones:
-            with timing(f"list disks in {len(zones)} zones"):
-                disks = self.__list_disks(project_id, zone)
+        with timing(f"label_all(Disk) in {project_id}"):
+            zones = self._all_zones(project_id)
+            for zone in zones:
+                with timing(f"list disks in {len(zones)} zones in {project_id}"):
+                    disks = self.__list_disks(project_id, zone)
 
-            for disk in disks:
-                try:
-                    self.label_resource(disk, project_id)
-                except Exception as e:
-                    logging.exception(e)
+                for disk in disks:
+                    try:
+                        self.label_resource(disk, project_id)
+                    except Exception as e:
+                        logging.exception(e)
 
-        if self.counter > 0:
-            self.do_batch()
+            if self.counter > 0:
+                self.do_batch()
 
     def get_gcp_object(self, log_data):
         try:

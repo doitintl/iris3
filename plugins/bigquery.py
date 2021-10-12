@@ -9,7 +9,7 @@ from ratelimit import limits, sleep_and_retry
 
 from plugin import Plugin
 from util import gcp_utils
-from util.utils import log_time
+from util.utils import log_time, timing
 
 
 class Bigquery(Plugin):
@@ -96,32 +96,32 @@ class Bigquery(Plugin):
             logging.exception(e)
             return None
 
-    @log_time
     def label_all(self, project_id):
         """
         Label both tables and data sets
         """
-        page_token = None
-        more_results = True
-        while more_results:
-            response = (
-                self._google_client.datasets()
-                .list(
-                    projectId=project_id,
-                    pageToken=page_token,
-                    # Though filters are supported here, "NOT" filters are
-                    # not
+        with timing(f"label_all for BigQuery in {project_id}"):
+            page_token = None
+            more_results = True
+            while more_results:
+                response = (
+                    self._google_client.datasets()
+                    .list(
+                        projectId=project_id,
+                        pageToken=page_token,
+                        # Though filters are supported here, "NOT" filters are
+                        # not
+                    )
+                    .execute()
                 )
-                .execute()
-            )
 
-            if "datasets" in response:
-                for dataset in response["datasets"]:
-                    self.__label_dataset_and_tables(project_id, dataset)
-            if "nextPageToken" in response:
-                page_token = response["nextPageToken"]
-            else:
-                more_results = False
+                if "datasets" in response:
+                    for dataset in response["datasets"]:
+                        self.__label_dataset_and_tables(project_id, dataset)
+                if "nextPageToken" in response:
+                    page_token = response["nextPageToken"]
+                else:
+                    more_results = False
 
     def __label_dataset_and_tables(self, project_id, dataset):
         self.__label_one_dataset(dataset, project_id)

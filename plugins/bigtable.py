@@ -6,7 +6,7 @@ from googleapiclient import errors
 import util.gcp_utils
 from plugin import Plugin
 from util import gcp_utils
-from util.utils import log_time
+from util.utils import log_time, timing
 
 PROJECTS = "projects/"
 
@@ -92,34 +92,34 @@ class Bigtable(Plugin):
             logging.exception(e)
             return None
 
-    @log_time
     def label_all(self, project_id):
-        page_token = None
-        more_results = True
-        while more_results:
-            result = (
-                self._google_client.projects()
-                .instances()
-                .list(
-                    parent=PROJECTS + project_id,
-                    pageToken=page_token,
-                    # Filter not supported
+        with timing(f"label_all(BigTable) in {project_id}"):
+            page_token = None
+            more_results = True
+            while more_results:
+                result = (
+                    self._google_client.projects()
+                    .instances()
+                    .list(
+                        parent=PROJECTS + project_id,
+                        pageToken=page_token,
+                        # Filter not supported
+                    )
+                    .execute()
                 )
-                .execute()
-            )
 
-            if "instances" in result:
-                for inst in result["instances"]:
-                    try:
-                        self.label_resource(inst, project_id)
-                    except Exception as e:
-                        logging.exception(e)
-            if "nextPageToken" in result:
-                page_token = result["nextPageToken"]
-            else:
-                more_results = False
-            if self.counter > 0:
-                self.do_batch()
+                if "instances" in result:
+                    for inst in result["instances"]:
+                        try:
+                            self.label_resource(inst, project_id)
+                        except Exception as e:
+                            logging.exception(e)
+                if "nextPageToken" in result:
+                    page_token = result["nextPageToken"]
+                else:
+                    more_results = False
+                if self.counter > 0:
+                    self.do_batch()
 
     @log_time
     def label_resource(self, gcp_object, project_id):

@@ -58,20 +58,20 @@ class Instances(GceZonalBase):
             logging.exception(e)
             return None
 
-    @log_time
     def label_all(self, project_id):
-        zones = self._all_zones(project_id)
-        for zone in zones:
-            with timing(f"list instances in {len(zones)} zones"):
-                instances = self.__list_instances(project_id, zone)
+        with timing(f"label_all(Instance) in {project_id}"):
+            zones = self._all_zones(project_id)
+            for zone in zones:
+                with timing(f"list instances in {len(zones)} zones"):
+                    instances = self.__list_instances(project_id, zone)
 
-            for instance in instances:
-                try:
-                    self.label_resource(instance, project_id)
-                except Exception as e:
-                    logging.exception(e)
-        if self.counter > 0:
-            self.do_batch()
+                for instance in instances:
+                    try:
+                        self.label_resource(instance, project_id)
+                    except Exception as e:
+                        logging.exception(e)
+            if self.counter > 0:
+                self.do_batch()
 
     def get_gcp_object(self, log_data):
         try:

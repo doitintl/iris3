@@ -3,7 +3,7 @@ import typing
 
 from plugin import Plugin
 from util import gcp_utils
-from util.utils import log_time
+from util.utils import log_time, timing
 
 
 class Buckets(Plugin):
@@ -48,33 +48,32 @@ class Buckets(Plugin):
             logging.exception(e)
             return None
 
-    @log_time
     def label_all(self, project_id):
-
-        page_token = None
-        more_results = True
-        while more_results:
-            response = (
-                self._google_client.buckets()
-                .list(
-                    project=project_id,
-                    pageToken=page_token,
-                    # filter not supported
+        with timing(f"label_all(Bucket) in {project_id}"):
+            page_token = None
+            more_results = True
+            while more_results:
+                response = (
+                    self._google_client.buckets()
+                    .list(
+                        project=project_id,
+                        pageToken=page_token,
+                        # filter not supported
+                    )
+                    .execute()
                 )
-                .execute()
-            )
-            if "items" in response:
-                for bucket in response["items"]:
-                    try:
-                        self.label_resource(bucket, project_id)
-                    except Exception as e:
-                        logging.exception(e)
-            if "nextPageToken" in response:
-                page_token = response["nextPageToken"]
-            else:
-                more_results = False
-        if self.counter > 0:
-            self.do_batch()
+                if "items" in response:
+                    for bucket in response["items"]:
+                        try:
+                            self.label_resource(bucket, project_id)
+                        except Exception as e:
+                            logging.exception(e)
+                if "nextPageToken" in response:
+                    page_token = response["nextPageToken"]
+                else:
+                    more_results = False
+            if self.counter > 0:
+                self.do_batch()
 
     @log_time
     def label_resource(self, gcp_object, project_id):

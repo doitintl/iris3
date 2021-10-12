@@ -4,7 +4,7 @@ from googleapiclient import errors
 
 from gce_base.gce_base import GceBase
 from util import gcp_utils
-from util.utils import log_time
+from util.utils import log_time, timing
 
 
 class Snapshots(GceBase):
@@ -46,16 +46,16 @@ class Snapshots(GceBase):
             logging.exception(e)
             return None
 
-    @log_time
     def label_all(self, project_id):
-        snapshots = self.__list_snapshots(project_id)
-        for snapshot in snapshots:
-            try:
-                self.label_resource(snapshot, project_id)
-            except Exception as e:
-                logging.exception(e)
-        if self.counter > 0:
-            self.do_batch()
+        with timing(f"label_all(Snapshot) in {project_id}"):
+            snapshots = self.__list_snapshots(project_id)
+            for snapshot in snapshots:
+                try:
+                    self.label_resource(snapshot, project_id)
+                except Exception as e:
+                    logging.exception(e)
+            if self.counter > 0:
+                self.do_batch()
 
     def get_gcp_object(self, log_data):
         try:

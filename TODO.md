@@ -1,5 +1,9 @@
 # Improvements and fixes to be done
 
+* P2 Concurrent execution
+    * Since all activity is highly network-constrained, it would speed up significantly with  concurrent execution
+    using Python's `async`.
+
 * P2 Labeling GKE Nodes (VM Instances) and Disks
     * Today, this is not done because it forces recreation of resources.
     * It can be done through specific mechanisms for GKE clusters.
@@ -13,7 +17,7 @@
     - Or better: [Use JWT](https://cloud.google.com/pubsub/docs/push)
 
 * P2 Use Cloud Tasks instead of PubSub
-    * to trigger `label_one`. This will allow a delay of 10 minutes for Cloud SQL, so allowing allow the labeling on
+    * to trigger `label_one`. This will allow a delay of 10 minutes for Cloud SQL, so allowing the labeling to happen on
       creation (rather than just cron) for Cloud SQL
     * to trigger `do_label` from `schedule()`, with a random delay, so minimizing the number of App Engine instances
       that are created.
@@ -27,12 +31,15 @@
         1. Call `deploy.sh` using with the `-c` switch to disable event-based labeling 1. Wait 1.5 minutes after deploy
            before checking that the labels are there
 
-* P3 Label ASAP, rather than waiting for the cron job
-    * Cloud SQL Instances
+* P3 Label ASAP after it happens, rather than waiting for the cron job
+    * Cloud SQL Instances 
+        * See above re Cloud Tasks
     * Boot disks that are created with the instance
         * As shown in [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), do this by pulling a
           list of disks from the information about the instance.
-    * The attachment status of disks (so a label need to change from false to true or vice versa)
+    * The attachment status of disks 
+        * So a label need to change from false to true or vice versa
+        * This could probably be done by capturing the log for the attachment event, just as we already capture logs for creation events.
 
 * P3 Address the error *"Labels fingerprint either invalid or resource labels have changed",* printed
   in `_batch_callback`, which occurs intermittently, especially with disks. Solutions:
