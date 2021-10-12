@@ -68,9 +68,7 @@ class Disks(GceZonalBase):
         with timing(f"label_all(Disk) in {project_id}"):
             zones = self._all_zones(project_id)
             for zone in zones:
-                with timing(f"list disks in {len(zones)} zones in {project_id}"):
-                    disks = self.__list_disks(project_id, zone)
-
+                disks = self.__list_disks(project_id, zone)
                 for disk in disks:
                     try:
                         self.label_resource(disk, project_id)

@@ -57,17 +57,17 @@ class Subscriptions(Plugin):
         page_token = None
 
         while True:
-            with timing("list subscriptions"):
-                result = (
-                    self._google_client.projects()
-                    .subscriptions()
-                    .list(
-                        project=f"projects/{project_id}",
-                        pageToken=page_token,
-                        # No filter param
-                    )
-                    .execute()
+
+            result = (
+                self._google_client.projects()
+                .subscriptions()
+                .list(
+                    project=f"projects/{project_id}",
+                    pageToken=page_token,
+                    # No filter param
                 )
+                .execute()
+            )
             if "subscriptions" in result:
                 subscriptions += result["subscriptions"]
             if "nextPageToken" in result:

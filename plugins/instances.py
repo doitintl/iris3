@@ -61,15 +61,14 @@ class Instances(GceZonalBase):
     def label_all(self, project_id):
         with timing(f"label_all(Instance) in {project_id}"):
             zones = self._all_zones(project_id)
-            for zone in zones:
-                with timing(f"list instances in {len(zones)} zones"):
+            with timing(f" label instances in {len(zones)} zones"):
+                for zone in zones:
                     instances = self.__list_instances(project_id, zone)
-
-                for instance in instances:
-                    try:
-                        self.label_resource(instance, project_id)
-                    except Exception as e:
-                        logging.exception(e)
+                    for instance in instances:
+                        try:
+                            self.label_resource(instance, project_id)
+                        except Exception as e:
+                            logging.exception(e)
             if self.counter > 0:
                 self.do_batch()
 
