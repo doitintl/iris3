@@ -65,8 +65,13 @@ def init_logging():
                 if hasattr(flask.request, "trace_msg"):
                     trace_msg = flask.request.trace_msg
                 else:
-                    trace_msg = " [Trace: " + flask.request.headers.get(
-                        "X-Cloud-Trace-Context", random_str(8))+"]"
+                    trace_msg = (
+                        " [Trace: "
+                        + flask.request.headers.get(
+                            "X-Cloud-Trace-Context", random_str(8)
+                        )
+                        + "]"
+                    )
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
                 if "outside of request context" in str(e):
@@ -141,4 +146,3 @@ def timed_lru_cache(seconds: int, maxsize: int = 128):
         return wrapped_func
 
     return wrapper_cache
-
