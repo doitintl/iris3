@@ -233,6 +233,7 @@ else
     gcloud app deploy --project $PROJECTID -q app.yaml cron.yaml
 fi
 set -u
+
 FINISH=$(date "+%s")
 ELAPSED_SEC=$((FINISH - START))
 echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC} s"

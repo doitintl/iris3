@@ -66,7 +66,7 @@ mv config.yaml config.yaml.pretest
 function revert_config() {
   # Cleanup should not stop on error
   set +e
-  echo >&2 "Reverting"
+  echo >&2 "Reverting config"
   mv config.yaml.pretest config.yaml
 }
 
@@ -76,12 +76,15 @@ envsubst <config.yaml.test.template >config.yaml
 export GAEVERSION=$RUN_ID
 
 ./deploy.sh $DEPLOYMENT_PROJECT
+ERROR=0
 
 # Cleanup on exit
 function clean_resources() {
-  EXIT_CODE=$?
+  echo >&2 "Cleaning up resources"
+
   # Cleanup should not stop on error
   set +e
+
   # Include the earlier on-exit code inside this one.
   revert_config
 
@@ -95,13 +98,13 @@ function clean_resources() {
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
 
-  gcloud app versions delete $GAEVERSION -q --service iris3 --project $DEPLOYMENT_PROJECT
+   gcloud app services delete iris3 -q  --project $DEPLOYMENT_PROJECT
 
   FINISH_TEST=$(date "+%s")
   ELAPSED_SEC_TEST=$((FINISH_TEST - START_TEST))
-  echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC_TEST} s; exiting with $EXIT_CODE"
+  echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC_TEST} s; exiting with $ERROR"
 
-  exit $EXIT_CODE
+  exit $ERROR
 }
 trap "clean_resources" EXIT
 
@@ -126,19 +129,34 @@ sleep 30
 DESCRIBE_FLAGS=(--project "$TEST_PROJECT" --format json)
 JQ=(jq -e ".labels.${RUN_ID}_name")
 
-
-gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+#From now on , don't exit on test failure
+set +e
 gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud bigtable instances describe "bigtable${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 # For buckets, JSON shows labels without the label:{} wrapper seen in  the others
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".${RUN_ID}_name"
-# Check GCE instances and disks last because they take longest to set up and because the Google API
-# call to read the disk sometmes fails, causing our test to fail, and we want to see what happens
-# with other resource types
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud compute instances describe "instance${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud compute disks describe "disk${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 
-#clean up and exit in clean_resources, which is called on exit
+if [ $ERROR -ne 0 ];
+then
+  # On Error leave resources; do not delete them
+  trap - EXIT
+  # But still, revert the config
+  revert_config
+  exit $ERROR
+fi
+
