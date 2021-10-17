@@ -62,14 +62,14 @@ EOF
 fi
 
 # Move aside the config file while we use a temporary one
-mv config.yaml config.yaml.pretest
+mv config.yaml config.yaml.before_test
 
 # Prepare to revert config on exit
 function revert_config() {
   # Cleanup should not stop on error
   set +e
   echo >&2 "Reverting config"
-  mv config.yaml.pretest config.yaml
+  mv config.yaml.before_test config.yaml
 }
 
 trap "revert_config" EXIT
@@ -78,6 +78,7 @@ envsubst <config.yaml.test.template >config.yaml
 export GAEVERSION=$RUN_ID
 
 ./deploy.sh $DEPLOYMENT_PROJECT
+
 ERROR=0
 
 # Cleanup on exit

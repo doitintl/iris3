@@ -55,6 +55,3 @@
   the [GCP Auto Tag project](https://github.com/doitintl/gcp-auto-tag/)
   But **don't add too many**: There are *a lot* of fields on resources.
     - Add a label with the email of the creator of the resource
-    
-* P4 Move PUBSUB_VERIFICATION_TOKEN out of  `app.yaml` and into `config.yaml`. There is
-  no reason that application configuration should be in two places.

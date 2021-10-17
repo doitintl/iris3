@@ -42,8 +42,6 @@ def generate_uuid() -> str:
     return str(uuid.uuid4())
 
 
-
-
 def all_projects() -> List[str]:
     all_proj = resource_manager_client.list_projects()
     return sorted([p.project_id for p in all_proj])

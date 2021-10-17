@@ -13,7 +13,6 @@ def __load_app_yaml():
         return documents
 
 
-
 @functools.lru_cache
 def localdev_project_id():
     if project_id := os.environ.get("IRIS_PROJECT"):

@@ -23,7 +23,7 @@ import googlecloudprofiler
 
 init_logging()
 # If you set ENABLE_PROFILER to True, then edit requiremnts.txt and add a line to app.yaml as stated in requirements.txt
-ENABLE_PROFILER=False
+ENABLE_PROFILER = False
 
 # Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
 if detect_gae() and ENABLE_PROFILER:
