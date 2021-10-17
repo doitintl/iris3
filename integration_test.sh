@@ -83,7 +83,7 @@ ERROR=0
 
 # Cleanup on exit
 function clean_resources() {
-  echo >&2 "Cleaning up resources"
+  echo >&2 "Cleaning up resources. Exit code is now $ERROR"
 
   # Cleanup should not stop on error
   set +e
