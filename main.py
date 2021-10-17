@@ -29,14 +29,13 @@ if detect_gae():
     try:
         googlecloudprofiler.start()
     except (ValueError, NotImplementedError) as exc:
-        err_msg = (
-            ". This is not needed in local development, unless you want to experiment with the cloud debugger"
+        localdev_error_msg = (
+            ". Profiler is not supported in local development"
             if "Service name must be provided" in str(exc)
             else ""
         )
 
-        print("Exception initializing the Cloud Profiler", exc, err_msg)
-
+        print("Exception initializing the Cloud Profiler", exc, localdev_error_msg)
 
 gcp_utils.set_env()
 
@@ -65,6 +64,7 @@ def schedule():
         """
         Send out a message per-plugin per-project to label all objects of that type and project.
         """
+        logging.info("Schedule called")
         is_cron = flask.request.headers.get("X-Appengine-Cron")
         if not is_cron:
             return "Access Denied: No Cron header found", 403
@@ -116,9 +116,9 @@ def schedule():
         for project_id in configured_projects:
             for _, plugin_ in Plugin.instances.items():
                 if (
-                    not plugin_.is_labeled_on_creation()
-                    or plugin_.relabel_on_cron()
-                    or config_utils.label_all_on_cron()
+                        not plugin_.is_labeled_on_creation()
+                        or plugin_.relabel_on_cron()
+                        or config_utils.label_all_on_cron()
                 ):
                     pubsub_utils.publish(
                         msg=json.dumps(
@@ -213,6 +213,13 @@ def __extract_pubsub_content() -> typing.Dict:
     __check_pubsub_verification_token()
 
     envelope = flask.request.get_json()
+    msg = envelope.get("message", {})
+
+    logging.info("pubsub deliveryAttempt %d; messageId %s, timestamp %s",
+                 envelope.get("deliveryAttempt"),
+                 msg.get("messageId"),
+                 msg.get("publishTime"))
+
     if not envelope:
         raise FlaskException("Expect JSON")
 

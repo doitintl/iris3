@@ -7,3 +7,4 @@ google-cloud-resource-manager==0.30.3
 google-cloud-tasks==2.1.0
 black
 google-cloud-profiler
+gunicorn==19.3.0

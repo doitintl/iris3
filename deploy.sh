@@ -34,6 +34,7 @@ LOGS_TOPIC=iris_logs_topic
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
 LOG_SINK=iris_log
 DEADLETTER_TOPIC=iris_deadletter_topic
+DEADLETTER_SUB=iris_deadletter
 DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
 REGION=us-central
@@ -44,7 +45,8 @@ if [[ $# -eq 0 ]]; then
   exit
 fi
 
-PROJECTID=$1
+PROJECT_ID=$1
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format json|jq -r '.projectNumber')
 
 shift
 
@@ -56,7 +58,7 @@ while getopts c opt; do
     ;;
   *)
     cat <<EOF
-      Usage deploy.sh PROJECTID [-c]
+      Usage deploy.sh PROJECT_ID [-c]
           Argument:
                   The project to which Iris 3 will be deployed
           Options:
@@ -68,18 +70,18 @@ EOF
   esac
 done
 
-gcloud projects describe "$PROJECTID" || {
-  echo "Project $PROJECTID not found"
+gcloud projects describe "$PROJECT_ID" || {
+  echo "Project $PROJECT_ID not found"
   exit 1
 }
 
-echo "Project ID $PROJECTID"
-gcloud config set project "$PROJECTID"
+echo "Project ID $PROJECT_ID"
+gcloud config set project "$PROJECT_ID"
 
 GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
 PUBSUB_VERIFICATION_TOKEN=$(grep " PUBSUB_VERIFICATION_TOKEN:" app.yaml | awk '{print $2}')
-LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
-DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECTID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
+LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
+DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
 declare -A enabled_services
 while read -r svc _; do
@@ -106,7 +108,7 @@ done
 # Get organization id for this project
 ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-token)\"" \
   -H "Content-Type: application/json; charset=utf-8" \
-  https://cloudresourcemanager.googleapis.com/v1/projects/"${PROJECTID}":getAncestry | grep -A 1 organization |
+  https://cloudresourcemanager.googleapis.com/v1/projects/"${PROJECT_ID}":getAncestry | grep -A 1 organization |
   tail -n 1 | tr -d ' ' | cut -d'"' -f4)
 
 # Create App Engine app
@@ -121,25 +123,49 @@ fi
 
 # Assign default iris app engine service account with role on organization level
 gcloud organizations add-iam-policy-binding "$ORGID" \
-  --member "serviceAccount:$PROJECTID@appspot.gserviceaccount.com" \
+  --member "serviceAccount:$PROJECT_ID@appspot.gserviceaccount.com" \
   --role "organizations/$ORGID/roles/$ROLEID" \
   --condition=None
 
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
-gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" ||
-  gcloud pubsub topics create "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" --quiet >/dev/null
+gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID"
 
 # Create PubSub topic for receiving dead messages
-gcloud pubsub topics describe "$DEADLETTER_TOPIC" --project="$PROJECTID" ||
-  gcloud pubsub topics create "$DEADLETTER_TOPIC" --project="$PROJECTID" --quiet >/dev/null
+gcloud pubsub topics describe "$DEADLETTER_TOPIC" --project="$PROJECT_ID" ||
+  gcloud pubsub topics create "$DEADLETTER_TOPIC" --project="$PROJECT_ID" --quiet >/dev/null
 
+# Create PubSub subscription for receiving dead messages. The messages will just accumulate until pulled, up to 7 days.
+# Devops can just look at the stats, or pull messages as needed.
+gcloud pubsub subscriptions describe "$DEADLETTER_SUB" --project="$PROJECT_ID"
+if [[ $? -eq 0 ]]; then
+   echo >&2 "Updating $DEADLETTER_SUB"
+   gcloud pubsub subscriptions update $DEADLETTER_SUB \
+   --project="$PROJECT_ID" \
+   --message-retention-duration=2d \
+   --quiet >/dev/null
+else
+   gcloud pubsub subscriptions create $DEADLETTER_SUB \
+   --project="$PROJECT_ID" \
+   --topic $DEADLETTER_TOPIC \
+   --message-retention-duration=2d \
+   --quiet >/dev/null
+fi
+PUBSUB_SERVICE_ACCOUNT="service-${PROJECT_NUMBER}@gcp-sa-pubsub.iam.gserviceaccount.com"
+
+# Allow Pubsub to publish into the deadletter topic
+gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
+        --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
+         --role="roles/pubsub.publisher" --project $PROJECT_ID
 
 # Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
 # If the subscription exists, it will not be changed.
 # So, if you want to change the PubSub token, you have to manually delete this subscription first.
-gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECTID" ||
-  gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" \
-    --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECTID" \
+gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECT_ID"
+if [[ $? -eq 0 ]]; then
+  echo >&2 "Updating $DO_LABEL_SUBSCRIPTION"
+
+  gcloud pubsub subscriptions update "$DO_LABEL_SUBSCRIPTION" \
+    --project="$PROJECT_ID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
     --ack-deadline 60 \
     --max-delivery-attempts=5 \
@@ -147,27 +173,62 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
     --min-retry-delay=30s \
     --max-retry-delay=600s \
     --quiet >/dev/null
+else
+  gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" \
+    --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" \
+    --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
+    --ack-deadline 60 \
+    --max-delivery-attempts=5 \
+    --dead-letter-topic=$DEADLETTER_TOPIC \
+    --min-retry-delay=30s \
+    --max-retry-delay=600s \
+    --quiet >/dev/null
+fi
+
+# Allow Pubsub to delete failed message from this sub
+gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
+    --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
+    --role="roles/pubsub.subscriber" --project $PROJECT_ID
+
 
 if [[ "$CRON_ONLY" == "true" ]]; then
-  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" 2>/dev/null || true
-  gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECTID" 2>/dev/null || true
+  gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" 2>/dev/null || true
+  gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID" 2>/dev/null || true
 else
   # Create PubSub topic for receiving logs about new GCP objects
-  gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECTID" ||
-    gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECTID" --quiet >/dev/null
+  gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECT_ID" ||
+    gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECT_ID" --quiet >/dev/null
 
   # Create PubSub subscription for receiving log about new GCP objects
   # If the subscription exists, it will not be changed.
   # So, if you want to change the PubSub token, you have to manually delete this subscription first.
-  gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECTID" ||
-    gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECTID" \
-      --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
-      --ack-deadline 60 \
-      --max-delivery-attempts=5 \
-      --dead-letter-topic=$DEADLETTER_TOPIC \
-      --min-retry-delay=30s \
-      --max-retry-delay=600s \
-      --quiet >/dev/null
+  gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID"
+  if [[ $? -eq 0 ]]; then
+      echo >&2 "Updating $LABEL_ONE_SUBSCRIPTION"
+
+      gcloud pubsub subscriptions update "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" \
+        --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
+        --ack-deadline 60 \
+        --max-delivery-attempts=5 \
+        --dead-letter-topic=$DEADLETTER_TOPIC \
+        --min-retry-delay=30s \
+        --max-retry-delay=600s \
+        --quiet >/dev/null
+  else
+      gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECT_ID" \
+        --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
+        --ack-deadline 60 \
+        --max-delivery-attempts=5 \
+        --dead-letter-topic=$DEADLETTER_TOPIC \
+        --min-retry-delay=30s \
+        --max-retry-delay=600s \
+        --quiet >/dev/null
+  fi
+
+  # Allow Pubsub to delete failed message from this sub
+  gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
+      --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
+      --role="roles/pubsub.subscriber" --project $PROJECT_ID
 
   log_filter=("")
 
@@ -202,12 +263,12 @@ else
   # Create or update a sink at org level
   if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
     gcloud logging sinks create "$LOG_SINK" \
-      pubsub.googleapis.com/projects/"$PROJECTID"/topics/"$LOGS_TOPIC" \
+      pubsub.googleapis.com/projects/"$PROJECT_ID"/topics/"$LOGS_TOPIC" \
       --organization="$ORGID" --include-children \
       --log-filter="${log_filter[*]}" --quiet
   else
     gcloud logging sinks update "$LOG_SINK" \
-      pubsub.googleapis.com/projects/"$PROJECTID"/topics/"$LOGS_TOPIC" \
+      pubsub.googleapis.com/projects/"$PROJECT_ID"/topics/"$LOGS_TOPIC" \
       --organization="$ORGID" \
       --log-filter="${log_filter[*]}" --quiet
   fi
@@ -218,7 +279,7 @@ else
     grep writerIdentity | awk '{print $2}')
 
   # Assign a publisher role to the extracted service account.
-  gcloud projects add-iam-policy-binding "$PROJECTID" \
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 fi
 
@@ -228,9 +289,9 @@ set +u
 # Deploy to App Engine
 if [[ -n "$GAEVERSION" ]]
 then
-    gcloud app deploy --project $PROJECTID --version $GAEVERSION -q app.yaml cron.yaml
+    gcloud app deploy --project $PROJECT_ID --version $GAEVERSION -q app.yaml cron.yaml
 else
-    gcloud app deploy --project $PROJECTID -q app.yaml cron.yaml
+    gcloud app deploy --project $PROJECT_ID -q app.yaml cron.yaml
 fi
 set -u
 

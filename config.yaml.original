@@ -14,5 +14,5 @@ from_project: True
 # get labeled on cron. Labeling *all* resources is very expensive, so default is False
 label_all_on_cron: False
 
-#  Only these projects are included. But if empty, *all* projects in the organization are included.
+#  projects: Only resources these projects will get labeled. But the value is empty, *all* projects in the organization are included.
 projects: {}

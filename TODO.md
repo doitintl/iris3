@@ -1,12 +1,8 @@
 # Improvements and fixes to be done
 
-* P2 Concurrent execution
-    * Since all activity is highly network-constrained, it would speed up significantly with  concurrent execution
-    using Python's `async`.
-
 * P2 Labeling GKE Nodes (VM Instances) and Disks
     * Today, this is not done because it forces recreation of resources.
-    * It can be done through specific mechanisms for GKE clusters.
+    * But we could support cluster labels
 
 * P2 PubSub push endpoint security:
   Note: The token which is now used is not very secure, though it is an improvement on earlier versions of Iris, and
@@ -16,9 +12,9 @@
     - Replace the `PUBSUB_VERIFICATION_TOKEN` with random value in `deploy.sh`
     - Or better: [Use JWT](https://cloud.google.com/pubsub/docs/push)
 
-* P2 Use Cloud Tasks instead of PubSub
-    * to trigger `label_one`. This will allow a delay of 10 minutes for Cloud SQL, so allowing the labeling to happen on
-      creation (rather than just cron) for Cloud SQL
+* P3 Use Cloud Tasks instead of PubSub
+    * to trigger `label_one`. This will allow a delay of 10 minutes for Cloud SQL, so allowing the labeling for Cloud SQL to happen on
+      creation (rather than just on cron).
     * to trigger `do_label` from `schedule()`, with a random delay, so minimizing the number of App Engine instances
       that are created.
 
@@ -46,6 +42,14 @@
     - Retry - Ignore and let the cron do it - Implement Cloud Task with a delay. (Not clear if that will help.)
 
 * P3 Rethink the need for title case in class names. This is clumsy for `Bigtable` and `Cloudsql`.
+
+* P3 Concurrent execution
+    * Since all activity is highly network-constrained, it would speed up significantly with concurrent execution
+    using Python's `async`. Possibly Google APIs don't suport that, in which 
+     case threads or the eventlet library could be used.
+        * Init of multiple plugins is among the biggest slowdowns. They could be initalized concurrently.
+        * `do_label` may  loop across about 85 zones. This could be done concurrently.
+        * `do_label` lists resources and then calls `label_one`. The `label_one` calls could be done concurrently.
 
 * P4 Implement new labels, for example using ideas from
   the [GCP Auto Tag project](https://github.com/doitintl/gcp-auto-tag/)
