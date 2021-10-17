@@ -9,4 +9,4 @@ black
 google-cloud-profiler
 # gunicorn is only needed if you add entrypoint: gunicorn -b :$PORT --worker-class=sync --workers=1 main:app
 # to app.yaml as a workaround to let Cloud Profiler work
-gunicorn==19.3.0
+gunicorn==19.5.0
