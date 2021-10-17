@@ -34,6 +34,11 @@ def label_all_on_cron() -> bool:
     return ret
 
 
+def pubsub_token() -> str:
+    config = get_config()
+    return config.get("pubsub_verification_token")
+
+
 @functools.lru_cache
 def get_config() -> typing.Dict:
     with open("config.yaml") as config_file:

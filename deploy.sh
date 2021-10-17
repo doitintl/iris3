@@ -79,7 +79,7 @@ echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
 
 GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
-PUBSUB_VERIFICATION_TOKEN=$(grep " PUBSUB_VERIFICATION_TOKEN:" app.yaml | awk '{print $2}')
+PUBSUB_VERIFICATION_TOKEN=$(grep "pubsub_verification_token:" config.yaml | awk '{print $2}')
 LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
 DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
@@ -128,28 +128,34 @@ gcloud organizations add-iam-policy-binding "$ORGID" \
   --condition=None
 
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
-gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID"
+gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" ||
+  gcloud pubsub topics create "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" --quiet >/dev/null
 
 # Create PubSub topic for receiving dead messages
 gcloud pubsub topics describe "$DEADLETTER_TOPIC" --project="$PROJECT_ID" ||
   gcloud pubsub topics create "$DEADLETTER_TOPIC" --project="$PROJECT_ID" --quiet >/dev/null
 
+
 # Create PubSub subscription for receiving dead messages. The messages will just accumulate until pulled, up to 7 days.
 # Devops can just look at the stats, or pull messages as needed.
+set +e
 gcloud pubsub subscriptions describe "$DEADLETTER_SUB" --project="$PROJECT_ID"
 if [[ $? -eq 0 ]]; then
+   set -e
    echo >&2 "Updating $DEADLETTER_SUB"
    gcloud pubsub subscriptions update $DEADLETTER_SUB \
    --project="$PROJECT_ID" \
    --message-retention-duration=2d \
    --quiet >/dev/null
 else
+  set -e
    gcloud pubsub subscriptions create $DEADLETTER_SUB \
    --project="$PROJECT_ID" \
    --topic $DEADLETTER_TOPIC \
    --message-retention-duration=2d \
    --quiet >/dev/null
 fi
+
 PUBSUB_SERVICE_ACCOUNT="service-${PROJECT_NUMBER}@gcp-sa-pubsub.iam.gserviceaccount.com"
 
 # Allow Pubsub to publish into the deadletter topic
@@ -160,8 +166,10 @@ gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
 # Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
 # If the subscription exists, it will not be changed.
 # So, if you want to change the PubSub token, you have to manually delete this subscription first.
+set +e
 gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECT_ID"
 if [[ $? -eq 0 ]]; then
+  set -e
   echo >&2 "Updating $DO_LABEL_SUBSCRIPTION"
 
   gcloud pubsub subscriptions update "$DO_LABEL_SUBSCRIPTION" \
@@ -174,6 +182,7 @@ if [[ $? -eq 0 ]]; then
     --max-retry-delay=600s \
     --quiet >/dev/null
 else
+  set -e
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" \
     --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
@@ -184,6 +193,7 @@ else
     --max-retry-delay=600s \
     --quiet >/dev/null
 fi
+
 
 # Allow Pubsub to delete failed message from this sub
 gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
@@ -202,8 +212,10 @@ else
   # Create PubSub subscription for receiving log about new GCP objects
   # If the subscription exists, it will not be changed.
   # So, if you want to change the PubSub token, you have to manually delete this subscription first.
+  set +e
   gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID"
   if [[ $? -eq 0 ]]; then
+      set -e
       echo >&2 "Updating $LABEL_ONE_SUBSCRIPTION"
 
       gcloud pubsub subscriptions update "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" \
@@ -215,6 +227,7 @@ else
         --max-retry-delay=600s \
         --quiet >/dev/null
   else
+      set -e
       gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECT_ID" \
         --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
         --ack-deadline 60 \

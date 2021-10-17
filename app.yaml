@@ -4,8 +4,5 @@ automatic_scaling:
   max_instances: 15
 inbound_services:
   - warmup
-env_variables:
-  PUBSUB_VERIFICATION_TOKEN: 2a343f4c1b76512039fe763412756c4fbb30c
-
 
 

@@ -6,7 +6,6 @@ from typing import List
 from google.cloud import resource_manager
 
 from util import localdev_config
-from util.localdev_config import localdev_pubsub_token
 
 resource_manager_client = resource_manager.Client()
 
@@ -43,12 +42,6 @@ def generate_uuid() -> str:
     return str(uuid.uuid4())
 
 
-def pubsub_token():
-    from_env = os.environ.get("PUBSUB_VERIFICATION_TOKEN")
-    if from_env:
-        return from_env
-    else:
-        return localdev_pubsub_token()
 
 
 def all_projects() -> List[str]:

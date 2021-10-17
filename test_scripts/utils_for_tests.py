@@ -8,7 +8,7 @@ from textwrap import shorten
 from urllib import request
 from urllib.parse import urlencode
 
-from util.gcp_utils import pubsub_token
+from util.config_utils import pubsub_token
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)

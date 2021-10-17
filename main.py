@@ -10,12 +10,11 @@ import typing
 
 import flask
 
-import util.gcp_utils
 from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import detect_gae
 
-from util.config_utils import iris_prefix, configured_project, get_config
+from util.config_utils import iris_prefix, configured_project, get_config, pubsub_token
 from util.utils import init_logging, log_time, timing
 
 import googlecloudprofiler
@@ -23,9 +22,11 @@ import googlecloudprofiler
 # Must init logging before any library code writes logs (which would overwide our config)
 
 init_logging()
+# If you set ENABLE_PROFILER to True, then edit requiremnts.txt and add a line to app.yaml as stated in requirements.txt
+ENABLE_PROFILER=False
 
 # Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
-if detect_gae():
+if detect_gae() and ENABLE_PROFILER:
     try:
         googlecloudprofiler.start()
     except (ValueError, NotImplementedError) as exc:
@@ -116,9 +117,9 @@ def schedule():
         for project_id in configured_projects:
             for _, plugin_ in Plugin.instances.items():
                 if (
-                        not plugin_.is_labeled_on_creation()
-                        or plugin_.relabel_on_cron()
-                        or config_utils.label_all_on_cron()
+                    not plugin_.is_labeled_on_creation()
+                    or plugin_.relabel_on_cron()
+                    or config_utils.label_all_on_cron()
                 ):
                     pubsub_utils.publish(
                         msg=json.dumps(
@@ -215,10 +216,12 @@ def __extract_pubsub_content() -> typing.Dict:
     envelope = flask.request.get_json()
     msg = envelope.get("message", {})
 
-    logging.info("pubsub deliveryAttempt %d; messageId %s, timestamp %s",
-                 envelope.get("deliveryAttempt"),
-                 msg.get("messageId"),
-                 msg.get("publishTime"))
+    logging.info(
+        "pubsub deliveryAttempt %d; messageId %s, timestamp %s",
+        envelope.get("deliveryAttempt"),
+        msg.get("messageId"),
+        msg.get("publishTime"),
+    )
 
     if not envelope:
         raise FlaskException("Expect JSON")
@@ -255,7 +258,7 @@ def do_label():
 
 def __check_pubsub_verification_token():
     """Token verifying that only PubSub accesses PubSub push endpoints"""
-    known_token = util.gcp_utils.pubsub_token()
+    known_token = pubsub_token()
     if not known_token:
         raise FlaskException(
             f"Should define expected token in env. Keys were {list(os.environ.keys())}",

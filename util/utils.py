@@ -5,11 +5,9 @@ import sys
 import textwrap
 import time
 import typing
-import uuid
-
-from functools import lru_cache, wraps
-from datetime import datetime, timedelta
 from contextlib import contextmanager
+from datetime import datetime, timedelta
+from functools import lru_cache, wraps
 
 import flask
 

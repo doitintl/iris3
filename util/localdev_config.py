@@ -13,11 +13,6 @@ def __load_app_yaml():
         return documents
 
 
-def localdev_pubsub_token():
-    with open("app.yaml") as file:
-        documents = yaml.full_load(file)
-        return documents["env_variables"]["PUBSUB_VERIFICATION_TOKEN"]
-
 
 @functools.lru_cache
 def localdev_project_id():

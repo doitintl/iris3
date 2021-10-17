@@ -60,7 +60,8 @@ These are also listed below.
 * CloudSQL (Labels name, zone, region)
     * These receive a label only on the Cloud Scheduler cron job, not on creation.
 * Google Cloud Storage buckets  (Labels name, location)
-* In addition to these, project labels may be copied into each resource, if you have configured that in `config.yaml`,
+* In addition to these, project labels may be copied into each resource,
+  if you have configured that in `config.yaml`,
 
 ## Installation
 
@@ -88,7 +89,7 @@ On the project where Iris is deployed, you will need Owner or these roles:
 * Have Python 3.8+ as your default `python3`.
 * Install tools  `envsubst` and `jq`.
 * Install and initialize `gcloud` to an account with the [above-mentioned](#before-deploying) roles
-* Optionally configure by editing `config.yaml`, `cron.yaml`, or `app.yaml`. See [Configuration](#configuration) below.
+* Optionally configure by editing `config.yaml` (use `config.yaml.original` as , `cron.yaml`, or `app.yaml`. See [Configuration](#configuration) below.
 * Run `./deploy.sh <PROJECT_ID>`.
     * Add `-c` at the end to use only Cloud Scheduler cron (i.e., without labeling on-creatio).
         * With `-c`, resources will get labeled only by cron. This saves costs.

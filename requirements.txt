@@ -7,4 +7,6 @@ google-cloud-resource-manager==0.30.3
 google-cloud-tasks==2.1.0
 black
 google-cloud-profiler
+# gunicorn is only needed if you add entrypoint: gunicorn -b :$PORT --worker-class=sync --workers=1 main:app
+# to app.yaml as a workaround to let Cloud Profiler work
 gunicorn==19.3.0

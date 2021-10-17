@@ -3,6 +3,9 @@
 
 # Keys:
 
+# Change this before first deployment for added security in communication between PubSub and the Iris App on App Engine.
+pubsub_verification_token: 2a343f4c1b76512039fe763412756c4fbb30c
+
 # iris_prefix is prefixed to the key of each label that is added.
 iris_prefix: iris
 
@@ -10,7 +13,7 @@ iris_prefix: iris
 from_project: True
 
 # If label_all_on_cron is True, then all resource types will be labeled on every cron (Clouid Scheduler) cycle.
-# If label_all_on_cron is Fals,e then only plugins with  relabel_on_cron True or is_labeled_on_creation False
+# If label_all_on_cron is False, then only plugins with  relabel_on_cron True or is_labeled_on_creation False
 # get labeled on cron. Labeling *all* resources is very expensive, so default is False
 label_all_on_cron: False
 

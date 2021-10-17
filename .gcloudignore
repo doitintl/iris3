@@ -1,21 +1,11 @@
 # Installer logs
 # Installer logs
-pip-delete-this-directory.txt
-idea
 .idea/
 __pycache__/
 # Unit test / coverage reports
 htmlcov/
-.tox/
-.coverage
-.coverage.*
 .cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
 .pytest_cache/
-.pytest_cache
 requirements-test.txt
 
 # Environments
@@ -24,7 +14,6 @@ requirements-test.txt
 venv/
 
 virtenv*/
-env.bak/
 
 *.bak
 

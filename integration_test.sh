@@ -36,6 +36,8 @@ else
   RUN_ID="iris$(base64 </dev/urandom | tr -d '+/' | head -c 6 | awk '{print tolower($0)}')"
 fi
 
+export PUBSUB_TEST_TOKEN
+PUBSUB_TEST_TOKEN=$(hexdump -n 16 -e '4/4 "%08X" 1 "\n"' /dev/urandom| tr '[:upper:]' '[:lower:]')
 export DEPLOYMENT_PROJECT=$1
 export TEST_PROJECT=$2
 declare -a projects
