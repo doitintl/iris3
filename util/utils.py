@@ -64,11 +64,11 @@ def init_logging():
                     trace_msg = flask.request.trace_msg
                 else:
                     trace_msg = (
-                            " [Trace: "
-                            + flask.request.headers.get(
-                        "X-Cloud-Trace-Context", random_str(8)
-                    )
-                            + "]"
+                        " [Trace: "
+                        + flask.request.headers.get(
+                            "X-Cloud-Trace-Context", random_str(8)
+                        )
+                        + "]"
                     )
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
@@ -77,7 +77,7 @@ def init_logging():
                 else:
                     raise e
 
-            record.trace_msg_trunc= truncate_middle(trace_msg,15)
+            record.trace_msg_trunc = truncate_middle(trace_msg, 15)
             return True
 
     f = ContextFilter()
@@ -156,7 +156,5 @@ def truncate_middle(s, resulting_len):
     pfx = s[:len_pfx_string]
     sfx = s[-len_sfx_string:]
     ret = pfx + ellipsis_s + sfx
-    assert  len(ret)==resulting_len, len(ret)
+    assert len(ret) == resulting_len, len(ret)
     return ret
-
-

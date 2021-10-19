@@ -36,14 +36,17 @@ if detect_gae() and ENABLE_PROFILER:
             else ""
         )
 
-        logging.info("Exception initializing the Cloud Profiler %s, %s", exc, localdev_error_msg)
+        logging.info(
+            "Exception initializing the Cloud Profiler %s, %s", exc, localdev_error_msg
+        )
 else:
     logging.info("Cloud Profiler not in use")
 
 gcp_utils.set_env()
 
-logging.info("env GAE_USE_SOCKETS_HTTPLIB is %s",os.environ.get("GAE_USE_SOCKETS_HTTPLIB"))
-
+logging.info(
+    "env GAE_USE_SOCKETS_HTTPLIB is %s", os.environ.get("GAE_USE_SOCKETS_HTTPLIB")
+)
 
 
 app = flask.Flask(__name__)
@@ -123,9 +126,9 @@ def schedule():
         for project_id in configured_projects:
             for _, plugin_ in Plugin.instances.items():
                 if (
-                        not plugin_.is_labeled_on_creation()
-                        or plugin_.relabel_on_cron()
-                        or config_utils.label_all_on_cron()
+                    not plugin_.is_labeled_on_creation()
+                    or plugin_.relabel_on_cron()
+                    or config_utils.label_all_on_cron()
                 ):
                     pubsub_utils.publish(
                         msg=json.dumps(
@@ -209,8 +212,8 @@ def __label_one_0(data, plugin):
             logging.info(msg)
     else:
         logging.error(
-            "Cannot find gcp_object to label (this sometimes does not result in failure to label, " +
-            "e.g. for BQ datasets where serviceData is missing), based on %s",
+            "Cannot find gcp_object to label (this sometimes does not result in failure to label, "
+            + "e.g. for BQ datasets where serviceData is missing), based on %s",
             utils.shorten(str(data.get("resource")), 300),
         )
 
