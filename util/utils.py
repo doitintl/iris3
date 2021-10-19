@@ -63,13 +63,11 @@ def init_logging():
                 if hasattr(flask.request, "trace_msg"):
                     trace_msg = flask.request.trace_msg
                 else:
-                    trace_id = flask.request.headers.get("X-Cloud-Trace-Context", random_str(8))
-                    trace_id_trunc = truncate_middle(trace_id, 20)
-                    trace_msg = (
-                        " [Trace: "
-                        + trace_id_trunc
-                        + "]"
+                    trace_id = flask.request.headers.get(
+                        "X-Cloud-Trace-Context", random_str(8)
                     )
+                    trace_id_trunc = truncate_middle(trace_id, 20)
+                    trace_msg = " [Trace: " + trace_id_trunc + "]"
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
                 if "outside of request context" in str(e):
