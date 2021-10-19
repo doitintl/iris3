@@ -1,18 +1,12 @@
-# config.yaml.original is a "clean" version that you can refer to after you have edited config.yaml.
-# You can even set up a git pre-commit hook to replace config.yaml with this clean version to avoid commiting an edited version.
-
-# Keys:
-
-# iris_prefix is prefixed to the key of each label that is added.
-iris_prefix: iris
-
-# If from_project is True, then for each resource we are labeling, copy the labels from its project onto it.
+# If you see this comment, you are using a config file that was temporarily generated for a test.
+#
+# In integration_test.sh, config.yaml.test.template is used to make a temporary config.yaml, then config.yaml is reverted at the end.
+#
+# Generate random token per-test-run as an additional isolation measure
+pubsub_verification_token: a129f6ac270cc1ae3b4398b4422e5798
+iris_prefix: iris9i3vws
 from_project: True
-
-# If label_all_on_cron is True, then all resource types will be labeled on every cron (Clouid Scheduler) cycle.
-# If label_all_on_cron is Fals,e then only plugins with  relabel_on_cron True or is_labeled_on_creation False
-# get labeled on cron. Labeling *all* resources is very expensive, so default is False
 label_all_on_cron: False
-
-#  Only these projects are included. But if empty, *all* projects in the organization are included.
-projects: {}
+projects:
+  - joshua-playground2
+  - joshua-playground-host-vpc

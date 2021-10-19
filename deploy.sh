@@ -30,6 +30,9 @@ python3 ./util/check_version.py
 START=$(date "+%s")
 ROLEID=iris3
 
+REGION=us-central
+GAE_REGION_ABBREV=uc
+
 LOGS_TOPIC=iris_logs_topic
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
 LOG_SINK=iris_log
@@ -37,8 +40,11 @@ DEADLETTER_TOPIC=iris_deadletter_topic
 DEADLETTER_SUB=iris_deadletter
 DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
-REGION=us-central
-GAE_REGION_ABBREV=uc
+
+ACK_DEADLINE=60
+MAX_DELIVERY_ATTEMPTS=5
+MIN_RETRY=60s
+MAX_RETRY=600s
 
 if [[ $# -eq 0 ]]; then
   echo Missing project id argument
@@ -136,7 +142,8 @@ gcloud pubsub topics describe "$DEADLETTER_TOPIC" --project="$PROJECT_ID" ||
   gcloud pubsub topics create "$DEADLETTER_TOPIC" --project="$PROJECT_ID" --quiet >/dev/null
 
 
-# Create PubSub subscription for receiving dead messages. The messages will just accumulate until pulled, up to 7 days.
+# Create or update PubSub subscription for receiving dead messages.
+# The messages will just accumulate until pulled, up to message-retention-duratiobn.
 # Devops can just look at the stats, or pull messages as needed.
 set +e
 gcloud pubsub subscriptions describe "$DEADLETTER_SUB" --project="$PROJECT_ID"
@@ -175,22 +182,22 @@ if [[ $? -eq 0 ]]; then
   gcloud pubsub subscriptions update "$DO_LABEL_SUBSCRIPTION" \
     --project="$PROJECT_ID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
-    --ack-deadline 60 \
-    --max-delivery-attempts=5 \
+    --ack-deadline=$ACK_DEADLINE \
+    --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
     --dead-letter-topic=$DEADLETTER_TOPIC \
-    --min-retry-delay=30s \
-    --max-retry-delay=600s \
+    --min-retry-delay=$MIN_RETRY \
+    --max-retry-delay=$MAX_RETRY\
     --quiet >/dev/null
 else
   set -e
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" \
     --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
-    --ack-deadline 60 \
-    --max-delivery-attempts=5 \
+    --ack-deadline=$ACK_DEADLINE \
+    --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
     --dead-letter-topic=$DEADLETTER_TOPIC \
-    --min-retry-delay=30s \
-    --max-retry-delay=600s \
+    --min-retry-delay=$MIN_RETRY \
+    --max-retry-delay=$MAX_RETRY \
     --quiet >/dev/null
 fi
 
@@ -209,9 +216,7 @@ else
   gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECT_ID" ||
     gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECT_ID" --quiet >/dev/null
 
-  # Create PubSub subscription for receiving log about new GCP objects
-  # If the subscription exists, it will not be changed.
-  # So, if you want to change the PubSub token, you have to manually delete this subscription first.
+  # Create or update PubSub subscription for receiving log about new GCP objects
   set +e
   gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID"
   if [[ $? -eq 0 ]]; then
@@ -219,22 +224,22 @@ else
       echo >&2 "Updating $LABEL_ONE_SUBSCRIPTION"
 
       gcloud pubsub subscriptions update "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" \
-        --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
-        --ack-deadline 60 \
-        --max-delivery-attempts=5 \
+        --push-endpoint="$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
+        --ack-deadline=$ACK_DEADLINE \
+        --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
         --dead-letter-topic=$DEADLETTER_TOPIC \
-        --min-retry-delay=30s \
-        --max-retry-delay=600s \
+        --min-retry-delay=$MIN_RETRY \
+        --max-retry-delay=$MAX_RETRY \
         --quiet >/dev/null
   else
       set -e
       gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECT_ID" \
-        --push-endpoint "$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
-        --ack-deadline 60 \
-        --max-delivery-attempts=5 \
+        --push-endpoint="$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
+        --ack-deadline=$ACK_DEADLINE \
+        --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
         --dead-letter-topic=$DEADLETTER_TOPIC \
-        --min-retry-delay=30s \
-        --max-retry-delay=600s \
+        --min-retry-delay=$MIN_RETRY \
+        --max-retry-delay=$MAX_RETRY \
         --quiet >/dev/null
   fi
 

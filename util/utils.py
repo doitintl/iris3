@@ -64,11 +64,11 @@ def init_logging():
                     trace_msg = flask.request.trace_msg
                 else:
                     trace_msg = (
-                        " [Trace: "
-                        + flask.request.headers.get(
-                            "X-Cloud-Trace-Context", random_str(8)
-                        )
-                        + "]"
+                            " [Trace: "
+                            + flask.request.headers.get(
+                        "X-Cloud-Trace-Context", random_str(8)
+                    )
+                            + "]"
                     )
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
@@ -77,17 +77,16 @@ def init_logging():
                 else:
                     raise e
 
-            record.trace_msg = trace_msg
+            record.trace_msg_trunc= truncate_middle(trace_msg,15)
             return True
 
     f = ContextFilter()
 
     h1 = logging.StreamHandler(sys.stdout)
     h1.addFilter(filter=f)
-
     logging.basicConfig(
         handlers=[h1],
-        format=f"%(levelname)s [{iris_prefix()}]%(trace_msg)s %(message)s",
+        format=f"%(levelname)s [{iris_prefix()}]%(trace_msg_trunc)s %(message)s",
         level=logging.INFO,
     )
     logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
@@ -144,3 +143,20 @@ def timed_lru_cache(seconds: int, maxsize: int = 128):
         return wrapped_func
 
     return wrapper_cache
+
+
+def truncate_middle(s, resulting_len):
+    ellipsis_s = "..."
+    if len(s) < len(ellipsis_s):
+        return s
+    len_remaining_strings = resulting_len - len(ellipsis_s)
+    half = len_remaining_strings // 2
+    len_sfx_string = half
+    len_pfx_string = half if len_remaining_strings % 2 == 0 else half + 1
+    pfx = s[:len_pfx_string]
+    sfx = s[-len_sfx_string:]
+    ret = pfx + ellipsis_s + sfx
+    assert  len(ret)==resulting_len, len(ret)
+    return ret
+
+

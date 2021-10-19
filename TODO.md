@@ -34,12 +34,17 @@
         * As shown in [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), do this by pulling a
           list of disks from the information about the instance.
     * The attachment status of disks 
-        * So a label need to change from false to true or vice versa
-        * This could probably be done by capturing the log for the attachment event, just as we already capture logs for creation events.
+        * When this happens,  a label needs to change from false to true or vice versa. 
+        * Current code does it on cron schedule.
+        * We could do it on-event by capturing the log for the attachment event, 
+          just as we already capture logs for creation events.
 
 * P3 Address the error *"Labels fingerprint either invalid or resource labels have changed",* printed
-  in `_batch_callback`, which occurs intermittently, especially with disks. Solutions:
-    - Retry - Ignore and let the cron do it - Implement Cloud Task with a delay. (Not clear if that will help.)
+  in `_batch_callback`, which occurs intermittently, especially with disks. 
+    Solutions:
+    - Retry 
+    - Ignore and let the cron do it 
+     - Implement Cloud Task with a delay. (Not clear if that will help.)
 
 * P3 Rethink the need for title case in class names. This is clumsy for `Bigtable` and `Cloudsql`.
 

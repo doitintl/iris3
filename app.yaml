@@ -4,5 +4,7 @@ automatic_scaling:
   max_instances: 15
 inbound_services:
   - warmup
+env_variables:
+  GAE_USE_SOCKETS_HTTPLIB: False
 
 
