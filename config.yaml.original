@@ -13,9 +13,11 @@ iris_prefix: iris
 from_project: True
 
 # If label_all_on_cron is True, then all resource types will be labeled on every cron (Clouid Scheduler) cycle.
-# If label_all_on_cron is False, then only plugins with  relabel_on_cron True or is_labeled_on_creation False
-# get labeled on cron. Labeling *all* resources is very expensive, so default is False
-label_all_on_cron: False
+# This is good for labeling existing resources on first running Iris3
+# If label_all_on_cron is False, to save money, then only plugins which return True on relabel_on_cron() or False in is_labeled_on_creation()
+# get labeled on cron.
+label_all_on_cron: True
 
-#  projects: Only resources these projects will get labeled. But the value is empty, *all* projects in the organization are included.
+#  projects: Only resources in these projects will get labeled.
+# But if the value is empty, *all* projects in the organization are included.
 projects: {}

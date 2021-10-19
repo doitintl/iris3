@@ -33,8 +33,9 @@ Iris adds labels:
     - You can disable this, see ["Deploy"](#deployment).
 * On schedule, using a Cloud Scheduler cron job that the deployer sets up for you. 
     - See  [Configuration section below](#configuration) below for details.
-    - By default only some types of resources get labeled on the cron job, but you can 
-    configure that all resources get labeled.
+    - You can configure whether all resources get labeled during the cron run or just the ones that need
+    it because they cannot be labeled on-event. (See `label_all_on_cron` below.)
+      
 ## Supported Google Cloud Products
 
 Right now, there are plugins for the following types of resources. To learn what label keys are added, search
@@ -93,9 +94,7 @@ On the project where Iris is deployed, you will need Owner or these roles:
 * Run `./deploy.sh <PROJECT_ID>`.
     * Add `-c` at the end to use only Cloud Scheduler cron (i.e., without labeling on-creatio).
         * With `-c`, resources will get labeled only by cron. This saves costs.
-        * By default, only a few types of resource will be labeled by cron. (Cloud SQL and Disks.)
-          You may wish to set `label_all_on_cron` to `True` in `config.yaml` so that everything is labeled by cron,
-          though this does mean that Iris has to iterate over *all* your resources.
+        * See below re the `label_all_on_cron` setting in  `config.yaml`.
 * If you redeploy different versions of Iris code.
     * If new plugins were added or some removed, the log sink *will* be updated to reflect this.
     * If the parameters for subscriptions or topics were changed in a new version of the Iris code, the subscriptions
@@ -107,11 +106,17 @@ On the project where Iris is deployed, you will need Owner or these roles:
     - What projects to include. (The default is all projects in the organization.)
     - A prefix for all label keys (so, if the prefix is `xyz`, labels will look like `xyz_name` etc.)
     - Whether to copy all labels from the project into resources in the project.
-    - Whether the Cloud Scheduler cron job should label all types of resources. (If so, Iris must scan *all*
-      resources in all projects, which we avoid by default); or just the types that need it (Cloud SQL and Disks).
-        - Setting this to `True` may be useful for a first run, to label existing resources.
+    - Whether the Cloud Scheduler cron job should label all types of resources. 
+        - If True, then on cron job, Iris scans and labels *all* resources in all projects 
+            - Setting this to `True` may be useful for a first run, to label existing resources.
+        - If False, then on cron job, Iris labels just the types that need it, because they cannot be 
+            labeled in full on-event
+            (Cloud SQL and Disks).
+    - You can also change the secret token for PubSub here. 
+        - The security this provides is real, particularly if your GCP project is secure, but not strong.
+    
 * `app.yaml` lets you configure App Engine. See App Engine documentation.
-  * You can also change the secret token for PubSub here. 
+
 * See the `-c` switch on `deploy.sh` discussed in ["Deployment" above](#deployment) for disabling the on-event labeling 
   and using only Cloud  Scheduler cron.
 * `cron.yaml` lets you change the timing for the Cloud Scheduler scheduled labelings.
@@ -121,15 +126,19 @@ On the project where Iris is deployed, you will need Owner or these roles:
 * Iris runs in Google App Engine Standard Environment (Python 3).
 * The cron job is run in Cloud Scheduler (see `cron.yaml`)
 * A Log Sink on the organization level sends all logs about resource-creation to a PubSub topic.
-    * The Log Sink is filtered to include only supported resource types and (if configured) specific projects
-* Two PubSub topics:
+    * The Log Sink is filtered to include only supported resource types and (if configured) 
+      only specific projects.
+* PubSub topics:
     * One receives the logs from the Log Sink on resource creation.
     * The other receives messages sent by the `/schedule` Cloud Scheduler handler in `main.py`, which is triggered by
       the Cloud Scheduler.
         * Such messages are an instruction to call `do_label` for each 
           combination of (project, resource-type).
-* PubSub subscriptions, one for each topic:
-    * These direct the messages to `/label_one` and `/do_label` in `main.py`, respectively
+    * A dead-letter topic      
+* PubSub subscriptions
+   * One for each topic: These direct the messages to `/label_one` and `/do_label` in `main.py`, respectively
+   * A dead-letter subscription. This is a pull subscription. By default it just accumulates the messages.
+     You can use it just to see statistics, or you can pull messages from it.  
 * IAM Roles
     * See the ["Before Deploying" section above](#before-deploying)
 
@@ -220,8 +229,9 @@ Use existing files in `/plugins` as examples.
 - This is less automated than `integration_test.sh`, so do it only if you have special need to test this functionality.
 - Deploy some cloud resources like Cloud SQL instance. Or deploy an unattached disk and attach it.
 - Configuration
-    * Optionally edit `config.yaml` to set `label_all_on_cron: True`. This will cause all resources to be labeled on the
-      Cloud Scheduler cron job, not just Cloud SQL and GCE Disks.
+    * Optionally edit `config.yaml` to set `label_all_on_cron: True` or `False`. 
+      `True`  will cause all resources to be labeled on the Cloud Scheduler cron job, while
+      `False` will cause only Cloud SQL and GCE Disks to be labeled.
     * Edit `config.yaml` to set `iris_prefix` to a unique value so you can track the labels generated by this test.
 - Deploy the app
     * Use the `-c` switch at the end of the line(after the project ID). This disables event-based labeling so you can

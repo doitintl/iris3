@@ -1,12 +1,23 @@
-# If you see this comment, you are using a config file that was temporarily generated for a test.
-#
-# In integration_test.sh, config.yaml.test.template is used to make a temporary config.yaml, then config.yaml is reverted at the end.
-#
-# Generate random token per-test-run as an additional isolation measure
-pubsub_verification_token: a129f6ac270cc1ae3b4398b4422e5798
-iris_prefix: iris9i3vws
+# config.yaml.original is a "clean" version that you can refer to after you have edited config.yaml.
+# You can even set up a git pre-commit hook to replace config.yaml with this clean version to avoid commiting an edited version.
+
+# Keys:
+
+# Change this before first deployment for added security in communication between PubSub and the Iris App on App Engine.
+pubsub_verification_token: 2a343f4c1b76512039fe763412756c4fbb30c
+
+# iris_prefix is prefixed to the key of each label that is added.
+iris_prefix: iris
+
+# If from_project is True, then for each resource we are labeling, copy the labels from its project onto it.
 from_project: True
-label_all_on_cron: False
-projects:
-  - joshua-playground2
-  - joshua-playground-host-vpc
+
+# If label_all_on_cron is True, then all resource types will be labeled on every cron (Clouid Scheduler) cycle.
+# This is good for labeling existing resources on first running Iris3
+# If label_all_on_cron is False, to save money, then only plugins which return True on relabel_on_cron() or False in is_labeled_on_creation()
+# get labeled on cron.
+label_all_on_cron: True
+
+#  projects: Only resources in these projects will get labeled.
+# But if the value is empty, *all* projects in the organization are included.
+projects: {}
