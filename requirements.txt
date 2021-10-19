@@ -1,11 +1,10 @@
 Flask==1.1.2
 google-api-python-client==1.12.8
 google-cloud-pubsub==2.2.0
-#backoff==1.4.3
 ratelimit==2.2.1
 google-cloud-resource-manager==0.30.3
 black
 google-cloud-profiler
 # gunicorn is only needed if you add entrypoint: gunicorn -b :$PORT --worker-class=sync --workers=1 main:app
 # to app.yaml as a workaround to let Cloud Profiler work
-#gunicorn==19.3.0
+#gunicorn==19.5.0
