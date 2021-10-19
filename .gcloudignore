@@ -3,15 +3,10 @@
 .idea/
 __pycache__/
 # Unit test / coverage reports
-htmlcov/
-.cache
-.pytest_cache/
 requirements-test.txt
 
 # Environments
 .env
-.venv
-venv/
 
 virtenv*/
 
@@ -19,7 +14,7 @@ virtenv*/
 
 .DS_Store
 
-pytest.ini
+
 test_scripts/
 sample_data/
 README.md
