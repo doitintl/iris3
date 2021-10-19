@@ -63,21 +63,22 @@ def init_logging():
                 if hasattr(flask.request, "trace_msg"):
                     trace_msg = flask.request.trace_msg
                 else:
+                    trace_id = flask.request.headers.get("X-Cloud-Trace-Context", random_str(8))
+                    trace_id_trunc = truncate_middle(trace_id, 20)
                     trace_msg = (
                         " [Trace: "
-                        + flask.request.headers.get(
-                            "X-Cloud-Trace-Context", random_str(8)
-                        )
+                        + trace_id_trunc
                         + "]"
                     )
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
                 if "outside of request context" in str(e):
+                    # Occurs in app tartup
                     trace_msg = ""
                 else:
                     raise e
 
-            record.trace_msg_trunc = truncate_middle(trace_msg, 15)
+            record.trace_msg = trace_msg
             return True
 
     f = ContextFilter()
@@ -86,7 +87,7 @@ def init_logging():
     h1.addFilter(filter=f)
     logging.basicConfig(
         handlers=[h1],
-        format=f"%(levelname)s [{iris_prefix()}]%(trace_msg_trunc)s %(message)s",
+        format=f"%(levelname)s [{iris_prefix()}]%(trace_msg)s %(message)s",
         level=logging.INFO,
     )
     logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)

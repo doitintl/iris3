@@ -250,9 +250,10 @@ def do_label():
     try:
         data = __extract_pubsub_content()
         plugin_class_name = data["plugin"]
-        with timing(f"do_label {plugin_class_name}"):
-            plugin = Plugin.get_plugin(plugin_class_name)
-            project_id = data["project_id"]
+
+        plugin = Plugin.get_plugin(plugin_class_name)
+        project_id = data["project_id"]
+        with timing(f"do_label {plugin_class_name} {project_id}"):
             logging.info(
                 "do_label() for %s in %s", plugin.__class__.__name__, project_id
             )

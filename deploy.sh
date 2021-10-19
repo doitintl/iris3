@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
-# Pass the project as the first command line argument.
-# Optionall set environment variable GAEVERSION to set the Google App Engine Version.
+# Usage
+# - Pass the project as the first command line argument.
+# - Optionally set environment variable GAEVERSION to set the Google App Engine Version.
 #
 
 set -x
@@ -47,7 +48,7 @@ MIN_RETRY=60s
 MAX_RETRY=600s
 
 if [[ $# -eq 0 ]]; then
-  echo Missing project id argument
+  echo Missing project id argument. Run with --help switch for usage.
   exit
 fi
 
@@ -69,7 +70,9 @@ while getopts c opt; do
                   The project to which Iris 3 will be deployed
           Options:
                   -c (at end of line, after project ID):
-                      Use only cron to add labels; do not add labels on resource creation.
+                      Use only Cloud Scheduler cron to add labels; do not add labels on resource creation.
+          Environment variable:
+                  GAEVERSION (Optional) sets the Google App Engine Version.
 EOF
     exit 1
     ;;
@@ -155,7 +158,7 @@ if [[ $? -eq 0 ]]; then
    --message-retention-duration=2d \
    --quiet >/dev/null
 else
-  set -e
+   set -e
    gcloud pubsub subscriptions create $DEADLETTER_SUB \
    --project="$PROJECT_ID" \
    --topic $DEADLETTER_TOPIC \
@@ -178,7 +181,7 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
 if [[ $? -eq 0 ]]; then
   set -e
   echo >&2 "Updating $DO_LABEL_SUBSCRIPTION"
-
+ # TODO avoid repetition here and in similar create-or-update cases
   gcloud pubsub subscriptions update "$DO_LABEL_SUBSCRIPTION" \
     --project="$PROJECT_ID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
@@ -186,7 +189,7 @@ if [[ $? -eq 0 ]]; then
     --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
     --dead-letter-topic=$DEADLETTER_TOPIC \
     --min-retry-delay=$MIN_RETRY \
-    --max-retry-delay=$MAX_RETRY\
+    --max-retry-delay=$MAX_RETRY \
     --quiet >/dev/null
 else
   set -e
