@@ -81,7 +81,9 @@ def schedule():
 
         all_projects = gcp_utils.all_projects()
 
-        appscript_projects = [p for p in all_projects if gcp_utils.is_appscript_project(p)]
+        appscript_projects = [
+            p for p in all_projects if gcp_utils.is_appscript_project(p)
+        ]
 
         nonappscript_projects = [p for p in all_projects if p not in appscript_projects]
 

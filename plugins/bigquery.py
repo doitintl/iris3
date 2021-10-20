@@ -98,7 +98,7 @@ class Bigquery(Plugin):
             return table
         except KeyError as ke:
             if "'serviceData'" in str(ke):
-                logging.info("Cannot find serviceData for table" )
+                logging.info("Cannot find serviceData for table")
             else:
                 logging.exception(ke)
             return None
