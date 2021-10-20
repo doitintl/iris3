@@ -1,23 +1,15 @@
-# Installer logs
-# Installer logs
-.idea/
-__pycache__/
-# Unit test / coverage reports
-requirements-test.txt
-
-# Environments
-.env
-
-virtenv*/
-
 *.bak
-
 .DS_Store
-
 
 test_scripts/
 sample_data/
+
+.env
+.venv
+virtenv*/
+.idea/
 README.md
 *.sh
+TEMP*
 *.template
 

@@ -2,35 +2,12 @@
 .DS_Store
 TEMP*
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-./idea
-.idea/
-*.pyc
-__pycache__/
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-.pytest_cache
-requirements-test.txt
-pytest.ini
 test_scripts/
 sample_data/
 
 # Environments
 .env
 .venv
-venv/
 virtenv*/
-env.bak/
-
+.idea/
+__pycache__/

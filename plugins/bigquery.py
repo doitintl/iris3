@@ -73,9 +73,11 @@ class Bigquery(Plugin):
 
     def get_gcp_object(self, log_data):
         try:
-            dataset_name = log_data["protoPayload"]["serviceData"][
-                "datasetInsertRequest"
-            ]["resource"]["datasetName"]
+            proto_payload = log_data["protoPayload"]
+            service_data = proto_payload["serviceData"]
+            dataset_insert_request_ = service_data["datasetInsertRequest"]
+            resource = dataset_insert_request_["resource"]
+            dataset_name = resource["datasetName"]
             datasetid = dataset_name["datasetId"]
             projectid = dataset_name["projectId"]
             dataset = self.__get_dataset(projectid, datasetid)
@@ -84,14 +86,22 @@ class Bigquery(Plugin):
             # No such dataset; hoping for table
             pass
         try:
-            table = log_data["protoPayload"]["serviceData"]["tableInsertRequest"][
-                "resource"
-            ]["tableName"]
+            proto_payload_ = log_data["protoPayload"]
+            service_data_ = proto_payload_["serviceData"]
+            table_insert_request_ = service_data_["tableInsertRequest"]
+            resource_ = table_insert_request_["resource"]
+            table = resource_["tableName"]
             tableid = table["tableId"]
-            projectid = table["projectId"]
+            projectid_ = table["projectId"]
             datasetid = table["datasetId"]
-            table = self.__get_table(projectid, datasetid, tableid)
+            table = self.__get_table(projectid_, datasetid, tableid)
             return table
+        except KeyError as ke:
+            if "'serviceData'" in str(ke):
+                logging.info("Cannot find serviceData for table" )
+            else:
+                logging.exception(ke)
+            return None
         except Exception as e:
             logging.exception(e)
             return None
