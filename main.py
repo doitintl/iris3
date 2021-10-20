@@ -100,7 +100,7 @@ def schedule():
             )
 
         logging.info(
-            "schedule() skipping %d non-appscript projects per config.yaml: %s",
+            "schedule() skipping %d non-appscript projects (See config.yaml): %s",
             len(skipped_nonappscript_projects),
             ", ".join(skipped_nonappscript_projects),
         )
@@ -114,11 +114,11 @@ def schedule():
         if not gcp_utils.detect_gae():
             max_project_in_localdev = 3
             if len(configured_projects) > max_project_in_localdev:
-                msg = """In development, we support no more than %d projects to avoid overwhelming system in development. 
+                msg = """In development, we support no more than %d projects (out of the %d projects available) to avoid overwhelming the system. 
                    One motivation for this safety measure is that if you are using your personal credentials, 
-                   the system has access to *ALL* the projects that you have access to.
-                   But you can increase max_project_in_localdev to a very large number if you do want to do this.
-                   Was %d projects""" % (
+                   the system has access to *ALL* the projects that you have access to, possibly in multiple organizations.
+                   But you can increase the max_project_in_localdev variable above if you do want.
+                   """ % (
                     max_project_in_localdev,
                     len(configured_projects),
                 )

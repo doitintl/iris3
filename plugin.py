@@ -4,10 +4,10 @@ import re
 import typing
 from abc import ABCMeta, abstractmethod
 
-from google.cloud import resource_manager
 from googleapiclient import discovery
 from googleapiclient import errors
 
+from util import gcp_utils
 from util.config_utils import is_copying_labels_from_project, iris_prefix
 from util.utils import methods, cls_by_name, log_time, timed_lru_cache
 
@@ -57,9 +57,8 @@ class Plugin(object, metaclass=ABCMeta):
             project_id
         ), f"Project ID is illegal: {project_id}"
         try:
-            client = resource_manager.Client()
-            proj = client.fetch_project(project_id)
-            labels = proj.labels or {}  # Will be {} if emptu but playing it safe
+            proj = gcp_utils.get_project(project_id)
+            labels = proj.get("labels", {})
             return labels
         except errors.HttpError as e:
             logging.exception(f"Failing to get labels for project {project_id}: {e}")
@@ -90,9 +89,9 @@ class Plugin(object, metaclass=ABCMeta):
 
     def __batch_callback(self, request_id, response, exception):
         if exception is not None:
-            logging.error(
+            logging.exception(
                 "in __batch_callback(), %s",
-                exception,
+                exc_info=exception,
             )
 
     def do_batch(self):
@@ -160,7 +159,7 @@ class Plugin(object, metaclass=ABCMeta):
             self._project_labels(project_id) if is_copying_labels_from_project() else {}
         )
         iris_labels = self.__iris_labels(gcp_object)
-        all_labels = original_labels | project_labels | iris_labels
+        all_labels = {**original_labels, **project_labels, **iris_labels}
         if self.block_labeling(gcp_object, original_labels):
             return None
         elif all_labels == original_labels:

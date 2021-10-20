@@ -18,6 +18,6 @@ from_project: True
 # get labeled on cron.
 label_all_on_cron: True
 
-#  projects: Only resources in these projects will get labeled.
+# projects: Only resources in these projects will get labeled.
 # But if the value is empty, *all* projects in the organization are included.
 projects: {}

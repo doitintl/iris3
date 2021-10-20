@@ -1,13 +1,19 @@
 import os
 import re
 import uuid
-from typing import List
-
-from google.cloud import resource_manager
+from pprint import pprint
+from typing import List, Dict, Any
 
 from util import localdev_config
 
-resource_manager_client = resource_manager.Client()
+from googleapiclient import discovery
+from oauth2client.client import GoogleCredentials
+
+resource_manager = discovery.build(
+    "cloudresourcemanager",
+    "v1",
+    credentials=(GoogleCredentials.get_application_default()),
+)
 
 
 def detect_gae():
@@ -36,16 +42,31 @@ def region_from_zone(zone):
 
 def generate_uuid() -> str:
     """
-    :return a UUID as a string (and not an object or bytes);
-     this is required by the http API.
+    :return a UUID as a string (and not an object or bytes);  this is required by the http API.
     """
     return str(uuid.uuid4())
 
 
-def all_projects() -> List[str]:
-    all_proj = resource_manager_client.list_projects()
-    return sorted([p.project_id for p in all_proj])
-
-
-def is_appscript(p) -> bool:
+def is_appscript_project(p) -> bool:
     return bool(re.match(r"sys-\d{26}", p))
+
+
+def all_projects() -> List[str]:
+    projs = []
+    request = resource_manager.projects().list()
+    while request is not None:
+        response = request.execute()
+        projs += [p["projectId"] for p in response.get("projects", [])]
+
+        request = resource_manager.projects().list_next(
+            previous_request=request, previous_response=response
+        )
+    return sorted(projs)
+
+
+def get_project(project_id: str) -> Dict[str, Any]:
+    projects = resource_manager.projects()
+    request = projects.get(projectId=project_id)
+
+    response = request.execute()
+    return response

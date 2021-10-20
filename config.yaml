@@ -20,4 +20,6 @@ label_all_on_cron: True
 
 #  projects: Only resources in these projects will get labeled.
 # But if the value is empty, *all* projects in the organization are included.
-projects: {}
+projects:
+  - joshua-playground2
+  - joshua-playground-host-vpc

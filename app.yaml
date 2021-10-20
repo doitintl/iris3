@@ -1,4 +1,4 @@
-runtime: python39
+runtime: python38
 service: iris3
 automatic_scaling:
   max_instances: 15
