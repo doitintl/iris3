@@ -4,6 +4,10 @@
 # Keys:
 
 # Change this before first deployment for added security in communication between PubSub and the Iris App on App Engine.
+# You could even re-generate a new token per deployment.
+# Note that this approach is not very secure, though it was was once recommended by Google.
+# However, so long as  your GCP project is secure, this token protects against unwanted invocations.
+# Also, the worst an invocation can do is re-trigger idempotent behavior, with possible DOS.
 pubsub_verification_token: 2a343f4c1b76512039fe763412756c4fbb30c
 
 # iris_prefix is prefixed to the key of each label that is added.
