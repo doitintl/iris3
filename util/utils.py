@@ -155,5 +155,5 @@ def truncate_middle(s, resulting_len):
     pfx = s[:len_pfx_string]
     sfx = s[-len_sfx_string:]
     ret = pfx + ellipsis_s + sfx
-    assert len(ret) == resulting_len, len(ret)
+
     return ret

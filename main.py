@@ -229,10 +229,10 @@ def __extract_pubsub_content() -> typing.Dict:
     msg = envelope.get("message", {})
 
     logging.info(
-        "pubsub deliveryAttempt %d; messageId %s, timestamp %s",
-        envelope.get("deliveryAttempt"),
-        msg.get("messageId"),
-        msg.get("publishTime"),
+        "pubsub deliveryAttempt %s; messageId %s, timestamp %s",
+        envelope.get("deliveryAttempt","N/A"),
+        msg.get("messageId","N/A"),
+        msg.get("publishTime","N/A"),
     )
 
     if not envelope:
