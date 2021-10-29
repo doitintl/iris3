@@ -42,13 +42,12 @@ def implementation1():
     return sorted(projs)
 
 
-
-
-
 def list_projects():
-    current_project = projects_client.get_project(None, name="projects/joshua-playground")
+    current_project = projects_client.get_project(
+        None, name="projects/joshua-playground"
+    )
     parent_name = current_project.name
-    org_name = get_org(  parent_name)
+    org_name = get_org(parent_name)
 
     projects = projects_client.list_projects(parent=org_name)
     ret = [p.project_id for p in projects]
@@ -56,8 +55,10 @@ def list_projects():
 
 
 def get_org(proj_name):
-    assert proj_name.startswith("projects"), f"Expect the form 'projects/123456789, was {proj_name}"
-    parent_name=proj_name
+    assert proj_name.startswith(
+        "projects"
+    ), f"Expect the form 'projects/123456789, was {proj_name}"
+    parent_name = proj_name
     while True:
         if parent_name.startswith("projects/"):
             parent = projects_client.get_project(None, name=parent_name)
@@ -72,8 +73,9 @@ def get_org(proj_name):
         parent_name = parent.parent
     return org_name
 
-proj_1=implementation1()
-proj_1=[p for p in proj_1 if not p.startswith('sys-')]
+
+proj_1 = implementation1()
+proj_1 = [p for p in proj_1 if not p.startswith("sys-")]
 proj2 = list_projects()
 
 d1 = set(proj_1) - set(proj2)
