@@ -186,11 +186,17 @@ def label_one():
                     )  # Append it even if not used due to is_labeled_on_creation False
 
         if not plugins_found:
-            logging.info("(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
-                         method_from_log, config_utils.enabled_plugins())
+            logging.info(
+                "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                method_from_log,
+                config_utils.enabled_plugins(),
+            )
 
-        if len(plugins_found)> 1:
-            raise Exception(f"Error: Multiple plugins found %s for %s" %( plugins_found,method_from_log))
+        if len(plugins_found) > 1:
+            raise Exception(
+                f"Error: Multiple plugins found %s for %s"
+                % (plugins_found, method_from_log)
+            )
 
         return "OK", 200
     except Exception as e:
@@ -260,8 +266,11 @@ def do_label():
 
         plugin = Plugin.get_plugin(plugin_class_name)
         if not plugin:
-            logging.info("(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
-                         plugin_class_name, config_utils.enabled_plugins())
+            logging.info(
+                "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                plugin_class_name,
+                config_utils.enabled_plugins(),
+            )
         else:
             project_id = data["project_id"]
             with timing(f"do_label {plugin_class_name} {project_id}"):
