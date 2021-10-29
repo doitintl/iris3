@@ -3,10 +3,11 @@
 # In integration_test.sh, config.yaml.test.template is used to make a temporary config.yaml, then config.yaml is reverted at the end.
 #
 # Generate random token per-test-run as an additional isolation measure
-pubsub_verification_token: ${PUBSUB_TEST_TOKEN}
-iris_prefix: ${RUN_ID}
-from_project: True
-label_all_on_cron: False
 projects:
   - ${DEPLOYMENT_PROJECT}
   - ${TEST_PROJECT}
+plugins: {}
+iris_prefix: ${RUN_ID}
+from_project: True
+label_all_on_cron: False
+pubsub_verification_token: ${PUBSUB_TEST_TOKEN}

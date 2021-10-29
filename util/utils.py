@@ -64,7 +64,7 @@ def init_logging():
                     trace_msg = flask.request.trace_msg
                 else:
                     trace_id = flask.request.headers.get(
-                        "X-Cloud-Trace-Context", random_str(8)
+                        "X-Cloud-Trace-Context", random_str(30)
                     )
                     trace_id_trunc = truncate_middle(trace_id, 20)
                     trace_msg = " [Trace: " + trace_id_trunc + "]"

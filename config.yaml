@@ -3,12 +3,15 @@
 
 # Keys:
 
-# Change this before first deployment for added security in communication between PubSub and the Iris App on App Engine.
-# You could even re-generate a new token per deployment.
-# Note that this approach is not very secure, though it was was once recommended by Google.
-# However, so long as  your GCP project is secure, this token protects against unwanted invocations.
-# Also, the worst an invocation can do is re-trigger idempotent behavior, with possible DOS.
-pubsub_verification_token: 2a343f4c1b76512039fe763412756c4fbb30c
+# projects: Only resources in these projects will get labeled.
+# But if the value is empty, *all* projects in the organization are included.
+projects:
+  - joshua-playground
+
+# plugins: Only these plugins are enabled.
+# For example, list some of these: bigquery, bigtable, disks, buckets, cloudsql, instances, snaphots, subscriptions, topics
+# But if the value is empty, *all* plugins are enabled
+plugins: {}
 
 # iris_prefix is prefixed to the key of each label that is added.
 iris_prefix: iris
@@ -22,6 +25,9 @@ from_project: True
 # get labeled on cron.
 label_all_on_cron: True
 
-# projects: Only resources in these projects will get labeled.
-# But if the value is empty, *all* projects in the organization are included.
-projects: {}
+# Change this before first deployment for added security in communication between PubSub and the Iris App on App Engine.
+# You could even re-generate a new token per deployment.
+# Note that this approach is not very secure, though it was was once recommended by Google.
+# However, so long as  your GCP project is secure, this token protects against unwanted invocations.
+# Also, the worst an invocation can do is re-trigger idempotent behavior, with possible DOS.
+pubsub_verification_token: 2a343f4c1b76512039fe763412756c4fbb30c

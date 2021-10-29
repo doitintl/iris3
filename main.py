@@ -14,7 +14,7 @@ from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import detect_gae
 
-from util.config_utils import iris_prefix, configured_project, get_config, pubsub_token
+from util.config_utils import iris_prefix, is_project_enabled, get_config, pubsub_token
 from util.utils import init_logging, log_time, timing
 
 import googlecloudprofiler
@@ -88,7 +88,7 @@ def schedule():
         nonappscript_projects = [p for p in all_projects if p not in appscript_projects]
 
         configured_projects = [
-            p for p in nonappscript_projects if config_utils.configured_project(p)
+            p for p in nonappscript_projects if config_utils.is_project_enabled(p)
         ]
 
         skipped_nonappscript_projects = [
@@ -126,7 +126,7 @@ def schedule():
                 raise Exception(msg)
 
         for project_id in configured_projects:
-            for _, plugin_ in Plugin.instances.items():
+            for _, plugin_ in Plugin.plugins.items():
                 if (
                     not plugin_.is_labeled_on_creation()
                     or plugin_.relabel_on_cron()
@@ -175,7 +175,7 @@ def label_one():
         method_from_log = data["protoPayload"]["methodName"]
 
         plugins_found = []
-        for plugin_name, plugin in Plugin.instances.items():
+        for plugin_name, plugin in Plugin.plugins.items():
             for supported_method in plugin.method_names():
                 if supported_method.lower() in method_from_log.lower():
                     if plugin.is_labeled_on_creation():
@@ -185,8 +185,19 @@ def label_one():
                         plugin_name
                     )  # Append it even if not used due to is_labeled_on_creation False
 
-        if len(plugins_found) != 1:
-            logging.error(f"Error: plugins found {plugins_found} for {method_from_log}")
+        if not plugins_found:
+            logging.info(
+                "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                method_from_log,
+                config_utils.enabled_plugins(),
+            )
+
+        if len(plugins_found) > 1:
+            raise Exception(
+                f"Error: Multiple plugins found %s for %s"
+                % (plugins_found, method_from_log)
+            )
+
         return "OK", 200
     except Exception as e:
         project_id = data.get("resource", {}).get("labels", {}).get("project_id")
@@ -200,7 +211,7 @@ def __label_one_0(data, plugin):
     gcp_object = plugin.get_gcp_object(data)
     if gcp_object is not None:
         project_id = data["resource"]["labels"]["project_id"]
-        if configured_project(project_id):
+        if is_project_enabled(project_id):
             logging.info("Will label_one() in %s, %s", project_id, gcp_object)
             plugin.label_resource(gcp_object, project_id)
             plugin.do_batch()
@@ -254,13 +265,20 @@ def do_label():
         plugin_class_name = data["plugin"]
 
         plugin = Plugin.get_plugin(plugin_class_name)
-        project_id = data["project_id"]
-        with timing(f"do_label {plugin_class_name} {project_id}"):
+        if not plugin:
             logging.info(
-                "do_label() for %s in %s", plugin.__class__.__name__, project_id
+                "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                plugin_class_name,
+                config_utils.enabled_plugins(),
             )
-            plugin.label_all(project_id)
-        logging.info("OK on do_label %s %s", plugin_class_name, project_id)
+        else:
+            project_id = data["project_id"]
+            with timing(f"do_label {plugin_class_name} {project_id}"):
+                logging.info(
+                    "do_label() for %s in %s", plugin.__class__.__name__, project_id
+                )
+                plugin.label_all(project_id)
+            logging.info("OK on do_label %s %s", plugin_class_name, project_id)
         return "OK", 200
     except Exception as e:
         logging.exception(

@@ -2,6 +2,7 @@ import functools
 import typing
 
 import yaml
+import re
 
 
 def is_copying_labels_from_project() -> bool:
@@ -16,15 +17,28 @@ def iris_prefix() -> str:
     return config["iris_prefix"]
 
 
-def configured_project(project_id) -> bool:
-    projects = configured_projects()
+def is_project_enabled(project_id) -> bool:
+    projects = enabled_projects()
     return (project_id in projects) if projects else True
 
 
-def configured_projects() -> typing.List[str]:
+def enabled_projects() -> typing.List[str]:
     config = get_config()
     projects = config.get("projects")
     return projects
+
+
+def enabled_plugins() -> typing.List[str]:
+    config = get_config()
+    plugins = config.get("plugins")
+
+    assert all(re.match(r"[a-z]+", p) for p in plugins), plugins
+    return plugins
+
+
+def is_plugin_enabled(plugin) -> bool:
+    plugins = enabled_plugins()
+    return (plugin in plugins) if plugins else True
 
 
 def label_all_on_cron() -> bool:

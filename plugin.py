@@ -7,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 from googleapiclient import discovery
 from googleapiclient import errors
 
-from util import gcp_utils
+from util import gcp_utils, config_utils
 from util.config_utils import is_copying_labels_from_project, iris_prefix
 from util.utils import methods, cls_by_name, log_time, timed_lru_cache
 
@@ -22,8 +22,8 @@ class Plugin(object, metaclass=ABCMeta):
 
     # For a class to know its subclasses and their instances is generally bad.
     # We could create a separate PluginManager but let's not get too Java-ish.
-    instances: typing.Dict[str, "Plugin"]
-    instances = {}
+    plugins: typing.Dict[str, "Plugin"]
+    plugins = {}
 
     def __init__(self):
         self._google_client = discovery.build(*self.discovery_api())
@@ -139,15 +139,16 @@ class Plugin(object, metaclass=ABCMeta):
             return plugin_cls
 
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
-            plugin_class = load_plugin_class(module)
-            instance = plugin_class()
-            Plugin.instances[plugin_class.__name__] = instance
+            if config_utils.is_plugin_enabled(module):
+                plugin_class = load_plugin_class(module)
+                instance = plugin_class()
+                Plugin.plugins[plugin_class.__name__] = instance
 
-        assert Plugin.instances, "No plugins defined"
+        assert Plugin.plugins, "No plugins defined"
 
     @staticmethod
     def get_plugin(plugin_name: str) -> "Plugin":
-        return Plugin.instances[plugin_name]
+        return Plugin.plugins.get(plugin_name)
 
     def _build_labels(self, gcp_object, project_id):
         """
