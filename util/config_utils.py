@@ -27,7 +27,6 @@ def enabled_projects() -> typing.List[str]:
     projects = config.get("projects")
     return projects
 
-
 def enabled_plugins() -> typing.List[str]:
     config = get_config()
     plugins = config.get("plugins")
@@ -35,11 +34,9 @@ def enabled_plugins() -> typing.List[str]:
     assert all(re.match(r"[a-z]+", p) for p in plugins), plugins
     return plugins
 
-
-def is_plugin_enabled(plugin) -> bool:
-    plugins = enabled_plugins()
-    return (plugin in plugins) if plugins else True
-
+def is_plugin_enabled(plugin)->bool:
+    plugins=enabled_plugins()
+    return (plugin  in plugins) if plugins else True
 
 def label_all_on_cron() -> bool:
     config = get_config()
@@ -58,3 +55,5 @@ def get_config() -> typing.Dict:
     with open("config.yaml") as config_file:
         config = yaml.full_load(config_file)
     return config
+
+

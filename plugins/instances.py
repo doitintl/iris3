@@ -1,6 +1,5 @@
 import logging
 
-from google.cloud import compute_v1
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
@@ -25,42 +24,27 @@ class Instances(GceZonalBase):
         return ["compute.instances.insert", "compute.instances.start"]
 
     def __list_instances(self, project_id, zone):
-        def list1():
-            instances1 = []
-            page_token = None
-            more_results = True
-            while more_results:
-                result = (
-                    self._google_client.instances()
-                    .list(
-                        project=project_id,
-                        zone=zone,
-                        pageToken=page_token,
-                    )
-                    .execute()
+        instances = []
+        page_token = None
+        more_results = True
+        while more_results:
+            result = (
+                self._google_client.instances()
+                .list(
+                    project=project_id,
+                    zone=zone,
+                    pageToken=page_token,
                 )
-                if "items" in result:
-                    instances = instances1 + result["items"]
-                if "nextPageToken" in result:
-                    page_token = result["nextPageToken"]
-                else:
-                    more_results = False
-            return instances1
-
-        ret1 = list1()
-
-        def list2():
-            instances_client = compute_v1.InstancesClient()
-
-            request = compute_v1.ListInstancesRequest(
-                project=project_id, zone="us-central1-a"
+                .execute()
             )
-            instances2 = instances_client.list(request)
+            if "items" in result:
+                instances = instances + result["items"]
+            if "nextPageToken" in result:
+                page_token = result["nextPageToken"]
+            else:
+                more_results = False
 
-            return list(instances2)
-
-        ret2 = list2()
-        return ret1
+        return instances
 
     def __get_instance(self, project_id, zone, name):
         try:

@@ -1,6 +1,10 @@
 import os
+import re
+import uuid
+from pprint import pprint
+from typing import List, Dict, Any
 
-from google.cloud import resourcemanager_v3
+from util import localdev_config
 
 from googleapiclient import discovery
 from oauth2client.client import GoogleCredentials
@@ -10,8 +14,6 @@ resource_manager = discovery.build(
     "v1",
     credentials=(GoogleCredentials.get_application_default()),
 )
-projects_client = resourcemanager_v3.ProjectsClient()
-folders_client = resourcemanager_v3.FoldersClient()
 
 
 def detect_gae():
@@ -26,10 +28,30 @@ def project_id():
     if detect_gae():
         return os.environ.get("GAE_APPLICATION", "").split("~")[1]
     else:
-        return "joshua-playground"
+        return localdev_config.localdev_project_id()
 
 
-def implementation1():
+def set_env():
+    if not detect_gae():
+        localdev_config.set_localdev_project_id_in_env()
+
+
+def region_from_zone(zone):
+    return zone[: len(zone) - 2].lower()
+
+
+def generate_uuid() -> str:
+    """
+    :return a UUID as a string (and not an object or bytes);  this is required by the http API.
+    """
+    return str(uuid.uuid4())
+
+
+def is_appscript_project(p) -> bool:
+    return bool(re.match(r"sys-\d{26}", p))
+
+
+def all_projects() -> List[str]:
     projs = []
     request = resource_manager.projects().list()
     while request is not None:
@@ -42,48 +64,9 @@ def implementation1():
     return sorted(projs)
 
 
-def list_projects():
-    current_project = projects_client.get_project(
-        None, name="projects/joshua-playground"
-    )
-    parent_name = current_project.name
-    org_name = get_org(parent_name)
+def get_project(project_id: str) -> Dict[str, Any]:
+    projects = resource_manager.projects()
+    request = projects.get(projectId=project_id)
 
-    projects = projects_client.list_projects(parent=org_name)
-    ret = [p.project_id for p in projects]
-    return ret
-
-
-def get_org(proj_name):
-    assert proj_name.startswith(
-        "projects"
-    ), f"Expect the form 'projects/123456789, was {proj_name}"
-    parent_name = proj_name
-    while True:
-        if parent_name.startswith("projects/"):
-            parent = projects_client.get_project(None, name=parent_name)
-        elif parent_name.startswith("folders/"):
-            parent = folders_client.get_folder(None, name=parent_name)
-        elif parent_name.startswith("organizations/"):
-            org_name = parent_name
-            break
-        else:
-            raise Exception(parent_name)
-
-        parent_name = parent.parent
-    return org_name
-
-
-proj_1 = implementation1()
-proj_1 = [p for p in proj_1 if not p.startswith("sys-")]
-proj2 = list_projects()
-
-d1 = set(proj_1) - set(proj2)
-print("difference1", len(d1), d1)
-print()
-print()
-print()
-
-
-print("difference2", set(proj2) - set(proj_1))
-#
+    response = request.execute()
+    return response

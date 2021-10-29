@@ -1,6 +1,6 @@
 *.bak
 .DS_Store
-*-test.txt
+requirements-test.text
 test_scripts/
 test_*
 sample_data/

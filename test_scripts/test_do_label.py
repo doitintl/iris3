@@ -3,7 +3,6 @@ import os
 import sys
 
 from test_scripts.utils_for_tests import do_local_http
-from util import config_utils
 
 """
 This is a debugging tool useful in development.

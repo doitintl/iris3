@@ -4,8 +4,6 @@ from abc import ABCMeta
 import util.gcp_utils
 from gce_base.gce_base import GceBase
 
-from google.cloud import compute_v1
-
 
 class GceZonalBase(GceBase, metaclass=ABCMeta):
     def _gcp_zone(self, gcp_object):
@@ -29,12 +27,9 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         """
         Get all available zones.
         """
-        zones_client = compute_v1.ZonesClient()
-
-        request = compute_v1.ListZonesRequest(project=project_id)
-        zones = zones_client.list(request)
-        ret = [z.name for z in zones]
-        return ret
+        response = self._google_client.zones().list(project=project_id).execute()
+        zones = [zone["description"] for zone in response["items"]]
+        return zones
 
     def block_labeling(self, gcp_object, original_labels):
         # goog-gke-node appears in Nodes and Disks; and goog-gke-volume appears in Disks

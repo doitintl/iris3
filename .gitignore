@@ -3,7 +3,7 @@
 TEMP*
 
 test_scripts/
-*-test.text
+requirements-test.text
 test_*
 # Environments
 .env
