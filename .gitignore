@@ -3,7 +3,7 @@
 TEMP*
 
 test_scripts/
-requirements-test.text
+
 test_*
 # Environments
 .env
@@ -11,3 +11,4 @@ test_*
 virtenv*/
 .idea/
 __pycache__/
+/requirements-test.txt
