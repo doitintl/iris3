@@ -5,7 +5,7 @@
 projects:
   - ${DEPLOYMENT_PROJECT}
   - ${TEST_PROJECT}
-plugins: {}
+plugins: []
 iris_prefix: ${RUN_ID}
 from_project: True
 label_all_on_cron: False

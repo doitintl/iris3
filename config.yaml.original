@@ -5,12 +5,12 @@
 
 # projects: Only resources in these projects will get labeled.
 # But if the value is empty, *all* projects in the organization are included.
-projects: {}
+projects: []
 
 # plugins: Only these plugins are enabled.
 # For example, list some of these: bigquery, buckets, bigtable, disks,  cloudsql, instances, snaphots, subscriptions, topics
 # But if the value is empty, *all* plugins are enabled
-plugins: {}
+plugins: []
 
 # iris_prefix is prefixed to the key of each label that is added.
 iris_prefix: iris
