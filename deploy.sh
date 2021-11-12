@@ -88,7 +88,8 @@ echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
 
 GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
-PUBSUB_VERIFICATION_TOKEN=$(grep "pubsub_verification_token:" config.yaml | awk '{print $2}')
+# This dependson the  the export PYTHON_PATH="." above.
+PUBSUB_VERIFICATION_TOKEN=$(python3 ./util/print_pubsub_token.py)
 LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
 DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
