@@ -99,6 +99,7 @@ while read -r svc _; do
 done < <(gcloud services list | tail -n +2)
 
 required_svcs=(
+  cloudscheduler.googleapis.com
   cloudresourcemanager.googleapis.com
   pubsub.googleapis.com
   compute.googleapis.com

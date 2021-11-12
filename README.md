@@ -205,7 +205,9 @@ Use existing files in `/plugins` as examples.
    skipped for GKE Nodes, as doing so would cause them to be replaced), override `block_labeling()` and return `True`
    where needed.
 
-2. Add your Google Cloud API "methods" to `log_filter` in `deploy.sh`.
+2. Add your API to the `required_svcs`  in `deploy.sh`
+   
+3. Add your Google Cloud API "methods" to `log_filter` in `deploy.sh`.
     * `methodName` is part of the logs generated on creation.
     * See examples of such logs in `sample_data` directory.
         * E.g., you can see a log sample for bucket creation, in
@@ -213,7 +215,9 @@ Use existing files in `/plugins` as examples.
           (Or create a bucket and look at the log.)
         * In that file you see `"methodName": "storage.buckets.create"`.
 
-3. Add roles in `roles.yaml` allowing Iris to list, get, and update (add labels to) your resources.
+4. Add roles in `roles.yaml` allowing Iris to list, get, and update (add labels to) your resources.
+
+
 
 ### Testing
 
