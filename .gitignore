@@ -3,7 +3,7 @@
 TEMP*
 
 test_scripts/
-
+fil-result/
 test_*
 # Environments
 .env

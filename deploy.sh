@@ -214,6 +214,7 @@ gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
 
 
 if [[ "$CRON_ONLY" == "true" ]]; then
+  echo >&2 "CRON_ONLY set to true."
   gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" 2>/dev/null || true
   gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID" 2>/dev/null || true
 else
@@ -285,11 +286,13 @@ else
 
   # Create or update a sink at org level
   if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
+    echo >&2 "Creating Log Sink/Router at Organization level."
     gcloud logging sinks create "$LOG_SINK" \
       pubsub.googleapis.com/projects/"$PROJECT_ID"/topics/"$LOGS_TOPIC" \
       --organization="$ORGID" --include-children \
       --log-filter="${log_filter[*]}" --quiet
   else
+    echo >&2 "Updating Log Sink/Router at Organization level."
     gcloud logging sinks update "$LOG_SINK" \
       pubsub.googleapis.com/projects/"$PROJECT_ID"/topics/"$LOGS_TOPIC" \
       --organization="$ORGID" \
