@@ -144,8 +144,9 @@ bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-# For buckets, JSON shows labels without the label:{} wrapper seen in  the others
-gsutil label get "gs://bucket${RUN_ID}" | jq -e ".${RUN_ID}_name"
+# 1. For buckets, JSON shows labels without the label:{} wrapper seen in  the others
+# 2. For this test, we specified a label for buckets that is different from other resource types
+gsutil label get "gs://bucket${RUN_ID}" | jq -e ".gcs${RUN_ID}_name"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud compute instances describe "instance${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi

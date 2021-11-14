@@ -8,7 +8,11 @@ from googleapiclient import discovery
 from googleapiclient import errors
 
 from util import gcp_utils, config_utils
-from util.config_utils import is_copying_labels_from_project, iris_prefix
+from util.config_utils import (
+    is_copying_labels_from_project,
+    iris_prefix,
+    specific_prefix,
+)
 from util.utils import methods, cls_by_name, log_time, timed_lru_cache
 
 PLUGINS_MODULE = "plugins"
@@ -79,9 +83,13 @@ class Plugin(object, metaclass=ABCMeta):
             return legalize_value(func(gcp_obj))
 
         def key(func) -> str:
-            iris_pfx = iris_prefix()
-            iris_pfx_full = iris_pfx + "_" if iris_pfx else ""
-            return iris_pfx_full + func.__name__[len(func_name_pfx) :]
+            resource_type = type(self).__name__
+            general_pfx = iris_prefix()
+            assert general_pfx is not None
+            specific_pfx = specific_prefix(resource_type)
+            pfx = specific_pfx if specific_pfx is not None else general_pfx
+            pfx_full = pfx + "_" if pfx else ""
+            return pfx_full + func.__name__[len(func_name_pfx) :]
 
         ret = {key(f): value(f, gcp_object) for f in methods(self, func_name_pfx)}
 

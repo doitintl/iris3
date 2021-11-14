@@ -266,6 +266,7 @@ functionality, and fixing bugs.
 1. Optimization: Do not attempt to set labels if labels have not changed.
 1. Support "disk is attached" tag, and mutating it when status changes
 1. Improve performance and scalability, to save costs.
+1. Iris prefixes can be specific to a resource type
 
 ## Next steps
 

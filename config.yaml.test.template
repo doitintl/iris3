@@ -7,6 +7,8 @@ projects:
   - ${TEST_PROJECT}
 plugins: []
 iris_prefix: ${RUN_ID}
+specific_prefixes:
+  Buckets: gcs${RUN_ID}
 from_project: True
 label_all_on_cron: False
 # We generate a random token per-test-run as an additional isolation measure
