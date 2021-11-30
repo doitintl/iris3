@@ -17,10 +17,12 @@ iris_prefix: iris
 
 # specific_prefixes for a prefix per resource type, overriding iris_prefix
 # The comment below shows the resource types with some examples of key-value pairs.
-# Note that an empty value, as in Buckets in the comment below, is treated as "None"
-# and will not replace the general iris_prefix.
-# But if you use empty-string as in the Bigquery example below, then that will override
-# the iris_prefix so that you  get labels with no prefix.
+# Empty vs empty-string
+# - An empty value, as in Buckets in the comment below, is treated as "None"
+#   and will not replace the general iris_prefix.
+#  - Empty string, as in the Bigquery example below will override
+#   the iris_prefix so that you  get labels with no prefix.
+#
 # Remember to remove the {} after specific_prefixed below if you want to add some values.
 specific_prefixes: {}
     #  Buckets:
