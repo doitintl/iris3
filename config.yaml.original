@@ -38,7 +38,7 @@ specific_prefixes: {}
 # If from_project is True, then for each resource we are labeling, copy the labels from its project onto it.
 from_project: True
 
-# If label_all_on_cron is True, then all resource types will be labeled on every cron (Clouid Scheduler) cycle.
+# If label_all_on_cron is True, then all resource types will be labeled on every cron (Cloud Scheduler) cycle.
 # This is good for labeling existing resources on first running Iris3
 # If label_all_on_cron is False, to save money, then only plugins which return True on relabel_on_cron() or False in is_labeled_on_creation()
 # get labeled on cron.
@@ -46,7 +46,7 @@ label_all_on_cron: True
 
 # Change this before first deployment for added security in communication between PubSub and the Iris App on App Engine.
 # You could even re-generate a new token per deployment.
-# Note that this approach is not very secure, though it was was once recommended by Google.
+# Note that this approach is not very secure, though it  was once recommended by Google.
 # However, so long as  your GCP project is secure, this token protects against unwanted invocations.
 # Also, the worst an invocation can do is re-trigger idempotent behavior, with possible DOS.
 pubsub_verification_token: 2a343f4c1b76512039fe763412756c4fbb30c
