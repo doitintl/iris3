@@ -14,6 +14,7 @@ set -x
 
 START_TEST=$(date "+%s")
 
+
 if [[ $# -lt 2 ]]; then
 
   cat >&2 <<EOF
@@ -28,6 +29,7 @@ EOF
   exit
 fi
 
+# RUN_ID envsubst into config.yaml.test.template
 export RUN_ID
 if [[ $# -eq 3 ]]; then
   RUN_ID=$3
@@ -36,10 +38,18 @@ else
   RUN_ID="iris$(base64 </dev/urandom | tr -d '+/' | head -c 6 | awk '{print tolower($0)}')"
 fi
 
+
 export PUBSUB_TEST_TOKEN
+# PUBSUB_TEST_TOKEN is used for envsubst into config.yaml.test.template
 PUBSUB_TEST_TOKEN=$(hexdump -n 16 -e '4/4 "%08X" 1 "\n"' /dev/urandom| tr '[:upper:]' '[:lower:]')
+# DEPLOYMENT_PROJECT and TEST_PROJECT is used for envsubst into config.yaml.test.template
 export DEPLOYMENT_PROJECT=$1
 export TEST_PROJECT=$2
+
+GCE_REGION=europe-central2
+GCE_ZONE=europe-central2-b
+
+
 declare -a projects
 projects=("$DEPLOYMENT_PROJECT" "$TEST_PROJECT")
 for p in "${projects[@]}"; do
@@ -75,6 +85,8 @@ function revert_config() {
 trap "revert_config" EXIT
 
 envsubst <config.yaml.test.template >config.yaml
+
+# GAEVERSION is exported to deploy.sh
 export GAEVERSION=$RUN_ID
 
 ./deploy.sh $DEPLOYMENT_PROJECT
@@ -91,9 +103,9 @@ function clean_resources() {
   # Include the earlier on-exit code inside this one.
   revert_config
 
-  gcloud compute instances delete "instance${RUN_ID}" -q --project "$TEST_PROJECT"
+  gcloud compute instances delete "instance${RUN_ID}" -q --project "$TEST_PROJECT"  --zone $GCE_ZONE
   gcloud compute snapshots delete "snapshot${RUN_ID}" -q --project "$TEST_PROJECT"
-  gcloud compute disks delete "disk${RUN_ID}" -q --project "$TEST_PROJECT"
+  gcloud compute disks delete "disk${RUN_ID}" -q --project "$TEST_PROJECT" --zone $GCE_ZONE
   gcloud pubsub topics delete "topic${RUN_ID}" -q --project "$TEST_PROJECT"
   gcloud pubsub subscriptions delete "subscription${RUN_ID}" -q --project "$TEST_PROJECT"
   gcloud bigtable instances delete "bigtable${RUN_ID}" -q --project "$TEST_PROJECT"
@@ -101,7 +113,7 @@ function clean_resources() {
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
 
-   gcloud app services delete iris3 -q  --project $DEPLOYMENT_PROJECT
+   gcloud app services delete iris3 -q --project $DEPLOYMENT_PROJECT
 
   FINISH_TEST=$(date "+%s")
   ELAPSED_SEC_TEST=$((FINISH_TEST - START_TEST))
@@ -109,13 +121,15 @@ function clean_resources() {
 
   exit $ERROR
 }
+
 trap "clean_resources" EXIT
 
 sleep 20 # Need time for traffic to be migrated to the new version
 
-gcloud compute instances create "instance${RUN_ID}" --project "$TEST_PROJECT"
-gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT"
-gcloud compute disks snapshot "instance${RUN_ID}" --snapshot-names "snapshot${RUN_ID}" --project $TEST_PROJECT
+gcloud compute instances create "instance${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
+gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
+gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
+exit 1
 gcloud pubsub topics create "topic${RUN_ID}" --project "$TEST_PROJECT"
 gcloud pubsub subscriptions create "subscription${RUN_ID}" --topic "topic${RUN_ID}" --project "$TEST_PROJECT"
 gcloud bigtable instances create "bigtable${RUN_ID}" --display-name="bigtable${RUN_ID}" --cluster="bigtable${RUN_ID}" --cluster-zone=us-east1-c --project "$TEST_PROJECT"
@@ -144,13 +158,13 @@ bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-# 1. For buckets, JSON shows labels without the label:{} wrapper seen in  the others
+# 1. For buckets, JSON shows labels without the label:{} wrapper seen in the others.
 # 2. For this test, we specified a label for buckets that is different from other resource types
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".gcs${RUN_ID}_name"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-gcloud compute instances describe "instance${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+gcloud compute instances describe "instance${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-gcloud compute disks describe "disk${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+gcloud compute disks describe "disk${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
