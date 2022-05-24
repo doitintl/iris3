@@ -205,6 +205,6 @@ class Plugin(object, metaclass=ABCMeta):
             callback=self.__batch_callback
         )
 
-    # Override and return True if this object must not be labeled (for example, GKE objects)
+    # Override and return True if this object must not be labeled
     def block_labeling(self, block_labeling, original_labels):
         return False

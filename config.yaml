@@ -5,7 +5,7 @@
 
 # projects: Only resources in these projects will get labeled.
 # But if the value is empty, *all* projects in the organization are included.
-projects: []
+projects: ["joshua-playground2"]
 
 # plugins: Only these plugins are enabled.
 # For example, add some of these to the list:

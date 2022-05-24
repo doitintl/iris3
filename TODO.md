@@ -1,9 +1,5 @@
 # Improvements and fixes to be done
 
-* P2 Labeling GKE Nodes (VM Instances) and Disks
-    * Today, this is not done because it forces recreation of resources.
-    * But we could support cluster labels
-
 * P2 PubSub push endpoint security:
   Note: The token which is now used is not very secure, though it is an improvement on earlier versions of Iris, and
   Google has at times recommended this approach.

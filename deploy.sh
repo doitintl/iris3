@@ -27,6 +27,7 @@ fi
 export PYTHONPATH="."
 python3 ./util/check_version.py
 
+pip3 install -r requirements.txt
 
 START=$(date "+%s")
 ROLEID=iris3

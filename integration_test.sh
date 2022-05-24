@@ -129,7 +129,6 @@ sleep 20 # Need time for traffic to be migrated to the new version
 gcloud compute instances create "instance${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
 gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
 gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
-exit 1
 gcloud pubsub topics create "topic${RUN_ID}" --project "$TEST_PROJECT"
 gcloud pubsub subscriptions create "subscription${RUN_ID}" --topic "topic${RUN_ID}" --project "$TEST_PROJECT"
 gcloud bigtable instances create "bigtable${RUN_ID}" --display-name="bigtable${RUN_ID}" --cluster="bigtable${RUN_ID}" --cluster-zone=us-east1-c --project "$TEST_PROJECT"

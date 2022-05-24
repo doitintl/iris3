@@ -46,9 +46,8 @@ These are also listed below.
 
 * Compute Engine Instances (Labels name, zone, region, instance type)
     * Including preemptible instances or instances created by Managed Instance Groups.
-    * But: GKE Nodes are not labeled, as doing so recreates them.
+    * Including instances used as GKE Nodes
 * Compute Engine Disks (Labels name, zone, region)
-    * But: GKE Disks (Volumes) are not labeled. See above.
     * Disks created with an Instance are not labeled on-creation. They are labeled with the Cloud Scheduler cron job.
     * The label indicating whether a disk is attached will change, if the state changed, on the cron job, not on-event.
 * Compute Engine Snapshots  (Labels name, zone, region)
@@ -201,8 +200,7 @@ Use existing files in `/plugins` as examples.
    Cloud Scheduler cron to relabel them. (We label on-event only for creation events, so Cloud Scheduler is the way
    to relabel mutated state.)
 
-   f. For resources where labeling must be skipped under certain conditions (like GCE Instances, where labeling must be
-   skipped for GKE Nodes, as doing so would cause them to be replaced), override `block_labeling()` and return `True`
+   f. For resources where labeling must be skipped under certain conditions, override `block_labeling()` and return `True`
    where needed.
 
 2. Add your API to the `required_svcs`  in `deploy.sh`
