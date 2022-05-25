@@ -95,7 +95,14 @@ ERROR=0
 
 # Cleanup on exit
 function clean_resources() {
-  echo >&2 "Cleaning up resources. Exit code is now $ERROR"
+  STATUS_BEFORE_TRAPEXIT=$?
+  if  (("$ERROR" == 0 )) ; then
+    EXIT_CODE=$STATUS_BEFORE_TRAPEXIT
+  else
+    EXIT_CODE="$ERROR"
+  fi
+
+  echo >&2 "Cleaning up resources. Exit code will be $STATUS_BEFORE_TRAPEXIT; Stored code was $ERROR; Status code was $STATUS_BEFORE_TRAPEXIT"
 
   # Cleanup should not stop on error
   set +e
@@ -119,7 +126,7 @@ function clean_resources() {
   ELAPSED_SEC_TEST=$((FINISH_TEST - START_TEST))
   echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC_TEST} s; exiting with $ERROR"
 
-  exit $ERROR
+  exit $EXIT_CODE
 }
 
 trap "clean_resources" EXIT
@@ -170,7 +177,7 @@ if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 
 if [ $ERROR -ne 0 ];
 then
-  # On Error leave resources; do not delete them
+  # On Error during "describe", we leave resources -- we do not delete them
   trap - EXIT
   # But still, revert the config
   revert_config
