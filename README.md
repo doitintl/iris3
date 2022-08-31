@@ -13,7 +13,7 @@ the [post that presents Iris](https://blog.doit-intl.com/iris-3-automatic-labeli
 
 Iris automatically assigns labels to Google Cloud resources for manageability and easier billing reporting.
 
-Each resource in a Google Cloud Platform Organization will get automatically-generated labels with keys
+Each resource of a supported type in a Google Cloud Platform Organization will get automatically-generated labels with keys
 like `iris_zone` (the prefix is configurable), and the relevant value.  
 For example, a Google Compute Engine instance would get labels like
 `[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`.
@@ -85,11 +85,11 @@ On the project where Iris is deployed, you will need Owner or these roles:
 * *Pub/Sub Admin* to create topics and subscriptions.
 
 ### Deployment
-
+* `git clone https://github.com/doitintl/iris3.git`
 * Have Python 3.8+ as your default `python3`.
 * Install tools  `envsubst` and `jq`.
 * Install and initialize `gcloud` to an account with the [above-mentioned](#before-deploying) roles
-* Optionally configure by editing `config.yaml` (use `config.yaml.original` as , `cron.yaml`, or `app.yaml`. See [Configuration](#configuration) below.
+* Optionally configure by ed****iting `config.yaml` (use `config.yaml.original` as , `cron.yaml`, or `app.yaml`. See [Configuration](#configuration) below.
 * Run `./deploy.sh <PROJECT_ID>`.
     * Add `-c` at the end to use only Cloud Scheduler cron (i.e., without labeling on-creatio).
         * With `-c`, resources will get labeled only by cron. This saves costs.
@@ -100,15 +100,17 @@ On the project where Iris is deployed, you will need Owner or these roles:
     or topics will not be updated. You would have to delete them first.
     
 ### Configuration
-
-* See `config.yaml` for documentation of these options:
+* All values are optional.
+* See `config.yaml` for documentation of these  options:
     - What projects to include. (The default is all projects in the organization.)
-    - A prefix for all label keys (so, if the prefix is `xyz`, labels will look like `xyz_name` etc.)
-    - Whether to copy all labels from the project into resources in the project.
-    - Whether the Cloud Scheduler cron job should label all types of resources. 
+    - A prefix for all label keys (so, if the prefix is `xyz`, labels will look like `xyz_name` etc.) The default is `iris`.
+    - Specific prefixes per resource type. 
+    - Whether to copy all labels from the project into resources in the project. 
+     The default is False.
+    - Whether the Cloud Scheduler cron job should label all types of resources.  The default is  
         - If True, then on cron job, Iris scans and labels *all* resources in all projects 
             - Setting this to `True` may be useful for a first run, to label existing resources.
-        - If False, then on cron job, Iris labels just the types that need it, because they cannot be 
+        - If False, then on Cloud Scheduler cron job, Iris labels just the types that need it, because they cannot be 
             labeled in full on-event
             (Cloud SQL and Disks).
     - You can also change the secret token for PubSub here. 
@@ -118,12 +120,12 @@ On the project where Iris is deployed, you will need Owner or these roles:
 
 * See the `-c` switch on `deploy.sh` discussed in ["Deployment" above](#deployment) for disabling the on-event labeling 
   and using only Cloud  Scheduler cron.
-* `cron.yaml` lets you change the timing for the Cloud Scheduler scheduled labelings.
+* `cron.yaml` lets you optionally change the timing for the Cloud Scheduler scheduled labelings.
 
 ## Architecture
 
 * Iris runs in Google App Engine Standard Environment (Python 3).
-* The cron job is run in Cloud Scheduler (see `cron.yaml`)
+* The  Cloud Scheduler cron job is run (see `cron.yaml`)
 * A Log Sink on the organization level sends all logs about resource-creation to a PubSub topic.
     * The Log Sink is filtered to include only supported resource types and (if configured) 
       only specific projects.
