@@ -89,7 +89,7 @@ On the project where Iris is deployed, you will need Owner or these roles:
 * Have Python 3.8+ as your default `python3`.
 * Install tools  `envsubst` and `jq`.
 * Install and initialize `gcloud` to an account with the [above-mentioned](#before-deploying) roles
-* Optionally configure by ed****iting `config.yaml` (use `config.yaml.original` as , `cron.yaml`, or `app.yaml`. See [Configuration](#configuration) below.
+* Optionally configure by editing `config.yaml` (use `config.yaml.original` as , `cron.yaml`, or `app.yaml`. See [Configuration](#configuration) below.
 * Run `./deploy.sh <PROJECT_ID>`.
     * Add `-c` at the end to use only Cloud Scheduler cron (i.e., without labeling on-creatio).
         * With `-c`, resources will get labeled only by cron. This saves costs.
@@ -103,7 +103,7 @@ On the project where Iris is deployed, you will need Owner or these roles:
 * All values are optional.
 * See `config.yaml` for documentation of these  options:
     - What projects to include. (The default is all projects in the organization.)
-    - A prefix for all label keys (so, if the prefix is `xyz`, labels will look like `xyz_name` etc.) The default is `iris`.
+    - A prefix for all label keys (so, if the prefix is `xyz`, labels will look like `xyz_name` etc.) The default is `iris`. 
     - Specific prefixes per resource type. 
     - Whether to copy all labels from the project into resources in the project. 
      The default is False.
