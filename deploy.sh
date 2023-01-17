@@ -96,9 +96,11 @@ DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGIO
 
 declare -A enabled_services
 while read -r svc _; do
-  # Using the associative array as a set. The value does not matter, just that we can check that a key is in it.
+  # We check that a key is in the associative array, treating it as a set.
+  # The value (which is always "yes") does not matter, just that
   enabled_services["$svc"]=yes
-done < <(gcloud services list | tail -n +2)
+done < <(gcloud services list --format="value(config.name)")
+
 
 required_svcs=(
   cloudscheduler.googleapis.com
