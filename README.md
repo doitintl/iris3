@@ -1,3 +1,4 @@
+
 # Iris
 
 In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. She
@@ -66,24 +67,28 @@ These are also listed below.
 ## Installation
 
 ### Before deploying
-
-You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
+#### Org and IAM
+* You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
 [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
 
-To deploy, you will need to have these roles on the *organization* where Iris is deployed.
-
-* *Organization Role Administrator* to create a custom IAM role for Iris that allows to get and set labels on the
+* To deploy, you will need to have these roles on the *organization* where Iris is deployed.
+  * *Organization Role Administrator* to create a custom IAM role for Iris that allows to get and set labels on the
   services.
   (Note that this is different from *Organization Administrator* and from Organization *Owner*.)
-* *Security Admin* OR *Organization Administrator*  to allow Iris app engine service account to use the above role
-* *Logs Configuration Writer* to create an organization log sink that sends logs to PubSub
+  * *Security Admin* OR *Organization Administrator*  to allow Iris app engine service account to use the above role
+  * *Logs Configuration Writer* to create an organization log sink that sends logs to PubSub
 
-On the project where Iris is deployed, you will need Owner or these roles:
+* On the project where Iris is deployed, you will need Owner or these roles:
+  * *Project IAM Admin* to set up the custom role as mentioned above.
+  * *App Engine Admin* to deploy to App Engine.
+  * *Pub/Sub Admin* to create topics and subscriptions.
 
-* *Project IAM Admin* to set up the custom role as mentioned above.
-* *App Engine Admin* to deploy to App Engine.
-* *Pub/Sub Admin* to create topics and subscriptions.
-
+#### Default AppEngine service needed
+AppEngine requires a "default service" to exist (even though Iris runs as the `iris3` service). 
+  
+If your project does not have one,  just deploy some trivial hello-world app as the default service. (Having this service online  costs nothing.) Try [this](https://github.com/doitintl/QuickQuickstarts/tree/main/appengine_standard ) open-source that I wrote  to do that as easily as possible; or else step through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3/building-app) from Google.
+ 
+ 
 ### Deployment
 * `git clone https://github.com/doitintl/iris3.git`
 * Have Python 3.8+ as your default `python3`.
