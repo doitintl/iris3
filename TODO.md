@@ -46,9 +46,9 @@
 
 * P3 Concurrent execution
     * Since all activity is highly network-constrained, it would speed up significantly with concurrent execution
-    using Python's `async`. Possibly Google APIs don't suport that, in which 
+    using Python's `async`. Possibly Google APIs don't support that, in which 
      case threads or the eventlet library could be used.
-        * Init of multiple plugins is among the biggest slowdowns. They could be initalized concurrently.
+        * Init of multiple plugins is among the biggest slowdowns. They could be initialized concurrently.
         * `do_label` may  loop across about 85 zones. This could be done concurrently.
         * `do_label` lists resources and then calls `label_one`. The `label_one` calls could be done concurrently.
 

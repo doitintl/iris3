@@ -64,9 +64,9 @@ def all_projects() -> List[str]:
     return sorted(projs)
 
 
-def get_project(project_id: str) -> Dict[str, Any]:
+def get_project(proj_id: str) -> Dict[str, Any]:
     projects = resource_manager.projects()
-    request = projects.get(projectId=project_id)
+    request = projects.get(projectId=proj_id)
 
     response = request.execute()
     return response

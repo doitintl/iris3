@@ -1,5 +1,5 @@
 # config.yaml.original is a clean version that you can refer to after you have edited config.yaml.
-# You can even set up a git pre-commit hook to replace config.yaml with this clean version to avoid commiting an edited version.
+# You can even set up a git pre-commit hook to replace config.yaml with this clean version to avoid committing an edited version.
 
 # Keys:
 
@@ -9,7 +9,7 @@ projects: []
 
 # plugins: Only these plugins are enabled.
 # For example, add some of these to the list:
-#     bigquery, buckets, bigtable, disks,  cloudsql, instances, snaphots, subscriptions, topics
+#     bigquery, buckets, bigtable, disks,  cloudsql, instances, snapshots, subscriptions, topics
 # But if the value is empty, *all* plugins are enabled
 plugins: []
 

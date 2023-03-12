@@ -56,7 +56,7 @@ class Topics(Plugin):
                 .list(
                     project=f"projects/{project_id}",
                     pageToken=page_token
-                    # No filter param availble
+                    # No filter param available
                 )
                 .execute()
             )

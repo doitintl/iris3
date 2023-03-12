@@ -71,7 +71,7 @@ def init_logging():
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
                 if "outside of request context" in str(e):
-                    # Occurs in app tartup
+                    # Occurs in app startup
                     trace_msg = ""
                 else:
                     raise e
