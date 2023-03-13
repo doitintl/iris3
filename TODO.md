@@ -1,4 +1,4 @@
-# Improvements and fixes to be done
+# Improvements and fixes
 
 * P2 PubSub push endpoint security:
   Note: The token which is now used is not very secure, though it is an improvement on earlier versions of Iris, and
@@ -23,14 +23,14 @@
         1. Call `deploy.sh` using with the `-c` switch to disable event-based labeling 1. Wait 1.5 minutes after deploy
            before checking that the labels are there
 
-* P3 Label ASAP after it happens, rather than waiting for the cron job
+* P3 Label immediately after an event in certain cases, as opposed to using a daily cron as is now done.
     * Cloud SQL Instances 
         * See above re Cloud Tasks
     * Boot disks that are created with the instance
-        * As shown in [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), do this by pulling a
-          list of disks from the information about the instance.
+        * This is done  by pulling a
+          list of disks from the information about the instance. See [GCP Auto Tag](https://github.com/doitintl/gcp-auto-tag/blob/main/main.py), 
     * The attachment status of disks 
-        * When this happens,  a label needs to change from false to true or vice versa. 
+        * When attachment status changes, a label needs to change from false to true or vice versa. 
         * Current code does it on cron schedule.
         * We could do it on-event by capturing the log for the attachment event, 
           just as we already capture logs for creation events.

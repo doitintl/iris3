@@ -29,7 +29,7 @@
         "granted": true,
         "resourceAttributes": {
           "service": "compute",
-          "name": "projects/${project}/zones/us-east1-b/instances/${name}",
+          "name": "projects/${project}/zones/${zone}/instances/${name}",
           "type": "compute.instances"
         }
       },
@@ -38,7 +38,7 @@
         "granted": true,
         "resourceAttributes": {
           "service": "compute",
-          "name": "projects/${project}/zones/us-east1-b/disks/${name}",
+          "name": "projects/${project}/zones/${zone}/disks/${name}",
           "type": "compute.disks"
         }
       },
@@ -65,12 +65,12 @@
         "granted": true,
         "resourceAttributes": {
           "service": "compute",
-          "name": "projects/${project}/zones/us-east1-b/instances/${name}",
+          "name": "projects/${project}/zones/${zone}/instances/${name}",
           "type": "compute.instances"
         }
       }
     ],
-    "resourceName": "projects/${project}/zones/us-east1-b/instances/${name}",
+    "resourceName": "projects/${project}/zones${zone}/instances/${name}",
     "request": {
       "deletionProtection": false,
       "description": "",
@@ -100,7 +100,7 @@
           "deviceName": "${name}",
           "initializeParams": {
             "diskSizeGb": "10",
-            "diskType": "projects/${project}/zones/us-east1-b/diskTypes/pd-balanced",
+            "diskType": "projects/${project}/zones/${zone}/diskTypes/pd-balanced",
             "sourceImage": "projects/debian-cloud/global/images/debian-10-buster-v20210512"
           },
           "mode": "READ_WRITE"
@@ -127,7 +127,7 @@
         "enableDisplay": false
       },
       "canIpForward": false,
-      "machineType": "projects/${project}/zones/us-east1-b/machineTypes/e2-micro",
+      "machineType": "projects/${project}/zones/${zone}/machineTypes/e2-micro",
       "confidentialInstanceConfig": {
         "enableConfidentialCompute": false
       },
@@ -137,24 +137,24 @@
       }
     },
     "response": {
-      "zone": "https://www.googleapis.com/compute/beta/projects/${project}/zones/us-east1-b",
+      "zone": "https://www.googleapis.com/compute/beta/projects/${project}/zones/${zone}",
       "operationType": "insert",
-      "selfLink": "https://www.googleapis.com/compute/beta/projects/${project}/zones/us-east1-b/operations/operation-1622018793735-5c337ae050659-94b474c4-9c60921a",
+      "selfLink": "https://www.googleapis.com/compute/beta/projects/${project}/zones/${zone}/operations/operation-1622018793735-5c337ae050659-94b474c4-9c60921a",
       "status": "RUNNING",
       "id": "6244957132463256580",
       "insertTime": "2021-05-26T01:46:35.937-07:00",
-      "targetLink": "https://www.googleapis.com/compute/beta/projects/${project}/zones/us-east1-b/instances/${name}",
+      "targetLink": "https://www.googleapis.com/compute/beta/projects/${project}/zones/${zone}/instances/${name}",
       "@type": "type.googleapis.com/operation",
       "name": "operation-1622018793735-5c337ae050659-94b474c4-9c60921a",
       "progress": "0",
       "targetId": "7979750713159037957",
-      "selfLinkWithId": "https://www.googleapis.com/compute/beta/projects/${project}/zones/us-east1-b/operations/6244957132463256580",
+      "selfLinkWithId": "https://www.googleapis.com/compute/beta/projects/${project}/zones/${zone}/operations/6244957132463256580",
       "user": "joshua@doit-intl.com",
       "startTime": "2021-05-26T01:46:35.937-07:00"
     },
     "resourceLocation": {
       "currentLocations": [
-        "us-east1-b"
+        "${zone}"
       ]
     }
   },
@@ -162,7 +162,7 @@
   "resource": {
     "type": "gce_instance",
     "labels": {
-      "zone": "us-east1-b",
+      "zone": "${zone}",
       "project_id": "${project}",
       "instance_id": "7979750713159037957"
     }

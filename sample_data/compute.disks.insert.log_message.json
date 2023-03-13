@@ -22,26 +22,26 @@
         "granted": true,
         "resourceAttributes": {
           "service": "compute",
-          "name": "projects/${project}/zones/us-central1-a/disks/${name}",
+          "name": "projects/${project}/zones/${zone}/disks/${name}",
           "type": "compute.disks"
         }
       }
     ],
-    "resourceName": "projects/${project}/zones/us-central1-a/disks/${name}",
+    "resourceName": "projects/${project}/zones/${zone}/disks/${name}",
     "request": {
       "@type": "type.googleapis.com/compute.disks.insert",
       "sizeGb": "500",
-      "type": "projects/${project}/zones/us-central1-a/diskTypes/pd-standard",
+      "type": "projects/${project}/zones/${zone}/diskTypes/pd-standard",
       "name": "${name}"
     },
     "response": {
-      "zone": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a",
+      "zone": "https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}",
       "insertTime": "2021-01-14T07:49:53.234-08:00",
       "user": "xxx@example.com",
-      "selfLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/operations/operation-1610639392705-5b8de34dd0c92-d7a38a03-c823a3e8",
-      "targetLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/disks/${name}",
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}/operations/operation-1610639392705-5b8de34dd0c92-d7a38a03-c823a3e8",
+      "targetLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}/disks/${name}",
       "name": "operation-1610639392705-5b8de34dd0c92-d7a38a03-c823a3e8",
-      "selfLinkWithId": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/operations/6539759701942195918",
+      "selfLinkWithId": "https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}/operations/6539759701942195918",
       "status": "RUNNING",
       "startTime": "2021-01-14T07:49:53.242-08:00",
       "progress": "0",
@@ -52,7 +52,7 @@
     },
     "resourceLocation": {
       "currentLocations": [
-        "us-central1-a"
+        "${zone}"
       ]
     }
   },
@@ -62,7 +62,7 @@
     "labels": {
       "project_id": "${project}",
       "disk_id": "3535249642519123663",
-      "zone": "us-central1-a"
+      "zone": "${zone}"
     }
   },
   "timestamp": "2021-01-14T15:49:52.750837Z",

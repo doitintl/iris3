@@ -1,8 +1,12 @@
 import logging
 from abc import ABCMeta
+from functools import lru_cache
 
-import util.gcp_utils
+from google.cloud import compute_v1
+
 from gce_base.gce_base import GceBase
+from util import gcp_utils
+from util.utils import log_time, timing
 
 
 class GceZonalBase(GceBase, metaclass=ABCMeta):
@@ -18,15 +22,24 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             zone = self._gcp_zone(gcp_object)
-            return util.gcp_utils.region_from_zone(zone)
+            return gcp_utils.region_from_zone(zone)
         except KeyError as e:
             logging.exception(e)
             return None
 
-    def _all_zones(self, project_id):
+    @lru_cache(maxsize=1)
+    def _all_zones(self):
         """
-        Get all available zones.
+         Get all available zones.
+         NOTE! If different GCP Prpjects have different zones, this will break.
+        But we assume that the zone list is the same for all as a performance boost
+
         """
-        response = self._google_client.zones().list(project=project_id).execute()
-        zones = [zone["description"] for zone in response["items"]]
-        return zones
+        with timing("_all_zones"):
+            # zones_client = compute_v1.ZonesClient()
+            # project_id = gcp_utils.current_project_id()
+            # request = compute_v1.ListZonesRequest(project=project_id)
+            # zones = zones_client.list(request)
+            # return  = [z.name for z in zones]
+            # The above is slow
+            return gcp_utils.predefined_zone_list()

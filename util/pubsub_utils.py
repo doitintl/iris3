@@ -16,7 +16,7 @@ def schedulelabeling_topic() -> str:
 
 
 def publish(msg: str, topic_id: str):
-    topic_path = __publisher.topic_path(gcp_utils.project_id(), topic_id)
+    topic_path = __publisher.topic_path(gcp_utils.current_project_id(), topic_id)
 
     def on_publish(f):
         try:

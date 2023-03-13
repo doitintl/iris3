@@ -9,7 +9,7 @@ import os
 import typing
 
 import flask
-
+import googlecloudprofiler
 from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import detect_gae
@@ -17,7 +17,6 @@ from util.gcp_utils import detect_gae
 from util.config_utils import iris_prefix, is_project_enabled, get_config, pubsub_token
 from util.utils import init_logging, log_time, timing
 
-import googlecloudprofiler
 
 # Must init logging before any library code writes logs (which would overwide our config)
 
@@ -70,10 +69,10 @@ def warmup():
 @app.route("/schedule", methods=["GET"])
 @log_time
 def schedule():
+    """
+    Send out a message per-plugin per-project to label all objects of that type and project.
+    """
     try:
-        """
-        Send out a message per-plugin per-project to label all objects of that type and project.
-        """
         logging.info("Schedule called")
         is_cron = flask.request.headers.get("X-Appengine-Cron")
         if not is_cron:
@@ -110,6 +109,12 @@ def schedule():
             len(configured_projects),
             ", ".join(configured_projects),
         )
+        if not configured_projects:
+            raise Exception(
+                "No projects configured. This can happen when the config lists only projects"
+                "that are outside the current App Engine project's org. The config lists %s",
+                config_utils.enabled_projects(),
+            )
         msg_count = 0
         if not gcp_utils.detect_gae():
             max_project_in_localdev = 3
@@ -194,7 +199,7 @@ def label_one():
 
         if len(plugins_found) > 1:
             raise Exception(
-                f"Error: Multiple plugins found %s for %s"
+                "Error: Multiple plugins found %s for %s"
                 % (plugins_found, method_from_log)
             )
 

@@ -1,19 +1,20 @@
 import os
 import re
 import uuid
-from pprint import pprint
+from functools import lru_cache
 from typing import List, Dict, Any
 
+
+# from googleapiclient import discovery
+# from oauth2client.client import GoogleCredentials
 from util import localdev_config
+from util.utils import timed_lru_cache, log_time
 
-from googleapiclient import discovery
-from oauth2client.client import GoogleCredentials
-
-resource_manager = discovery.build(
-    "cloudresourcemanager",
-    "v1",
-    credentials=(GoogleCredentials.get_application_default()),
-)
+# resource_manager = discovery.build(
+#     "cloudresourcemanager",
+#     "v1",
+#     credentials=(GoogleCredentials.get_application_default()),
+# )
 
 
 def detect_gae():
@@ -21,7 +22,7 @@ def detect_gae():
     return "~" in gae_app
 
 
-def project_id():
+def current_project_id():
     """
     :return the project id on which we run AppEngine and PubSub
     """
@@ -48,25 +49,181 @@ def generate_uuid() -> str:
 
 
 def is_appscript_project(p) -> bool:
+    """With the Google Cloud Libraries, we don't get these appscript sys- project, as we do with the Google API Client Libraries,
+    but the filtering won't hurt."""
     return bool(re.match(r"sys-\d{26}", p))
 
 
+@lru_cache(maxsize=1)
 def all_projects() -> List[str]:
-    projs = []
-    request = resource_manager.projects().list()
-    while request is not None:
-        response = request.execute()
-        projs += [p["projectId"] for p in response.get("projects", [])]
+    from google.cloud import resourcemanager_v3
 
-        request = resource_manager.projects().list_next(
-            previous_request=request, previous_response=response
-        )
-    return sorted(projs)
+    projects_client = resourcemanager_v3.ProjectsClient()
+
+    current_proj_id = current_project_id()
+    current_project = projects_client.get_project(
+        None, name=f"projects/{current_proj_id}"
+    )
+    parent_name = current_project.name
+    org_name = get_org(parent_name)
+
+    projects = projects_client.list_projects(parent=org_name)
+    all_proj = [p.project_id for p in projects]
+    ret = sorted(all_proj)
+    return ret
 
 
-def get_project(proj_id: str) -> Dict[str, Any]:
-    projects = resource_manager.projects()
-    request = projects.get(projectId=proj_id)
+@log_time
+@timed_lru_cache(maxsize=250, seconds=600)
+def get_org(proj_name):
+    projects_client = __create_project_client()
+    folders_client = __create_folder_client()
+    assert proj_name.startswith(
+        "projects/"
+    ), f"Expect the form 'projects/123456789, was {proj_name}"
+    parent_name = proj_name
+    while True:
+        if parent_name.startswith("projects/"):
+            parent = projects_client.get_project(None, name=parent_name)
+        elif parent_name.startswith("folders/"):
+            parent = folders_client.get_folder(None, name=parent_name)
+        elif parent_name.startswith("organizations/"):
+            org_name = parent_name
+            break
+        else:
+            raise Exception(
+                f"expect projects/, folders/, or organizations/, was {parent_name}"
+            )
 
-    response = request.execute()
-    return response
+        parent_name = parent.parent
+    assert org_name.startswith(
+        "organizations/"
+    ), f"Expect the form 'organizations/123456789, was {org_name}"
+    return org_name
+
+
+def __create_folder_client():
+    from google.cloud import resourcemanager_v3
+
+    folders_client = resourcemanager_v3.FoldersClient()
+    return folders_client
+
+
+def __create_project_client():
+    from google.cloud import resourcemanager_v3
+
+    projects_client = resourcemanager_v3.ProjectsClient()
+    return projects_client
+
+
+@timed_lru_cache(maxsize=200, seconds=600)
+def get_project(project_id: str) -> Dict[str, Any]:
+    proj = __create_project_client().get_project(name=f"projects/{project_id}")
+    proj_as_dict = {"labels": proj.labels}  # This is the only key actually used
+    return proj_as_dict
+
+
+def predefined_zone_list():
+    return [
+        "asia-east1-a",
+        "asia-east1-b",
+        "asia-east1-c",
+        "asia-east2-a",
+        "asia-east2-b",
+        "asia-east2-c",
+        "asia-northeast1-a",
+        "asia-northeast1-b",
+        "asia-northeast1-c",
+        "asia-northeast2-a",
+        "asia-northeast2-b",
+        "asia-northeast2-c",
+        "asia-northeast3-a",
+        "asia-northeast3-b",
+        "asia-northeast3-c",
+        "asia-south1-a",
+        "asia-south1-b",
+        "asia-south1-c",
+        "asia-south2-a",
+        "asia-south2-b",
+        "asia-south2-c",
+        "asia-southeast1-a",
+        "asia-southeast1-b",
+        "asia-southeast1-c",
+        "asia-southeast2-a",
+        "asia-southeast2-b",
+        "asia-southeast2-c",
+        "australia-southeast1-a",
+        "australia-southeast1-b",
+        "australia-southeast1-c",
+        "australia-southeast2-a",
+        "australia-southeast2-b",
+        "australia-southeast2-c",
+        "europe-central2-a",
+        "europe-central2-b",
+        "europe-central2-c",
+        "europe-north1-a",
+        "europe-north1-b",
+        "europe-north1-c",
+        "europe-southwest1-a",
+        "europe-southwest1-b",
+        "europe-southwest1-c",
+        # No "europe-west1-a", https://groups.google.com/g/gce-announce/c/uAXw_yYLEhw
+        "europe-west1-b",
+        "europe-west1-c",
+        "europe-west1-d",
+        "europe-west2-a",
+        "europe-west2-b",
+        "europe-west2-c",
+        "europe-west3-a",
+        "europe-west3-b",
+        "europe-west3-c",
+        "europe-west4-a",
+        "europe-west4-b",
+        "europe-west4-c",
+        "europe-west6-a",
+        "europe-west6-b",
+        "europe-west6-c",
+        "europe-west8-a",
+        "europe-west8-b",
+        "europe-west8-c",
+        "europe-west9-a",
+        "europe-west9-b",
+        "europe-west9-c",
+        "me-west1-a",
+        "me-west1-b",
+        "me-west1-c",
+        "northamerica-northeast1-a",
+        "northamerica-northeast1-b",
+        "northamerica-northeast1-c",
+        "northamerica-northeast2-a",
+        "northamerica-northeast2-b",
+        "northamerica-northeast2-c",
+        "southamerica-east1-a",
+        "southamerica-east1-b",
+        "southamerica-east1-c",
+        "southamerica-west1-a",
+        "southamerica-west1-b",
+        "southamerica-west1-c",
+        "us-central1-a",
+        "us-central1-b",
+        "us-central1-c",
+        "us-central1-f",
+        "us-east5-a",
+        "us-east5-b",
+        "us-east5-c",
+        "us-south1-a",
+        "us-south1-b",
+        "us-south1-c",
+        "us-west1-a",
+        "us-west1-b",
+        "us-west1-c",
+        "us-west2-a",
+        "us-west2-b",
+        "us-west2-c",
+        "us-west3-a",
+        "us-west3-b",
+        "us-west3-c",
+        "us-west4-a",
+        "us-west4-b",
+        "us-west4-c",
+    ]

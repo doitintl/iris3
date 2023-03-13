@@ -13,15 +13,9 @@ a PubSub message, when a resource is created.
 To use this:
 1. Create resources that you want to test, for example a BigQuery Table table-1 in dataset-1.
 2. Run main.py in debug mode.
-3. Then run this file (in project root), test_label_one.py. Error messages will tell you what input it needs, but in summary:
-   
-  * Give it the environment variables
-    - `resource_type` selected from "buckets", "cloudsql", or any other of the 
-        resource types in the test_... functions below
-    - `project` where the resource is deployed
-    - `resource` for the name of the resource (in a BigQuery example, table-1)
-    -  and `parent` for the name of the parent if relevant (in the BigQuery example, dataset-1). 
-        The parent is needed only with BigQuery Tables and PubSub Subscriptions.
+3. Then run this file (in project root), test_label_one.py. Error messages will tell you what input it needs, but
+you can also see Usage below (or run test_label_one.py --help)) for details.
+  * The resource that you target must match the data in `sample_data`. For example, an instance must be in zone us-east1-b.
  
 """
 
@@ -43,6 +37,14 @@ def __resource_name():
             "Cloud Storage Bucket, or CloudSQL Instance"
         )
     return resource
+
+def __zone():
+    zone = os.environ.get("zone")
+    if not zone:
+        raise ValueError(
+            "Must specify 'zone' key in environment"
+        )
+    return zone
 
 
 def __parent_name():
@@ -78,7 +80,7 @@ def test_table():
 
 
 def test_instances():
-    label_one(__project(), __resource_name(), "compute.instances.insert")
+    label_one(__project(), __resource_name(), "compute.instances.insert", parent_name="", zone=__zone())
 
 
 def test_snapshots():
@@ -92,6 +94,8 @@ def test_disks():
         __project(),
         __resource_name(),
         Disks().method_names()[0],
+        parent_name="",
+        zone=__zone()
     )
 
 

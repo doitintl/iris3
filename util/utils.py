@@ -71,7 +71,7 @@ def init_logging():
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
                 if "outside of request context" in str(e):
-                    # Occurs in app startup
+                    # Occurs in app tartup
                     trace_msg = ""
                 else:
                     raise e
@@ -88,12 +88,20 @@ def init_logging():
         format=f"%(levelname)s [{iris_prefix()}]%(trace_msg)s %(message)s",
         level=logging.INFO,
     )
+    logging.getLogger().setLevel(logging.INFO)
+
+    logging.getLogger("time-wrapper").setLevel(logging.INFO)
+    logging.getLogger("time-ctx-mgr").setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
     logging.info("logging: Initialized logger")
 
 
-def __log_end_timer(tag, start):
-    logging.info(f"Time {tag}: {int((time.time() - start) * 1000)} ms")
+def __log_end_timer(tag, start, logger):
+    logging.getLogger(logger).info(
+        f"{logger} {tag}: {int((time.time() - start) * 1000)} ms"
+    )
+
 
 
 def log_time(func):
@@ -112,7 +120,7 @@ def log_time(func):
             else:
                 arg_s = ""
 
-            __log_end_timer(f"{func.__name__}({arg_s})", start)
+            __log_end_timer(f"{func.__name__}({arg_s})", start, "time-wrapper")
 
     return _time_it
 
@@ -121,8 +129,8 @@ def log_time(func):
 def timing(tag: str) -> None:
     start = time.time()
     yield
-    elapsed_ms = int((time.time() - start) * 1000)
-    logging.getLogger("Time").info("%s: %d ms", tag, elapsed_ms)
+
+    __log_end_timer(tag, start, "time-ctx-mgr")
 
 
 def timed_lru_cache(seconds: int, maxsize: int = 128):

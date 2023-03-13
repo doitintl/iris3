@@ -9,7 +9,7 @@ from util.utils import log_time, timing
 
 class Snapshots(GceBase):
     def method_names(self):
-        return ["compute.disks.createSnapshot", "compute.snapshots.insert"]
+        return ["compute.disks.createSnapshot"]
 
     def __list_snapshots(self, project_id):
         snapshots = []

@@ -14,7 +14,7 @@ def is_copying_labels_from_project() -> bool:
 
 def iris_prefix() -> str:
     config = get_config()
-    return config.get("iris_prefix", "")
+    return config["iris_prefix"]
 
 
 def specific_prefix(resource_type) -> str:

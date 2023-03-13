@@ -1,4 +1,3 @@
-
 # Iris
 
 In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. She
@@ -86,55 +85,45 @@ These are also listed below.
 AppEngine requires a "default service" to exist (even though Iris runs as the `iris3` service). 
   
 If your project does not have one,  just deploy some trivial hello-world app as the default service. (Having this service online  costs nothing.) Try [this](https://github.com/doitintl/QuickQuickstarts/tree/main/appengine_standard ) open-source that I wrote  to do that as easily as possible; or else step through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3/building-app) from Google.
- 
- 
+  
 ### Deployment
-* `git clone https://github.com/doitintl/iris3.git`
-* Have Python 3.8+ as your default `python3`.
-* Install tools  `envsubst` and `jq`.
-* Install and initialize `gcloud` to an account with the [above-mentioned](#before-deploying) roles
-* Optionally configure by editing `config.yaml` (use `config.yaml.original` as an example), `cron.yaml`, or `app.yaml`. See [Configuration](#configuration) below.
+* Get the code with `git clone https://github.com/doitintl/iris3.git`
+* Have Python 3.9+ as your default `python3`.
+* Install tools `envsubst` and `jq`.
+* Install and initialize `gcloud` using an account with the [above-mentioned](#before-deploying) roles.
+* Optionally configure by editing `config.yaml` (use `config.yaml.original` as an example), `cron.yaml`, and `app.yaml`. See [Configuration](#configuration) below.
 * Run `./deploy.sh <PROJECT_ID>`.
-    * Add `-c` at the end to use only Cloud Scheduler cron (i.e., without labeling on-creatio).
-        * With `-c`, resources will get labeled only by cron. This saves costs.
-        * See below re the `label_all_on_cron` setting in  `config.yaml`.
-* If you redeploy different versions of Iris code.
+    * To use *only* Cloud Scheduler cron (i.e., without labeling resources on-creation), put `-c` at the end
+    of the command line. 
+    * For the opposite, to label resources on-creation and *not* label with Cloud Scheduler, 
+    thus saving the costs of iterating over all resources, see below re the `label_all_on_cron` setting in  `config.yaml`.
+* When you redeploy different versions of Iris code on top of old ones:
     * If new plugins were added or some removed, the log sink *will* be updated to reflect this.
     * If the parameters for subscriptions or topics were changed in a new version of the Iris code, the subscriptions
-    or topics will not be updated. You would have to delete them first.
+    or topics will *not* be updated. You would have to delete them first.
     
 ### Configuration
 * All values are optional.
-* See `config.yaml` for documentation of these  options:
-    - What projects to include. (The default is all projects in the organization.)
-    - A prefix for all label keys (so, if the prefix is `xyz`, labels will look like `xyz_name` etc.) The default is `iris`. 
+* See `config.yaml.tempalte` for documentation of the following options. Details are omitted here to avoid duplicatin.
+    - What projects to include. 
+    - A prefix for all label keys.
     - Specific prefixes per resource type. 
     - Whether to copy all labels from the project into resources in the project. 
-     The default is False.
-    - Whether the Cloud Scheduler cron job should label all types of resources.  The default is  
-        - If True, then on cron job, Iris scans and labels *all* resources in all projects 
-            - Setting this to `True` may be useful for a first run, to label existing resources.
-        - If False, then on Cloud Scheduler cron job, Iris labels just the types that need it, because they cannot be 
-            labeled in full on-event
-            (Cloud SQL and Disks).
-    - You can also change the secret token for PubSub here. 
-        - The security this provides is real, particularly if your GCP project is secure, but not strong.
+    - Whether the Cloud Scheduler cron job should label all types of resources or skip certain types.
+    - The secret token for PubSub here. 
     
-* `app.yaml` lets you configure App Engine. See App Engine documentation.
-
-* See the `-c` switch on `deploy.sh` discussed in ["Deployment" above](#deployment) for disabling the on-event labeling 
-  and using only Cloud  Scheduler cron.
+* `app.yaml` lets you configure App Engine, for example to set a maximum number of instances. See App Engine documentation.
 * `cron.yaml` lets you optionally change the timing for the Cloud Scheduler scheduled labelings.
 
 ## Architecture
 
 * Iris runs in Google App Engine Standard Environment (Python 3).
-* The  Cloud Scheduler cron job is run (see `cron.yaml`)
-* A Log Sink on the organization level sends all logs about resource-creation to a PubSub topic.
-    * The Log Sink is filtered to include only supported resource types and (if configured) 
+* The Cloud Scheduler cron job triggers  Iris at configured intervals. (see `cron.yaml`)
+* For newly created resources, a Log Sink on the organization level sends all logs about resource-creation to a PubSub topic.
+    * The Log Sink is filtered to include only supported resource types and, if so configured, to support only 
       only specific projects.
 * PubSub topics:
-    * One receives the logs from the Log Sink on resource creation.
+    * One topic receives the logs from the Log Sink on resource creation.
     * The other receives messages sent by the `/schedule` Cloud Scheduler handler in `main.py`, which is triggered by
       the Cloud Scheduler.
         * Such messages are an instruction to call `do_label` for each 

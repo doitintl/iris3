@@ -22,7 +22,7 @@
         "granted": true,
         "resourceAttributes": {
           "service": "compute",
-          "name": "projects/${project}/zones/us-central1-a/disks/${name}",
+          "name": "projects/${project}/zones/${zone}/disks/${name}",
           "type": "compute.disks"
         }
       },
@@ -36,7 +36,7 @@
         }
       }
     ],
-    "resourceName": "projects/${project}/zones/us-central1-a/disks/${name}",
+    "resourceName": "projects/${project}/zones/${zone}/disks/${name}",
     "request": {
       "@type": "type.googleapis.com/compute.disks.createSnapshot",
       "guestFlush": false,
@@ -44,21 +44,21 @@
       "storageLocations": [
         "us"
       ],
-      "sourceDisk": "projects/${project}/zones/us-central1-a/disks/${name}"
+      "sourceDisk": "projects/${project}/zones/${zone}/disks/${name}"
     },
     "response": {
       "startTime": "2021-01-14T05:47:56.961-08:00",
-      "zone": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a",
-      "selfLinkWithId": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/operations/2942277713079956835",
+      "zone": "https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}",
+      "selfLinkWithId": "https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}/operations/2942277713079956835",
       "@type": "type.googleapis.com/operation",
       "progress": "0",
       "user": "xxx@example.com",
       "name": "operation-1610632076606-5b8dc80ca3d47-0aab4bbb-aeb2cd94",
-      "selfLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/operations/operation-1610632076606-5b8dc80ca3d47-0aab4bbb-aeb2cd94",
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}/operations/operation-1610632076606-5b8dc80ca3d47-0aab4bbb-aeb2cd94",
       "operationType": "createSnapshot",
       "status": "RUNNING",
       "insertTime": "2021-01-14T05:47:56.959-08:00",
-      "targetLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/us-central1-a/disks/${name}",
+      "targetLink": "https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}/disks/${name}",
       "targetId": "327216437446702469",
       "id": "2942277713079956835"
     },
@@ -72,7 +72,7 @@
   "resource": {
     "type": "gce_disk",
     "labels": {
-      "zone": "us-central1-a",
+      "zone": "${zone}",
       "disk_id": "327216437446702469",
       "project_id": "${project}"
     }

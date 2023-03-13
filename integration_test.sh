@@ -14,7 +14,6 @@ set -x
 
 START_TEST=$(date "+%s")
 
-
 if [[ $# -lt 2 ]]; then
 
   cat >&2 <<EOF
@@ -128,7 +127,6 @@ function clean_resources() {
 
   exit $EXIT_CODE
 }
-
 trap "clean_resources" EXIT
 
 sleep 20 # Need time for traffic to be migrated to the new version
@@ -164,7 +162,8 @@ bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-# 1. For buckets, JSON shows labels without the label:{} wrapper seen in the others.
+# Re Cloud Storagte, note:
+# 1. For buckets, JSON shows labels without the wrapper  label:{} seen in the others.
 # 2. For this test, we specified a label for buckets that is different from other resource types
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".gcs${RUN_ID}_name"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi

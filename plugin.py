@@ -3,6 +3,7 @@ import pkgutil
 import re
 import typing
 from abc import ABCMeta, abstractmethod
+from functools import lru_cache
 
 from googleapiclient import discovery
 from googleapiclient import errors
@@ -30,7 +31,7 @@ class Plugin(object, metaclass=ABCMeta):
     plugins = {}
 
     def __init__(self):
-        self._google_client = discovery.build(*self.discovery_api())
+        # self._google_client = discovery.build(*self.discovery_api())
         self.__init_batch_req()
 
     @classmethod
@@ -53,6 +54,10 @@ class Plugin(object, metaclass=ABCMeta):
         Only a few classes are  labeled on creation, and these classes should override this method.
         """
         return True
+
+    @lru_cache(maxsize=1)
+    def _google_client(self):
+        return discovery.build(*self.discovery_api())
 
     @timed_lru_cache(seconds=600, maxsize=512)
     def _project_labels(self, project_id) -> typing.Dict:
@@ -91,6 +96,7 @@ class Plugin(object, metaclass=ABCMeta):
             pfx_full = pfx + "_" if pfx else ""
             return pfx_full + func.__name__[len(func_name_pfx) :]
 
+        # noinspection PyTypeChecker
         ret = {key(f): value(f, gcp_object) for f in methods(self, func_name_pfx)}
 
         return ret
@@ -103,7 +109,7 @@ class Plugin(object, metaclass=ABCMeta):
             )
 
     def do_batch(self):
-        """In do_label, we loop over all objects. But for efficienccy, we do not process
+        """In main#do_label, we loop over all objects. But for efficienccy, we do not process
         then all at once, but rather gather objects and process them in batches of
         self._BATCH_SIZE as we loop; then parse the remaining at the end of the loop"""
         try:
@@ -146,12 +152,15 @@ class Plugin(object, metaclass=ABCMeta):
             plugin_cls = cls_by_name(PLUGINS_MODULE + "." + name + "." + name.title())
             return plugin_cls
 
+        loaded = []
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
             if config_utils.is_plugin_enabled(module):
                 plugin_class = load_plugin_class(module)
                 instance = plugin_class()
                 Plugin.plugins[plugin_class.__name__] = instance
+                loaded.append(plugin_class.__name__)
 
+        logging.info("Loaded  plugins: %s", loaded)
         assert Plugin.plugins, "No plugins defined"
 
     @staticmethod
@@ -169,9 +178,7 @@ class Plugin(object, metaclass=ABCMeta):
         )
         iris_labels = self.__iris_labels(gcp_object)
         all_labels = {**original_labels, **project_labels, **iris_labels}
-        if self.block_labeling(gcp_object, original_labels):
-            return None
-        elif all_labels == original_labels:
+        if all_labels == original_labels:
             # Skip labeling  because no change
             return None
         else:
@@ -186,9 +193,9 @@ class Plugin(object, metaclass=ABCMeta):
         return self.__name(gcp_object, separator="/")
 
     def _name_no_separator(self, gcp_object):
-        return self.__name(gcp_object, separator="")
+        return self.__name(gcp_object, separator=None)
 
-    def __name(self, gcp_object, separator=""):
+    def __name(self, gcp_object, separator: typing.Optional[str] = None):
         try:
             name = gcp_object["name"]
             if separator:
@@ -201,10 +208,6 @@ class Plugin(object, metaclass=ABCMeta):
 
     def __init_batch_req(self):
         self.counter = 0
-        self._batch = self._google_client.new_batch_http_request(
+        self._batch = self._google_client().new_batch_http_request(
             callback=self.__batch_callback
         )
-
-    # Override and return True if this object must not be labeled
-    def block_labeling(self, block_labeling, original_labels):
-        return False
