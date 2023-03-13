@@ -28,18 +28,17 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             return None
 
     @lru_cache(maxsize=1)
-    def _all_zones(self):
+    @staticmethod
+    def _all_zones( ):
         """
          Get all available zones.
-         NOTE! If different GCP Prpjects have different zones, this will break.
-        But we assume that the zone list is the same for all as a performance boost
-
+         NOTE! Because of caching, if different GCP Projects have different zones, this will break.
         """
         with timing("_all_zones"):
-            # zones_client = compute_v1.ZonesClient()
-            # project_id = gcp_utils.current_project_id()
-            # request = compute_v1.ListZonesRequest(project=project_id)
-            # zones = zones_client.list(request)
-            # return  = [z.name for z in zones]
-            # The above is slow
-            return gcp_utils.predefined_zone_list()
+            zones_client = compute_v1.ZonesClient()
+            project_id = gcp_utils.current_project_id()
+            request = compute_v1.ListZonesRequest(project=project_id)
+            zones = zones_client.list(request)
+            return   [z.name for z in zones]
+            #The above is slow
+
