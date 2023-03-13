@@ -18,24 +18,26 @@ plugins: []
 iris_prefix: iris
 
 # specific_prefixes gives a prefix per resource type, overriding iris_prefix.
-# The default is that there is no such override.
-# The comment below shows the resource types with some examples of key-value pairs.
-# How  empty-string vs no-value are interpreted
-#  - No-value, as in the Buckets example below, is treated as "None"
-#   and will not override the general iris_prefix.
-#  - Empty string, as in the Bigquery example below, will override
-#   the iris_prefix with empty-string so that you get labels with no prefix.
-# Remember to remove the {} after "specific_prefixed:" below if you want to add some values.
+# The default is that there is no override.
+# Empty vs empty-string:
+#  - An empty value, as in the Buckets example below, is treated as "None"
+#   and will not replace the general iris_prefix.
+#  - Empty string, as in the Bigquery example below, overrides
+#   the iris_prefix with empty-string, so that you get labels with no prefix.
+# The comment below gives an example.
 specific_prefixes: {}
-    #  Buckets:
-    #  Bigquery: ""
-    #  Bigtable: bt
-    #  Cloudsql: sql
-    #  Disks: gcedisk
-    #  Instances: gce
-    #  Snapshots:
-    #  Subscriptions:
-    #  Topics:
+
+# Example:
+# specific_prefixes:
+#  Buckets:
+#  Bigquery: ""
+#  Bigtable: bt
+#  Cloudsql: sql
+#  Disks: gcedisk
+#  Instances: gce
+#  Snapshots:
+#  Subscriptions:
+#  Topics:
 
 # If from_project is True, then for each resource we are labeling, copy the labels from its project onto it.
 # The default is False.
@@ -43,13 +45,11 @@ from_project: True
 
 # If label_all_on_cron is True, then all resource types will be labeled on every cron (Cloud Scheduler) cycle.
 #   This is also good for labeling existing resources on first running Iris3.
-#
-# If label_all_on_cron is False (the default), then to save money, then only resources of some types get labeled on cron:
-#   Those whose plugins either
-#    - return True on relabel_on_cron()
-#   - or return False in is_labeled_on_creation()
-#   At present that is Cloud SQL and Disks
-label_all_on_cron: True
+# If label_all_on_cron is False (the default), then to save money,
+#  only resources of certain types get labeled on cron: those whose plugins either
+#    - return True on relabel_on_cron() (like Disks)
+#    - or return False in is_labeled_on_creation() (like Cloud SQL)
+label_all_on_cron: False
 
 # Optionally change this before first deployment for added security in
 # communication between PubSub and the Iris App on App Engine.
@@ -57,4 +57,4 @@ label_all_on_cron: True
 # Note that this approach is not very secure, though it  was once recommended by Google.
 # However, so long as our GCP project is secure, this token protects against
 # unwanted repetitions of the labeling command.
-pubsub_verification_token: 2a343f4c1b76512039fe763412756c4fbb30c
+pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
