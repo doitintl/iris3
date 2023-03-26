@@ -1,65 +1,59 @@
+import json
 import logging
 import typing
 
+from google.cloud.compute_v1 import Disk
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
-from util.utils import log_time
+from util.utils import log_time, to_camel_case
 from util.utils import timing
+from google.cloud import compute_v1 as compute_cloudclient
 
 
 class Disks(GceZonalBase):
+    disks_cloudclient = compute_cloudclient.DisksClient()
+
     """
     Label GCE disks. Boot disks created with instances only get labeled on the cron schedule.
     Independently created disks get labeled on creation.
     """
 
     def method_names(self):
-        # As of 2021-1§0-12, the GUI has beta.compute.disks.insert
-        # and CLI has beta.compute.disks.insert
+        # As of 2021-1§0-12,   beta.compute.disks.insert
         return ["compute.disks.insert"]
 
     @classmethod
     def relabel_on_cron(cls) -> bool:
         """
-        Unattached disks are in fact labeled on creation.
-        But an attached disk is not.
-        Also, a disk that changes attachment status does not get relabeled on-event
+        We need to relabel on cron  because:
+        1. Though unattached disks are  labeled on creation,  attached disks are   not.
+        2. A disk that changes attachment status does not get relabeled on-event
         """
         return True
 
     def __list_disks(self, project_id, zone) -> typing.List[typing.Dict]:
-        disks = []
-        page_token = None
-        more_results = True
-        while more_results:
-            result = (
-                self._google_client.disks()
-                .list(
-                    project=project_id,
-                    zone=zone,
-                    pageToken=page_token,
-                )
-                .execute()
-            )
-            if "items" in result:
-                disks = disks + result["items"]
-            if "nextPageToken" in result:
-                page_token = result["nextPageToken"]
-            else:
-                more_results = False
-
-        return disks
+        # TODO could make this lazy
+        request = compute_cloudclient.ListInstancesRequest(
+            project=project_id, zone=zone
+        )
+        disks = list(self.disks_cloudclient.list(request))
+        assert all(isinstance(i, Disk) for i in disks), [d.__class__ for d in disks]
+        disks_as_dicts: typing.List[typing.Dict] = [
+            self._cloudclient_pb_obj_to_dict(i) for i in disks
+        ]
+        return disks_as_dicts
 
     def __get_disk(self, project_id, zone, name):
         try:
-            result = (
-                self._google_client.disks()
-                .get(project=project_id, zone=zone, disk=name)
-                .execute()
+            request = compute_cloudclient.GetDiskRequest(
+                project=project_id, zone=zone, disk=name
             )
-            return result
+
+            disk = self.disks_cloudclient.get(request)
+
+            return self._cloudclient_pb_obj_to_dict(disk)
         except errors.HttpError as e:
             logging.exception(e)
             return None
@@ -88,6 +82,7 @@ class Disks(GceZonalBase):
             return disk
         except Exception as e:
             logging.exception(e)
+
             return None
 
     @log_time
@@ -100,7 +95,9 @@ class Disks(GceZonalBase):
         zone = self._gcp_zone(gcp_object)
 
         self._batch.add(
-            self._google_client.disks().setLabels(
+            self._google_api_client()
+            .disks()
+            .setLabels(
                 project=project_id,
                 zone=zone,
                 resource=gcp_object["name"],

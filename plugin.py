@@ -14,7 +14,14 @@ from util.config_utils import (
     iris_prefix,
     specific_prefix,
 )
-from util.utils import methods, cls_by_name, log_time, timed_lru_cache
+from util.utils import (
+    methods,
+    cls_by_name,
+    log_time,
+    timed_lru_cache,
+    timing,
+    to_camel_case,
+)
 
 PLUGINS_MODULE = "plugins"
 
@@ -56,7 +63,7 @@ class Plugin(object, metaclass=ABCMeta):
         return True
 
     @lru_cache(maxsize=1)
-    def _google_client(self):
+    def _google_api_client(self):
         return discovery.build(*self.discovery_api())
 
     @timed_lru_cache(seconds=600, maxsize=512)
@@ -149,6 +156,7 @@ class Plugin(object, metaclass=ABCMeta):
             module_name = PLUGINS_MODULE + "." + name
             __import__(module_name)
             assert name == name.lower(), name
+
             plugin_cls = cls_by_name(PLUGINS_MODULE + "." + name + "." + name.title())
             return plugin_cls
 
@@ -208,6 +216,13 @@ class Plugin(object, metaclass=ABCMeta):
 
     def __init_batch_req(self):
         self.counter = 0
-        self._batch = self._google_client().new_batch_http_request(
+        self._batch = self._google_api_client().new_batch_http_request(
             callback=self.__batch_callback
         )
+
+    def _cloudclient_pb_obj_to_dict(self, o) -> typing.Dict[str, str]:
+        # e.g. "labelFingerprint" and  "machine_type"
+        keys = o.__dict__["_pb"].DESCRIPTOR.fields_by_name.keys()
+        object_as_dict = {key: getattr(o, key) for key in keys}
+        ret_camel = {to_camel_case(k): v for k, v in object_as_dict.items()}
+        return ret_camel

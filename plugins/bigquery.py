@@ -50,7 +50,8 @@ class Bigquery(Plugin):
     def __get_dataset(self, project_id, name):
         try:
             result = (
-                self._google_client.datasets()
+                self._google_api_client()
+                .datasets()
                 .get(projectId=project_id, datasetId=name)
                 .execute()
             )
@@ -62,7 +63,8 @@ class Bigquery(Plugin):
     def __get_table(self, project_id, dataset, table):
         try:
             result = (
-                self._google_client.tables()
+                self._google_api_client()
+                .tables()
                 .get(projectId=project_id, datasetId=dataset, tableId=table)
                 .execute()
             )
@@ -115,7 +117,8 @@ class Bigquery(Plugin):
             more_results = True
             while more_results:
                 response = (
-                    self._google_client.datasets()
+                    self._google_api_client()
+                    .datasets()
                     .list(
                         projectId=project_id,
                         pageToken=page_token,
@@ -139,7 +142,8 @@ class Bigquery(Plugin):
         more_results = True
         while more_results:
             response = (
-                self._google_client.tables()
+                self._google_api_client()
+                .tables()
                 .list(
                     projectId=project_id,
                     datasetId=dataset["datasetReference"]["datasetId"],
@@ -167,7 +171,7 @@ class Bigquery(Plugin):
             return
         try:
             dataset_reference = gcp_object["datasetReference"]
-            self._google_client.datasets().patch(
+            self._google_api_client().datasets().patch(
                 projectId=dataset_reference["projectId"],
                 body=labels,
                 datasetId=dataset_reference["datasetId"],
@@ -194,7 +198,9 @@ class Bigquery(Plugin):
         try:
             table_reference = gcp_object["tableReference"]
             self._batch.add(
-                self._google_client.tables().patch(
+                self._google_api_client()
+                .tables()
+                .patch(
                     projectId=table_reference["projectId"],
                     body=labels,
                     datasetId=table_reference["datasetId"],

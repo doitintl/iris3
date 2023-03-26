@@ -47,7 +47,8 @@ class Cloudsql(Plugin):
     def __get_instance(self, project_id, name):
         try:
             result = (
-                self._google_client.instances()
+                self._google_api_client()
+                .instances()
                 .get(project=project_id, instance=name)
                 .execute()
             )
@@ -75,7 +76,8 @@ class Cloudsql(Plugin):
             while True:
 
                 response = (
-                    self._google_client.instances()
+                    self._google_api_client()
+                    .instances()
                     .list(
                         project=project_id,
                         pageToken=page_token,
@@ -105,7 +107,7 @@ class Cloudsql(Plugin):
         try:
             database_instance_body = {"settings": {"userLabels": labels["labels"]}}
 
-            self._google_client.instances().patch(
+            self._google_api_client().instances().patch(
                 project=project_id,
                 body=database_instance_body,
                 instance=gcp_object["name"],

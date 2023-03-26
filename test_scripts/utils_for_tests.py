@@ -54,7 +54,7 @@ def do_local_http(
             req.add_header(k, v)
         resp = request.urlopen(req)  # Exception if Status >=300
         assert resp.status < 300, resp.status
-        logging.info("OK for %s: %s", path, shorten(str(contents), 150))
+        logging.info("OK for %s: %s", url_, shorten(str(contents), 150))
     except  URLError as e:
         raise Exception("Cannot connect to local test-server "+url_) from e
 

@@ -50,7 +50,8 @@ class Bigtable(Plugin):
         try:
 
             result = (
-                self._google_client.projects()
+                self._google_api_client()
+                .projects()
                 .instances()
                 .clusters()
                 .list(parent=PROJECTS + project_id + "/instances/" + instance_name)
@@ -71,7 +72,8 @@ class Bigtable(Plugin):
     def __get_instance(self, project_id, name):
         try:
             result = (
-                self._google_client.projects()
+                self._google_api_client()
+                .projects()
                 .instances()
                 .get(name=PROJECTS + project_id + "/instances/" + name)
                 .execute()
@@ -98,7 +100,8 @@ class Bigtable(Plugin):
             more_results = True
             while more_results:
                 result = (
-                    self._google_client.projects()
+                    self._google_api_client()
+                    .projects()
                     .instances()
                     .list(
                         parent=PROJECTS + project_id,
@@ -139,7 +142,8 @@ class Bigtable(Plugin):
         try:
 
             self._batch.add(
-                self._google_client.projects()
+                self._google_api_client()
+                .projects()
                 .instances()
                 .partialUpdateInstance(
                     name=gcp_object["name"], body=gcp_object, updateMask="labels"

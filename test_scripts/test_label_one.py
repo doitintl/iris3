@@ -1,5 +1,8 @@
 import os
 import sys
+from pprint import pprint
+
+from google.cloud.compute_v1 import Disk
 
 from plugins.snapshots import Snapshots
 from test_scripts.utils_for_tests import label_one
@@ -156,4 +159,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()

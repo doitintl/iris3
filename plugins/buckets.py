@@ -33,7 +33,9 @@ class Buckets(Plugin):
 
     def __get_bucket(self, bucket_name):
         try:
-            result = self._google_client.buckets().get(bucket=bucket_name).execute()
+            result = (
+                self._google_api_client().buckets().get(bucket=bucket_name).execute()
+            )
 
             return result
         except Exception as e:
@@ -54,7 +56,8 @@ class Buckets(Plugin):
             more_results = True
             while more_results:
                 response = (
-                    self._google_client.buckets()
+                    self._google_api_client()
+                    .buckets()
                     .list(
                         project=project_id,
                         pageToken=page_token,
@@ -86,7 +89,9 @@ class Buckets(Plugin):
             bucket_name = gcp_object["name"]
 
             self._batch.add(
-                self._google_client.buckets().patch(bucket=bucket_name, body=labels),
+                self._google_api_client()
+                .buckets()
+                .patch(bucket=bucket_name, body=labels),
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1

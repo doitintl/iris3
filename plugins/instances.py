@@ -1,19 +1,19 @@
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
-from google.cloud import compute_v1
+from google.cloud import compute_v1 as compute_cloudclient
 from google.cloud.compute_v1.types.compute import Instance
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
-from util.utils import log_time
+from util.utils import log_time, to_camel_case
 from util.utils import timing
-
-instances_client = compute_v1.InstancesClient()
 
 
 class Instances(GceZonalBase):
+    instances_cloudclient = compute_cloudclient.InstancesClient()
+
     def _gcp_instance_type(self, gcp_object: dict):
         """Method dynamically called in generating labels, so don't change name"""
         try:
@@ -29,37 +29,25 @@ class Instances(GceZonalBase):
         return ["compute.instances.insert", "compute.instances.start"]
 
     def __list_instances(self, project_id, zone):
-        instances = []
-        page_token = None
-        more_results = True
-        while more_results:
-            result = (
-                self._google_client.instances()
-                .list(
-                    project=project_id,
-                    zone=zone,
-                    pageToken=page_token,
-                )
-                .execute()
-            )
-            if "items" in result:
-                instances = instances + result["items"]
-            if "nextPageToken" in result:
-                page_token = result["nextPageToken"]
-            else:
-                more_results = False
+        # TODO could make this lazy
+        request = compute_cloudclient.ListInstancesRequest(
+            project=project_id, zone=zone
+        )
+        instances = list(self.instances_cloudclient.list(request))
 
-        return instances
+        instances_as_dicts: List[Dict] = [
+            self._cloudclient_pb_obj_to_dict(i) for i in instances
+        ]
+        return instances_as_dicts
 
     def __get_instance(self, project_id, zone, name) -> Optional[Dict]:
         try:
-            request = compute_v1.GetInstanceRequest(
+            request = compute_cloudclient.GetInstanceRequest(
                 project=project_id, zone=zone, instance=name
             )
 
-            inst = instances_client.get(request)
-            isinstance(inst, Instance)
-            return self.__instance_to_dict(inst)
+            inst = self.instances_cloudclient.get(request)
+            return self._cloudclient_pb_obj_to_dict(inst)
         except errors.HttpError as e:
             logging.exception(e)
             return None
@@ -99,9 +87,11 @@ class Instances(GceZonalBase):
             return
 
         zone = self._gcp_zone(gcp_object)
-        inst_client = self._google_client()
+
         self._batch.add(
-            inst_client.instances().setLabels(
+            self._google_api_client()
+            .instances()
+            .setLabels(
                 project=project_id,
                 zone=zone,
                 instance=gcp_object["name"],
@@ -115,12 +105,3 @@ class Instances(GceZonalBase):
         self.counter += 1
         if self.counter >= self._BATCH_SIZE:
             self.do_batch()
-
-    def __instance_to_dict(self, inst: Instance) -> Dict:
-        return {  # could copy more information into this dict. As-is, we copy only the fields that are later used.
-            "labels": inst.labels,
-            "labelFingerprint": inst.label_fingerprint,
-            "machineType": inst.machine_type,
-            "name": inst.name,
-            "zone": inst.zone,
-        }

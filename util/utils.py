@@ -103,7 +103,7 @@ def __log_end_timer(tag, start, logger):
     )
 
 
-
+# Function-wrapper; context-mgr below
 def log_time(func):
     @wraps(func)
     def _time_it(*args, **kwargs):
@@ -120,7 +120,7 @@ def log_time(func):
             else:
                 arg_s = ""
 
-            __log_end_timer(f"{func.__name__}({arg_s})", start, "time-wrapper")
+            __log_end_timer(f"{func.__name__}({arg_s})", start, "timing")
 
     return _time_it
 
@@ -130,7 +130,7 @@ def timing(tag: str) -> None:
     start = time.time()
     yield
 
-    __log_end_timer(tag, start, "time-ctx-mgr")
+    __log_end_timer(tag, start, "time")
 
 
 def timed_lru_cache(seconds: int, maxsize: int = 128):
@@ -173,3 +173,8 @@ def truncate_middle(s, resulting_len):
     sfx = s[-len_sfx_string:]
     ret = pfx + ellipsis_s + sfx
     return ret
+
+
+def to_camel_case(snake_str):
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])

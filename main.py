@@ -207,7 +207,7 @@ def label_one():
     except Exception as e:
         project_id = data.get("resource", {}).get("labels", {}).get("project_id")
         logging.exception(
-            "Error on do_label %s %s", plugin_name, project_id, exc_info=e
+            "Error on label_one %s %s", plugin_name, project_id, exc_info=e
         )
         return "Error", 500
 
@@ -217,7 +217,9 @@ def __label_one_0(data, plugin):
     if gcp_object is not None:
         project_id = data["resource"]["labels"]["project_id"]
         if is_project_enabled(project_id):
-            logging.info("Will label_one() in %s, %s", project_id, gcp_object)
+            logging.info(
+                "Will label_one() in %s, existing object %s", project_id, gcp_object
+            )
             plugin.label_resource(gcp_object, project_id)
             plugin.do_batch()
         else:

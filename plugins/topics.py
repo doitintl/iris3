@@ -38,7 +38,11 @@ class Topics(Plugin):
         assert self.__topic_path_regex.match(topic_path)
         try:
             result = (
-                self._google_client.projects().topics().get(topic=topic_path).execute()
+                self._google_api_client()
+                .projects()
+                .topics()
+                .get(topic=topic_path)
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -51,7 +55,8 @@ class Topics(Plugin):
         page_token = None
         while True:
             result = (
-                self._google_client.projects()
+                self._google_api_client()
+                .projects()
                 .topics()
                 .list(
                     project=f"projects/{project_id}",
