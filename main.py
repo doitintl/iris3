@@ -1,4 +1,9 @@
 """Entry point for Iris."""
+
+# Must init logging before any library code writes logs (which would overwide our config)
+from util.utils import init_logging
+
+init_logging()
 import time
 
 cold_start_begin = time.time()
@@ -15,13 +20,9 @@ from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import detect_gae
 
 from util.config_utils import iris_prefix, is_project_enabled, get_config, pubsub_token
-from util.utils import init_logging, log_time, timing
+from util.utils import log_time, timing
 
-
-# Must init logging before any library code writes logs (which would overwide our config)
-
-init_logging()
-# If you set ENABLE_PROFILER to True, then edit requiremnts.txt and add a line to app.yaml as stated in requirements.txt
+# For Google Cloud Profiler,  set ENABLE_PROFILER to True, and edit requirements.txt and add a line to app.yaml as stated in requirements.txt
 ENABLE_PROFILER = False
 
 # Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
@@ -46,7 +47,6 @@ gcp_utils.set_env()
 logging.info(
     "env GAE_USE_SOCKETS_HTTPLIB is %s", os.environ.get("GAE_USE_SOCKETS_HTTPLIB")
 )
-
 
 app = flask.Flask(__name__)
 
@@ -218,7 +218,9 @@ def __label_one_0(data, plugin):
         project_id = data["resource"]["labels"]["project_id"]
         if is_project_enabled(project_id):
             logging.info(
-                "Will label_one() in %s, existing object %s", project_id, gcp_object
+                "Will label_one() in %s, existing object %s...",
+                project_id,
+                str(gcp_object)[:100],
             )
             plugin.label_resource(gcp_object, project_id)
             plugin.do_batch()

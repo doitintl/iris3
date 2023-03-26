@@ -1,8 +1,5 @@
 import os
 import sys
-from pprint import pprint
-
-from google.cloud.compute_v1 import Disk
 
 from plugins.snapshots import Snapshots
 from test_scripts.utils_for_tests import label_one
@@ -41,9 +38,10 @@ def __resource_name():
         )
     return resource
 
-def __zone():
+
+def __zone(raise_exc=True):
     zone = os.environ.get("zone")
-    if not zone:
+    if not zone and raise_exc:
         raise ValueError(
             "Must specify 'zone' key in environment"
         )
@@ -151,6 +149,7 @@ def main():
         )
         exit(1)
 
+    print(__project(),__zone(raise_exc=False), __resource_name())
     f = getattr(
         sys.modules[__name__],
         func_name,
@@ -159,5 +158,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()

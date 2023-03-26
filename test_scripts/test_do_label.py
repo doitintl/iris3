@@ -40,6 +40,7 @@ def __project():
         raise ValueError("Must specify 'project' key in environment.")
     return proj
 
+
 @log_time
 def main():
     if len(sys.argv) > 1 and (sys.argv[1] == "-h" or sys.argv[1] == "--help"):

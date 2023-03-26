@@ -32,18 +32,18 @@ def do_local_http(
         headers: typing.Optional[typing.Dict[str, str]] = None,
         extra_args=None,
 ):
-    url_=''
+    url_ = ''
     try:
         headers = headers or {}
         data_bytes = __datastruct_for_pubsub_message(contents) if contents else None
 
-        logging.info(f"Will call %s with %s", url_, contents)
+        logging.info(f"Will call  with %s",   contents)
         host_and_port = f"localhost:{LOCAL_PORT}"
         args_s = ""
         if extra_args:
             args_s = "&"
             args_s += urlencode(extra_args)
-        url_=f"http://{host_and_port}/{path}?token={pubsub_token()}{args_s}"
+        url_ = f"http://{host_and_port}/{path}?token={pubsub_token()}{args_s}"
         req = request.Request(
             url_,
             data=data_bytes,
@@ -56,11 +56,10 @@ def do_local_http(
         assert resp.status < 300, resp.status
         logging.info("OK for %s: %s", url_, shorten(str(contents), 150))
     except  URLError as e:
-        raise Exception("Cannot connect to local test-server "+url_) from e
+        raise Exception("Cannot connect to local test-server " + url_) from e
 
 
-
-def label_one(project, name, method_name, parent_name="", zone="",extra_args=None):
+def label_one(project, name, method_name, parent_name="", zone="", extra_args=None):
     ls = os.listdir(".")
     if "sample_data" not in ls:
         raise ValueError("Run script in project root")

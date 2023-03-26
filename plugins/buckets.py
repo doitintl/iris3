@@ -57,13 +57,13 @@ class Buckets(Plugin):
             while more_results:
                 response = (
                     self._google_api_client()
-                    .buckets()
-                    .list(
+                        .buckets()
+                        .list(
                         project=project_id,
                         pageToken=page_token,
                         # filter not supported
                     )
-                    .execute()
+                        .execute()
                 )
                 if "items" in response:
                     for bucket in response["items"]:
@@ -90,8 +90,8 @@ class Buckets(Plugin):
 
             self._batch.add(
                 self._google_api_client()
-                .buckets()
-                .patch(bucket=bucket_name, body=labels),
+                    .buckets()
+                    .patch(bucket=bucket_name, body=labels),
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1

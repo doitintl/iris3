@@ -48,9 +48,9 @@ class Cloudsql(Plugin):
         try:
             result = (
                 self._google_api_client()
-                .instances()
-                .get(project=project_id, instance=name)
-                .execute()
+                    .instances()
+                    .get(project=project_id, instance=name)
+                    .execute()
             )
             return result
         except errors.HttpError as e:
@@ -63,7 +63,7 @@ class Cloudsql(Plugin):
                 return None
             labels_ = log_data["resource"]["labels"]
             ind = labels_["database_id"].rfind(":")
-            instance = labels_["database_id"][ind + 1 :]
+            instance = labels_["database_id"][ind + 1:]
             instance = self.__get_instance(labels_["project_id"], instance)
             return instance
         except Exception as e:
@@ -77,14 +77,14 @@ class Cloudsql(Plugin):
 
                 response = (
                     self._google_api_client()
-                    .instances()
-                    .list(
+                        .instances()
+                        .list(
                         project=project_id,
                         pageToken=page_token,
                         # Filter supported, but syntax not OK. We get this message: "Field not found. In
                         # expression labels.iris_name HAS *, At field labels ."
                     )
-                    .execute()
+                        .execute()
                 )
 
                 if "items" not in response:

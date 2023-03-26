@@ -19,12 +19,12 @@ class Snapshots(GceBase):
         while more_results:
             result = (
                 self._google_api_client()
-                .snapshots()
-                .list(
+                    .snapshots()
+                    .list(
                     project=project_id,
                     pageToken=page_token,
                 )
-                .execute()
+                    .execute()
             )
             if "items" in result:
                 snapshots = snapshots + result["items"]
@@ -39,9 +39,9 @@ class Snapshots(GceBase):
         try:
             result = (
                 self._google_api_client()
-                .snapshots()
-                .get(project=project_id, snapshot=name)
-                .execute()
+                    .snapshots()
+                    .get(project=project_id, snapshot=name)
+                    .execute()
             )
             return result
         except errors.HttpError as e:
@@ -79,8 +79,8 @@ class Snapshots(GceBase):
 
         self._batch.add(
             self._google_api_client()
-            .snapshots()
-            .setLabels(project=project_id, resource=gcp_object["name"], body=labels),
+                .snapshots()
+                .setLabels(project=project_id, resource=gcp_object["name"], body=labels),
             request_id=gcp_utils.generate_uuid(),
         )
         self.counter += 1

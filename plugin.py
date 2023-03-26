@@ -1,9 +1,9 @@
 import logging
 import pkgutil
 import re
-import typing
 from abc import ABCMeta, abstractmethod
 from functools import lru_cache
+from typing import Dict, Tuple, Type, Optional
 
 from googleapiclient import discovery
 from googleapiclient import errors
@@ -19,8 +19,6 @@ from util.utils import (
     cls_by_name,
     log_time,
     timed_lru_cache,
-    timing,
-    to_camel_case,
 )
 
 PLUGINS_MODULE = "plugins"
@@ -34,7 +32,7 @@ class Plugin(object, metaclass=ABCMeta):
 
     # For a class to know its subclasses and their instances is generally bad.
     # We could create a separate PluginManager but let's not get too Java-ish.
-    plugins: typing.Dict[str, "Plugin"]
+    plugins: Dict[str, "Plugin"]
     plugins = {}
 
     def __init__(self):
@@ -43,7 +41,7 @@ class Plugin(object, metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def discovery_api(cls) -> typing.Tuple[str, str]:
+    def discovery_api(cls) -> Tuple[str, str]:
         pass
 
     @classmethod
@@ -66,8 +64,14 @@ class Plugin(object, metaclass=ABCMeta):
     def _google_api_client(self):
         return discovery.build(*self.discovery_api())
 
+    @classmethod
+    def _cloudclient(cls):
+        raise NotImplementedError(
+            "Implement this if you want to use the Cloud Client libraries"
+        )
+
     @timed_lru_cache(seconds=600, maxsize=512)
-    def _project_labels(self, project_id) -> typing.Dict:
+    def _project_labels(self, project_id) -> Dict:
 
         assert self.__proj_regex.match(
             project_id
@@ -80,7 +84,7 @@ class Plugin(object, metaclass=ABCMeta):
             logging.exception(f"Failing to get labels for project {project_id}: {e}")
             return {}
 
-    def __iris_labels(self, gcp_object) -> typing.Dict[str, str]:
+    def __iris_labels(self, gcp_object) -> Dict[str, str]:
         func_name_pfx = "_gcp_"
 
         def legalize_value(s):
@@ -108,7 +112,8 @@ class Plugin(object, metaclass=ABCMeta):
 
         return ret
 
-    def __batch_callback(self, request_id, response, exception):
+    # noinspection PyUnusedLocal
+    def __batch_callback(self, request, response, exception):
         if exception is not None:
             logging.exception(
                 "in __batch_callback(), %s",
@@ -122,7 +127,7 @@ class Plugin(object, metaclass=ABCMeta):
         try:
             self._batch.execute()
         except Exception as e:
-            logging.exception(e)
+            logging.exception("Exception executing _batch()", e)
 
         self.__init_batch_req()
 
@@ -137,7 +142,7 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def label_resource(self, gcp_object: typing.Dict, project_id: str):
+    def label_resource(self, gcp_object: Dict, project_id: str):
         """Tag a single new object based on its description that comes from alog-line"""
         pass
 
@@ -152,7 +157,7 @@ class Plugin(object, metaclass=ABCMeta):
     @classmethod
     @log_time
     def init(cls):
-        def load_plugin_class(name) -> typing.Type:
+        def load_plugin_class(name) -> Type:
             module_name = PLUGINS_MODULE + "." + name
             __import__(module_name)
             assert name == name.lower(), name
@@ -203,7 +208,7 @@ class Plugin(object, metaclass=ABCMeta):
     def _name_no_separator(self, gcp_object):
         return self.__name(gcp_object, separator=None)
 
-    def __name(self, gcp_object, separator: typing.Optional[str] = None):
+    def __name(self, gcp_object, separator: Optional[str] = None):
         try:
             name = gcp_object["name"]
             if separator:
@@ -219,10 +224,3 @@ class Plugin(object, metaclass=ABCMeta):
         self._batch = self._google_api_client().new_batch_http_request(
             callback=self.__batch_callback
         )
-
-    def _cloudclient_pb_obj_to_dict(self, o) -> typing.Dict[str, str]:
-        # e.g. "labelFingerprint" and  "machine_type"
-        keys = o.__dict__["_pb"].DESCRIPTOR.fields_by_name.keys()
-        object_as_dict = {key: getattr(o, key) for key in keys}
-        ret_camel = {to_camel_case(k): v for k, v in object_as_dict.items()}
-        return ret_camel

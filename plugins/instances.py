@@ -1,25 +1,30 @@
 import logging
-from typing import Dict, Optional, List
+from functools import lru_cache
+from typing import Dict, Optional, List, Any
 
+import proto
 from google.cloud import compute_v1 as compute_cloudclient
-from google.cloud.compute_v1.types.compute import Instance
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
-from util.utils import log_time, to_camel_case
+from util.gcp_utils import cloudclient_pb_obj_to_dict
+from util.utils import log_time
 from util.utils import timing
 
 
 class Instances(GceZonalBase):
-    instances_cloudclient = compute_cloudclient.InstancesClient()
+    @classmethod
+    @lru_cache(maxsize=1)
+    def _cloudclient(cls):
+        return compute_cloudclient.InstancesClient()
 
     def _gcp_instance_type(self, gcp_object: dict):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             machine_type = gcp_object["machineType"]
             ind = machine_type.rfind("/")
-            machine_type = machine_type[ind + 1 :]
+            machine_type = machine_type[ind + 1:]
             return machine_type
         except KeyError as e:
             logging.exception(e)
@@ -28,17 +33,12 @@ class Instances(GceZonalBase):
     def method_names(self):
         return ["compute.instances.insert", "compute.instances.start"]
 
-    def __list_instances(self, project_id, zone):
+    def __list_instances(self, project_id, zone) -> List[Dict]:
         # TODO could make this lazy
-        request = compute_cloudclient.ListInstancesRequest(
+        page_result = compute_cloudclient.ListInstancesRequest(
             project=project_id, zone=zone
         )
-        instances = list(self.instances_cloudclient.list(request))
-
-        instances_as_dicts: List[Dict] = [
-            self._cloudclient_pb_obj_to_dict(i) for i in instances
-        ]
-        return instances_as_dicts
+        return self._list_resources_as_dicts(page_result)
 
     def __get_instance(self, project_id, zone, name) -> Optional[Dict]:
         try:
@@ -46,11 +46,14 @@ class Instances(GceZonalBase):
                 project=project_id, zone=zone, instance=name
             )
 
-            inst = self.instances_cloudclient.get(request)
-            return self._cloudclient_pb_obj_to_dict(inst)
+            return self._get_resource_as_dict(request)
         except errors.HttpError as e:
             logging.exception(e)
             return None
+
+    def _get_resource_as_dict(self, request: proto.Message) -> Dict[str, Any]:
+        inst = self._cloudclient().get(request)
+        return cloudclient_pb_obj_to_dict(inst)
 
     def label_all(self, project_id):
         with timing(f"label_all(Instance) in {project_id}"):
@@ -70,7 +73,7 @@ class Instances(GceZonalBase):
         try:
             inst = log_data["protoPayload"]["resourceName"]
             ind = inst.rfind("/")
-            inst = inst[ind + 1 :]
+            inst = inst[ind + 1:]
             labels = log_data["resource"]["labels"]["project_id"]
             zone = log_data["resource"]["labels"]["zone"]
             instance = self.__get_instance(labels, zone, inst)
@@ -90,8 +93,8 @@ class Instances(GceZonalBase):
 
         self._batch.add(
             self._google_api_client()
-            .instances()
-            .setLabels(
+                .instances()
+                .setLabels(
                 project=project_id,
                 zone=zone,
                 instance=gcp_object["name"],

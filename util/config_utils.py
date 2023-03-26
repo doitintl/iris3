@@ -1,8 +1,8 @@
 import functools
+import re
 import typing
 
 import yaml
-import re
 
 
 def is_copying_labels_from_project() -> bool:

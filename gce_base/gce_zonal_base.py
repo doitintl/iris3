@@ -1,12 +1,18 @@
 import logging
 from abc import ABCMeta
 from functools import lru_cache
+from typing import Dict, Any
 
+import proto
 from google.cloud import compute_v1
 
 from gce_base.gce_base import GceBase
 from util import gcp_utils
-from util.utils import log_time, timing
+from util.gcp_utils import (
+    cloudclient_pb_obj_to_dict,
+    cloudclient_pb_objects_to_list_of_dicts,
+)
+from util.utils import timing
 
 
 class GceZonalBase(GceBase, metaclass=ABCMeta):
@@ -29,9 +35,9 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             logging.exception(e)
             return None
 
+    @classmethod
     @lru_cache(maxsize=1)
     @timing
-    @classmethod
     def _all_zones(cls):
         """
         Get all available zones.
@@ -43,3 +49,11 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         zones = cls.zones_cloudclient.list(request)
         return [z.name for z in zones]
         # The above is slow, potentially use the hardcoded list in gcp_utils
+
+    def _get_resource_as_dict(self, request: proto.Message) -> Dict[str, Any]:
+        inst = self._cloudclient().get(request)
+        return cloudclient_pb_obj_to_dict(inst)
+
+    def _list_resources_as_dicts(self, request: proto.Message):
+        objects = self._cloudclient().list(request)  # Disk class
+        return cloudclient_pb_objects_to_list_of_dicts(objects)

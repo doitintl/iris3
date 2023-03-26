@@ -4,11 +4,11 @@ import uuid
 from functools import lru_cache
 from typing import List, Dict, Any
 
-
 # from googleapiclient import discovery
 # from oauth2client.client import GoogleCredentials
 from util import localdev_config
-from util.utils import timed_lru_cache, log_time
+from util.utils import timed_lru_cache, log_time, dict_to_camelcase
+
 
 # resource_manager = discovery.build(
 #     "cloudresourcemanager",
@@ -227,3 +227,15 @@ def predefined_zone_list():
         "us-west4-b",
         "us-west4-c",
     ]
+
+
+def cloudclient_pb_objects_to_list_of_dicts(objects):
+    return [cloudclient_pb_obj_to_dict(i) for i in objects]
+
+
+# todo move to GceZonalBase?
+def cloudclient_pb_obj_to_dict(o) -> Dict[str, str]:
+    # e.g. "labelFingerprint" and  "machine_type"
+    keys = o.__dict__["_pb"].DESCRIPTOR.fields_by_name.keys()
+    object_as_dict = {key: getattr(o, key) for key in keys}
+    return dict_to_camelcase(object_as_dict)

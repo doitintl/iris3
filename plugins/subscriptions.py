@@ -1,11 +1,17 @@
 import logging
 import re
 import typing
+from functools import lru_cache
 
 from google.cloud import pubsub_v1
+from google.pubsub_v1 import SubscriberClient
 from googleapiclient import errors
 
 from plugin import Plugin
+from util.gcp_utils import (
+    cloudclient_pb_obj_to_dict,
+    cloudclient_pb_objects_to_list_of_dicts,
+)
 from util.utils import log_time
 from util.utils import timing
 
@@ -14,7 +20,13 @@ class Subscriptions(Plugin):
     __sub_path_regex = re.compile(r"^projects/[^/]+/subscriptions/[^/]+$")
 
     @classmethod
+    @lru_cache(maxsize=1)
+    def _cloudclient(cls) -> SubscriberClient:
+        return pubsub_v1.SubscriberClient()
+
+    @classmethod
     def discovery_api(cls) -> typing.Tuple[str, str]:
+        """Not used"""
         return "pubsub", "v1"
 
     def api_name(self):
@@ -35,49 +47,20 @@ class Subscriptions(Plugin):
                     logging.exception(e)
 
     def __get_subscription(self, subscription_path):
-
         assert self.__sub_path_regex.match(subscription_path)
         try:
-            result = (
-                self._google_api_client()
-                .projects()
-                .subscriptions()
-                .get(
-                    subscription=subscription_path,
-                )
-                .execute()
-            )
-            return result
+            subsc = self._cloudclient().get_subscription(subscription=subscription_path)
+
+            return cloudclient_pb_obj_to_dict(subsc)
+
         except errors.HttpError as e:
             logging.exception(e)
             return None
 
     def __list_subscriptions(self, project_id):
 
-        subscriptions = []
-        page_token = None
-
-        while True:
-
-            result = (
-                self._google_api_client()
-                .projects()
-                .subscriptions()
-                .list(
-                    project=f"projects/{project_id}",
-                    pageToken=page_token,
-                    # No filter param
-                )
-                .execute()
-            )
-            if "subscriptions" in result:
-                subscriptions += result["subscriptions"]
-            if "nextPageToken" in result:
-                page_token = result["nextPageToken"]
-            else:
-                break
-
-        return subscriptions
+        subscriptions = self._cloudclient().list_subscriptions(project_id)
+        return cloudclient_pb_objects_to_list_of_dicts(subscriptions)
 
     @log_time
     def label_resource(self, gcp_object: typing.Dict, project_id):
@@ -88,22 +71,21 @@ class Subscriptions(Plugin):
 
         subscription_name = self._gcp_name(gcp_object)
         topic = gcp_object["topic"].split("/")[-1]
-        subscriber_client = pubsub_v1.SubscriberClient()
-        subscription_path = subscriber_client.subscription_path(
+
+        subscription_path = self._cloudclient().subscription_path(
             project_id, subscription_name
         )
         # Use the Google Cloud Library instead of the Google Client API used
-        # elsewhere because the latter does not seem to support changing the label,
-        # or at least I could not figure it out.
+        #   because the latter does not seem to support changing the label,
         subscription_object_holding_update = pubsub_v1.types.Subscription(
             name=subscription_path, topic=topic, labels=labels
         )
 
         update_mask = {"paths": {"labels"}}
 
-        with subscriber_client:
+        with self._cloudclient():
             with timing("update subscription"):
-                _ = subscriber_client.update_subscription(
+                _ = self._cloudclient().update_subscription(
                     request={
                         "subscription": subscription_object_holding_update,
                         "update_mask": update_mask,
