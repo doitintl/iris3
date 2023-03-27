@@ -1,5 +1,7 @@
 import logging
+from functools import lru_cache
 
+from google.cloud import compute_v1
 from googleapiclient import errors
 
 from gce_base.gce_base import GceBase
@@ -11,45 +13,27 @@ class Snapshots(GceBase):
     def method_names(self):
         return ["compute.disks.createSnapshot"]
 
+    @classmethod
+    @lru_cache(maxsize=1)
+    def _cloudclient(cls):
+        return compute_v1.SnapshotsClient()
+
     def __list_snapshots(self, project_id):
-        snapshots = []
-        page_token = None
-        more_results = True
-
-        while more_results:
-            result = (
-                self._google_api_client()
-                    .snapshots()
-                    .list(
-                    project=project_id,
-                    pageToken=page_token,
-                )
-                    .execute()
-            )
-            if "items" in result:
-                snapshots = snapshots + result["items"]
-            if "nextPageToken" in result:
-                page_token = result["nextPageToken"]
-            else:
-                more_results = False
-
-        return snapshots
+        # TODO could make this lazy
+        snapshots = compute_v1.ListSnapshotsRequest(project=project_id)
+        return self._list_resources_as_dicts(snapshots)
 
     def __get_snapshot(self, project_id, name):
         try:
-            result = (
-                self._google_api_client()
-                    .snapshots()
-                    .get(project=project_id, snapshot=name)
-                    .execute()
-            )
-            return result
+            request = compute_v1.GetSnapshotRequest(project=project_id,snapshot=name)
+
+            return self._get_resource_as_dict(request)
         except errors.HttpError as e:
             logging.exception(e)
             return None
 
     def label_all(self, project_id):
-        with timing(f"label_all(Snapshot) in {project_id}"):
+        with timing(f"label_all in {project_id}"):
             snapshots = self.__list_snapshots(project_id)
             for snapshot in snapshots:
                 try:
@@ -64,10 +48,10 @@ class Snapshots(GceBase):
             if "response" not in log_data["protoPayload"]:
                 return None
             request = log_data["protoPayload"]["request"]
-            snap_name = request["name"]
-            snapshot = self.__get_snapshot(
-                log_data["resource"]["labels"]["project_id"], snap_name
-            )
+            name = request["name"]
+            project_id = log_data["resource"]["labels"]["project_id"]
+
+            snapshot = self.__get_snapshot(project_id, name)
             return snapshot
         except Exception as e:
             logging.exception(e)
@@ -77,10 +61,10 @@ class Snapshots(GceBase):
     def label_resource(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
 
-        self._batch.add(
+        self._batch.add(  # Using Google Client API because CloudClient has no batch functionality, I think
             self._google_api_client()
-                .snapshots()
-                .setLabels(project=project_id, resource=gcp_object["name"], body=labels),
+            .snapshots()
+            .setLabels(project=project_id, resource=gcp_object["name"], body=labels),
             request_id=gcp_utils.generate_uuid(),
         )
         self.counter += 1

@@ -35,12 +35,12 @@ class Disks(GceZonalBase):
         """
         return True
 
-    def __list_disks(self, project_id, zone) -> typing.List[typing.Dict]:
+    def _list_all(self, project_id, zone) -> typing.List[typing.Dict]:
         # TODO could make this lazy
         request = compute_v1.ListInstancesRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(request)
 
-    def __get_disk(self, project_id, zone, name):
+    def _get_resource(self, project_id, zone, name):
         try:
             request = compute_v1.GetDiskRequest(
                 project=project_id, zone=zone, disk=name
@@ -49,33 +49,6 @@ class Disks(GceZonalBase):
             return self._get_resource_as_dict(request)
         except errors.HttpError as e:
             logging.exception(e)
-            return None
-
-    def label_all(self, project_id):
-        with timing(f"label_all(Disk) in {project_id}"):
-            zones = self._all_zones()
-            for zone in zones:
-                disks = self.__list_disks(project_id, zone)
-                for disk in disks:
-                    try:
-                        self.label_resource(disk, project_id)
-                    except Exception as e:
-                        logging.exception(e)
-
-            if self.counter > 0:
-                self.do_batch()
-
-    def get_gcp_object(self, log_data):
-        try:
-            disk_name = log_data["protoPayload"]["resourceName"]
-            ind = disk_name.rfind("/")
-            disk_name = disk_name[ind + 1:]
-            labels = log_data["resource"]["labels"]
-            disk = self.__get_disk(labels["project_id"], labels["zone"], disk_name)
-            return disk
-        except Exception as e:
-            logging.exception(e)
-
             return None
 
     @log_time
@@ -89,8 +62,8 @@ class Disks(GceZonalBase):
 
         self._batch.add(
             self._google_api_client()
-                .disks()
-                .setLabels(
+            .disks()
+            .setLabels(
                 project=project_id,
                 zone=zone,
                 resource=gcp_object["name"],

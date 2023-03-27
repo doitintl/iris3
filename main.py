@@ -234,7 +234,7 @@ def __label_one_0(data, plugin):
             logging.info(msg)
     else:
         logging.error(
-            "Cannot find gcp_object to label (this sometimes does not result in failure to label, "
+            "Cannot find gcp_object to label. (This usually does sometimes does not result in failure to label, "
             + "e.g. for BQ datasets where serviceData is missing), based on %s",
             utils.shorten(str(data.get("resource")), 300),
         )

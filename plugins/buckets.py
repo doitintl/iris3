@@ -1,15 +1,30 @@
 import logging
 import typing
+from functools import lru_cache
+
+from google.cloud import storage
 
 from plugin import Plugin
 from util import gcp_utils
-from util.utils import log_time, timing
+from util.gcp_utils import cloudclient_pb_objects_to_list_of_dicts
+from util.utils import log_time, timing, dict_to_camelcase
 
 
 class Buckets(Plugin):
     @classmethod
     def discovery_api(cls) -> typing.Tuple[str, str]:
         return "storage", "v1"
+
+    def api_name(self):
+        return "storage-component.googleapis.com"
+
+    def method_names(self):
+        return ["storage.buckets.create"]
+
+    @classmethod
+    @lru_cache(maxsize=500)  # cached per project
+    def _cloudclient(cls, project_id):
+        return storage.Client(project=project_id)
 
     def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
@@ -25,56 +40,43 @@ class Buckets(Plugin):
             logging.exception(e)
             return None
 
-    def api_name(self):
-        return "storage-component.googleapis.com"
-
-    def method_names(self):
-        return ["storage.buckets.create"]
-
-    def __get_bucket(self, bucket_name):
+    def __get_bucket(self, bucket_name, project_id):
         try:
-            result = (
-                self._google_api_client().buckets().get(bucket=bucket_name).execute()
+            bucket = self._cloudclient(project_id).get_bucket(
+                bucket_or_name=bucket_name
             )
+            d1 = bucket._properties | bucket.__dict__
+            d2 = {k: v for k, v in d1.items() if not k.startswith("_")}
+            d3 = dict_to_camelcase(d2)
+            return d3
 
-            return result
         except Exception as e:
             logging.exception(e)
             return None
 
     def get_gcp_object(self, log_data):
+        buck_name = log_data["resource"]["labels"]["bucket_name"]
+        project_id = log_data["resource"]["labels"]["project_id"]
+
+        bucket = self.__get_bucket(buck_name, project_id)
         try:
-            bucket = self.__get_bucket(log_data["resource"]["labels"]["bucket_name"])
             return bucket
         except Exception as e:
             logging.exception(e)
             return None
 
-    def label_all(self, project_id):
+    def __list_buckets(self, project_id):
+        buckets = self._cloudclient(project_id).list_buckets()
+        return cloudclient_pb_objects_to_list_of_dicts(buckets)
+
+    def label_all(self, project_id):  # TODO extract this code for general use
         with timing(f"label_all(Bucket) in {project_id}"):
-            page_token = None
-            more_results = True
-            while more_results:
-                response = (
-                    self._google_api_client()
-                        .buckets()
-                        .list(
-                        project=project_id,
-                        pageToken=page_token,
-                        # filter not supported
-                    )
-                        .execute()
-                )
-                if "items" in response:
-                    for bucket in response["items"]:
-                        try:
-                            self.label_resource(bucket, project_id)
-                        except Exception as e:
-                            logging.exception(e)
-                if "nextPageToken" in response:
-                    page_token = response["nextPageToken"]
-                else:
-                    more_results = False
+            buckets = self.__list_buckets(project_id)
+            for bucket in buckets:
+                try:
+                    self.label_resource(bucket, project_id)
+                except Exception as e:
+                    logging.exception(e)
             if self.counter > 0:
                 self.do_batch()
 
@@ -90,8 +92,8 @@ class Buckets(Plugin):
 
             self._batch.add(
                 self._google_api_client()
-                    .buckets()
-                    .patch(bucket=bucket_name, body=labels),
+                .buckets()
+                .patch(bucket=bucket_name, body=labels),
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1

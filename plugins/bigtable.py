@@ -51,11 +51,11 @@ class Bigtable(Plugin):
 
             result = (
                 self._google_api_client()
-                    .projects()
-                    .instances()
-                    .clusters()
-                    .list(parent=PROJECTS + project_id + "/instances/" + instance_name)
-                    .execute()
+                .projects()
+                .instances()
+                .clusters()
+                .list(parent=PROJECTS + project_id + "/instances/" + instance_name)
+                .execute()
             )
 
             return result
@@ -73,10 +73,10 @@ class Bigtable(Plugin):
         try:
             result = (
                 self._google_api_client()
-                    .projects()
-                    .instances()
-                    .get(name=PROJECTS + project_id + "/instances/" + name)
-                    .execute()
+                .projects()
+                .instances()
+                .get(name=PROJECTS + project_id + "/instances/" + name)
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -101,14 +101,14 @@ class Bigtable(Plugin):
             while more_results:
                 result = (
                     self._google_api_client()
-                        .projects()
-                        .instances()
-                        .list(
+                    .projects()
+                    .instances()
+                    .list(
                         parent=PROJECTS + project_id,
                         pageToken=page_token,
                         # Filter not supported
                     )
-                        .execute()
+                    .execute()
                 )
 
                 if "instances" in result:
@@ -143,9 +143,9 @@ class Bigtable(Plugin):
 
             self._batch.add(
                 self._google_api_client()
-                    .projects()
-                    .instances()
-                    .partialUpdateInstance(
+                .projects()
+                .instances()
+                .partialUpdateInstance(
                     name=gcp_object["name"], body=gcp_object, updateMask="labels"
                 ),
                 request_id=gcp_utils.generate_uuid(),

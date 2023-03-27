@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from functools import lru_cache
 from typing import Dict, Any
 
@@ -50,10 +50,36 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         return [z.name for z in zones]
         # The above is slow, potentially use the hardcoded list in gcp_utils
 
-    def _get_resource_as_dict(self, request: proto.Message) -> Dict[str, Any]:
-        inst = self._cloudclient().get(request)
-        return cloudclient_pb_obj_to_dict(inst)
+    def label_all(self, project_id):
+        with timing(f"label_all  in {project_id}"):
+            zones = self._all_zones()
+            for zone in zones:
+                for resource in self._list_all(project_id, zone):
+                    try:
+                        self.label_resource(resource, project_id)
+                    except Exception as e:
+                        logging.exception(e)
 
-    def _list_resources_as_dicts(self, request: proto.Message):
-        objects = self._cloudclient().list(request)  # Disk class
-        return cloudclient_pb_objects_to_list_of_dicts(objects)
+            if self.counter > 0:
+                self.do_batch()
+
+    def get_gcp_object(self, log_data):
+        try:
+            name = log_data["protoPayload"]["resourceName"]
+            ind = name.rfind("/")
+            name = name[ind + 1 :]
+            project_id = log_data["resource"]["labels"]["project_id"]
+            zone = log_data["resource"]["labels"]["zone"]
+            resource = self._get_resource(project_id, zone, name)
+            return resource
+        except Exception as e:
+            logging.exception("get_gcp_object", exc_info=e)
+            return None
+
+    @abstractmethod
+    def _get_resource(self, project_id, zone, name):
+        pass
+
+    @abstractmethod
+    def _list_all(self, project_id, zone):
+        pass

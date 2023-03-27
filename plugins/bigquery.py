@@ -31,7 +31,7 @@ class Bigquery(Plugin):
             else:
                 name = gcp_object["tableReference"]["tableId"]
             index = name.rfind(":")
-            name = name[index + 1:]
+            name = name[index + 1 :]
             return name
         except KeyError as e:
             logging.exception(e)
@@ -51,9 +51,9 @@ class Bigquery(Plugin):
         try:
             result = (
                 self._google_api_client()
-                    .datasets()
-                    .get(projectId=project_id, datasetId=name)
-                    .execute()
+                .datasets()
+                .get(projectId=project_id, datasetId=name)
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -64,9 +64,9 @@ class Bigquery(Plugin):
         try:
             result = (
                 self._google_api_client()
-                    .tables()
-                    .get(projectId=project_id, datasetId=dataset, tableId=table)
-                    .execute()
+                .tables()
+                .get(projectId=project_id, datasetId=dataset, tableId=table)
+                .execute()
             )
             return result
         except errors.HttpError as e:
@@ -118,14 +118,14 @@ class Bigquery(Plugin):
             while more_results:
                 response = (
                     self._google_api_client()
-                        .datasets()
-                        .list(
+                    .datasets()
+                    .list(
                         projectId=project_id,
                         pageToken=page_token,
                         # Though filters are supported here, "NOT" filters are
                         # not
                     )
-                        .execute()
+                    .execute()
                 )
 
                 if "datasets" in response:
@@ -143,14 +143,14 @@ class Bigquery(Plugin):
         while more_results:
             response = (
                 self._google_api_client()
-                    .tables()
-                    .list(
+                .tables()
+                .list(
                     projectId=project_id,
                     datasetId=dataset["datasetReference"]["datasetId"],
                     pageToken=page_token,
                     # filter not supported
                 )
-                    .execute()
+                .execute()
             )
             if "tables" in response:
                 for t in response["tables"]:
@@ -199,8 +199,8 @@ class Bigquery(Plugin):
             table_reference = gcp_object["tableReference"]
             self._batch.add(
                 self._google_api_client()
-                    .tables()
-                    .patch(
+                .tables()
+                .patch(
                     projectId=table_reference["projectId"],
                     body=labels,
                     datasetId=table_reference["datasetId"],

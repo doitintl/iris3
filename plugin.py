@@ -60,12 +60,14 @@ class Plugin(object, metaclass=ABCMeta):
         """
         return True
 
-    @lru_cache(maxsize=1)
+    @lru_cache(maxsize=1)  # TODO make it a class method
     def _google_api_client(self):
         return discovery.build(*self.discovery_api())
 
-    @classmethod
-    def _cloudclient(cls):
+    @classmethod  # Implementations should cache the result
+    def _cloudclient(
+        cls, project_id=None
+    ):  # Implementations can have the 2d param or not
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
         )
