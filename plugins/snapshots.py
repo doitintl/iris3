@@ -10,13 +10,14 @@ from util.utils import log_time, timing
 
 
 class Snapshots(GceBase):
-    def method_names(self):
-        return ["compute.disks.createSnapshot"]
 
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient(cls):
+    def _cloudclient():
         return compute_v1.SnapshotsClient()
+    @staticmethod
+    def method_names( ):
+        return ["compute.disks.createSnapshot"]
 
     def __list_snapshots(self, project_id):
         # TODO could make this lazy
@@ -25,8 +26,7 @@ class Snapshots(GceBase):
 
     def __get_snapshot(self, project_id, name):
         try:
-            request = compute_v1.GetSnapshotRequest(project=project_id,snapshot=name)
-
+            request = compute_v1.GetSnapshotRequest(project=project_id, snapshot=name)
             return self._get_resource_as_dict(request)
         except errors.HttpError as e:
             logging.exception(e)
@@ -61,7 +61,7 @@ class Snapshots(GceBase):
     def label_resource(self, gcp_object, project_id):
         labels = self._build_labels(gcp_object, project_id)
 
-        self._batch.add(  # Using Google Client API because CloudClient has no batch functionality, I think
+        self._batch.add(  # Using Google Client API because CloudClient has, I think, no batch functionality
             self._google_api_client()
             .snapshots()
             .setLabels(project=project_id, resource=gcp_object["name"], body=labels),

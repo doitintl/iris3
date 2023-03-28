@@ -19,20 +19,22 @@ from util.utils import timing
 class Subscriptions(Plugin):
     __sub_path_regex = re.compile(r"^projects/[^/]+/subscriptions/[^/]+$")
 
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient(cls) -> SubscriberClient:
+    def _cloudclient() -> SubscriberClient:
         return pubsub_v1.SubscriberClient()
 
-    @classmethod
-    def discovery_api(cls) -> typing.Tuple[str, str]:
+    @staticmethod
+    def discovery_api() -> typing.Tuple[str, str]:
         """Not used"""
         return "pubsub", "v1"
 
-    def api_name(self):
+    @staticmethod
+    def api_name():
         return "pubsub.googleapis.com"
 
-    def method_names(self):
+    @staticmethod
+    def method_names():
         # Actually "google.pubsub.v1.Subscriber.CreateSubscription" but a
         # substring is allowed
         return ["Subscriber.CreateSubscription"]
@@ -58,9 +60,13 @@ class Subscriptions(Plugin):
             return None
 
     def __list_subscriptions(self, project_id):
-
-        subscriptions = self._cloudclient().list_subscriptions(project_id)
-        return cloudclient_pb_objects_to_list_of_dicts(subscriptions)
+        project_path = f"projects/{project_id}"
+        subscriptions = self._cloudclient().list_subscriptions(
+            request={"project": project_path}
+        )
+        return cloudclient_pb_objects_to_list_of_dicts(
+            subscriptions
+        )  # TODO could make this lazy
 
     @log_time
     def label_resource(self, gcp_object: typing.Dict, project_id):

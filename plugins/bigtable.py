@@ -12,14 +12,16 @@ PROJECTS = "projects/"
 
 
 class Bigtable(Plugin):
-    @classmethod
-    def discovery_api(cls) -> typing.Tuple[str, str]:
+    @staticmethod
+    def discovery_api() -> typing.Tuple[str, str]:
         return "bigtableadmin", "v2"
 
-    def api_name(self):
+    @staticmethod
+    def api_name():
         return "bigtableadmin.googleapis.com"
 
-    def method_names(self):
+    @staticmethod
+    def method_names():
         return ["BigtableInstanceAdmin.CreateInstance"]
 
     def _gcp_name(self, gcp_object):

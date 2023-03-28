@@ -11,11 +11,12 @@ from util.gcp_utils import (
 
 
 class GceBase(Plugin, metaclass=ABCMeta):
-    @classmethod
-    def discovery_api(cls) -> Tuple[str, str]:
+    @staticmethod
+    def discovery_api() -> Tuple[str, str]:
         return "compute", "v1"
 
-    def api_name(self):
+    @staticmethod
+    def api_name():
         return "compute.googleapis.com"
 
     def _gcp_name(self, gcp_object):

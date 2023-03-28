@@ -7,12 +7,20 @@ from util.utils import log_time, timing
 
 
 class Cloudsql(Plugin):
-    @classmethod
-    def discovery_api(cls):
+    @staticmethod
+    def discovery_api():
         return "sqladmin", "v1beta4"
 
-    @classmethod
-    def is_labeled_on_creation(cls) -> bool:
+    @staticmethod
+    def api_name():
+        return "sqladmin.googleapis.com"
+
+    @staticmethod
+    def method_names():
+        return ["cloudsql.instances.create"]
+
+    @staticmethod
+    def is_labeled_on_creation() -> bool:
         """
         Labels cannot be applied to CloudSQL during its long initialization phase.
         Three log messages arrive (within 5 sec of each other) during initialization.
@@ -37,12 +45,6 @@ class Cloudsql(Plugin):
         except KeyError as e:
             logging.exception(e)
             return None
-
-    def api_name(self):
-        return "sqladmin.googleapis.com"
-
-    def method_names(self):
-        return ["cloudsql.instances.create"]
 
     def __get_instance(self, project_id, name):
         try:

@@ -1,25 +1,23 @@
 import logging
 from functools import lru_cache
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List
 
-import proto
 from google.cloud import compute_v1
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
-from util.gcp_utils import cloudclient_pb_obj_to_dict
 from util.utils import log_time
-from util.utils import timing
 
 
 class Instances(GceZonalBase):
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient(cls):
+    def _cloudclient():
         return compute_v1.InstancesClient()
 
-    def method_names(self):
+    @staticmethod
+    def method_names( ):
         return ["compute.instances.insert", "compute.instances.start"]
 
     def _gcp_instance_type(self, gcp_object: dict):
@@ -34,9 +32,8 @@ class Instances(GceZonalBase):
             return None
 
     def _list_all(self, project_id, zone) -> List[Dict]:
-        # TODO could make this lazy
         page_result = compute_v1.ListInstancesRequest(project=project_id, zone=zone)
-        return self._list_resources_as_dicts(page_result)
+        return self._list_resources_as_dicts(page_result)  # TODO could make this lazy
 
     def _get_resource(self, project_id, zone, name) -> Optional[Dict]:
         try:
@@ -51,26 +48,26 @@ class Instances(GceZonalBase):
 
     @log_time
     def label_resource(self, gcp_object, project_id):
-        labels = self._build_labels(gcp_object, project_id)
-        if labels is None:
-            return
+        with self._write_lock:
+            labels = self._build_labels(gcp_object, project_id)
+            if labels is None:
+                return
 
-        zone = self._gcp_zone(gcp_object)
+            zone = self._gcp_zone(gcp_object)
 
-        self._batch.add(
-            self._google_api_client()
-            .instances()
-            .setLabels(
-                project=project_id,
-                zone=zone,
-                instance=gcp_object["name"],
-                body=labels,
-            ),
-            request_id=gcp_utils.generate_uuid(),
-        )
-        # Could use the Cloud Client as follows , but that apparently that does not support batching
-        #  compute_v1.SetLabelsInstanceRequest(project=project_id, zone=zone, instance=name, labels=labels)
-
-        self.counter += 1
-        if self.counter >= self._BATCH_SIZE:
-            self.do_batch()
+            self._batch.add(
+                self._google_api_client()
+                .instances()
+                .setLabels(
+                    project=project_id,
+                    zone=zone,
+                    instance=gcp_object["name"],
+                    body=labels,
+                ),
+                request_id=gcp_utils.generate_uuid(),
+            )
+            # Could use the Cloud Client as follows , but that apparently that does not support batching
+            #  compute_v1.SetLabelsInstanceRequest(project=project_id, zone=zone, instance=name, labels=labels)
+            self.counter += 1
+            if self.counter >= self._BATCH_SIZE:
+                self.do_batch()

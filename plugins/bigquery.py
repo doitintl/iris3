@@ -13,14 +13,16 @@ from util.utils import log_time, timing
 
 
 class Bigquery(Plugin):
-    @classmethod
-    def discovery_api(cls) -> typing.Tuple[str, str]:
+    @staticmethod
+    def discovery_api() -> typing.Tuple[str, str]:
         return "bigquery", "v2"
 
-    def api_name(self):
+    @staticmethod
+    def api_name():
         return "bigquery-json.googleapis.com"
 
-    def method_names(self):
+    @staticmethod
+    def method_names():
         return ["datasetservice.insert", "tableservice.insert"]
 
     def _gcp_name(self, gcp_object):

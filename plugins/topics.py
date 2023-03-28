@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Tuple, List, Dict
 
 from google.cloud import pubsub_v1
-from google.pubsub_v1 import Topic
+from google.pubsub_v1 import Topic, ListTopicsRequest
 from googleapiclient import errors
 
 from plugin import Plugin
@@ -18,16 +18,17 @@ from util.utils import log_time, timing
 class Topics(Plugin):
     __topic_path_regex = re.compile(r"^projects/[^/]+/topics/[^/]+$")
 
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient(cls):
+    def _cloudclient():
         return pubsub_v1.PublisherClient()
 
-    @classmethod
-    def discovery_api(cls) -> Tuple[str, str]:
+    @staticmethod
+    def discovery_api() -> Tuple[str, str]:
         return "pubsub", "v1"
 
-    def api_name(self):
+    @staticmethod
+    def api_name():
         return "pubsub.googleapis.com"
 
     def method_names(self):
@@ -53,9 +54,11 @@ class Topics(Plugin):
             return None
 
     def __list_topics(self, project_id) -> List[Dict]:
-        # TODO could make this lazy
-        page_result = self._cloudclient().list_topics(project=project_id)
-        return cloudclient_pb_objects_to_list_of_dicts(page_result)
+        project_path = f"projects/{project_id}"
+        topics = self._cloudclient().list_topics(request={"project": project_path})
+        return cloudclient_pb_objects_to_list_of_dicts(
+            topics
+        )  # TODO could make this lazy
 
     @log_time
     def label_resource(self, gcp_object: Dict, project_id):

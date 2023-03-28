@@ -11,19 +11,21 @@ from util.utils import log_time, timing, dict_to_camelcase
 
 
 class Buckets(Plugin):
-    @classmethod
-    def discovery_api(cls) -> typing.Tuple[str, str]:
+    @staticmethod
+    def discovery_api() -> typing.Tuple[str, str]:
         return "storage", "v1"
 
-    def api_name(self):
+    @staticmethod
+    def api_name():
         return "storage-component.googleapis.com"
 
-    def method_names(self):
+    @staticmethod
+    def method_names():
         return ["storage.buckets.create"]
 
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=500)  # cached per project
-    def _cloudclient(cls, project_id):
+    def _cloudclient(project_id):
         return storage.Client(project=project_id)
 
     def _gcp_name(self, gcp_object):

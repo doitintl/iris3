@@ -39,13 +39,13 @@ class Plugin(object, metaclass=ABCMeta):
         # self._google_client = discovery.build(*self.discovery_api())
         self.__init_batch_req()
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def discovery_api(cls) -> Tuple[str, str]:
+    def discovery_api() -> Tuple[str, str]:
         pass
 
-    @classmethod
-    def relabel_on_cron(cls) -> bool:
+    @staticmethod
+    def relabel_on_cron() -> bool:
         """
         We must minimize labeling on cron because it is costly.
         Return  True if that is needed.
@@ -53,8 +53,8 @@ class Plugin(object, metaclass=ABCMeta):
         """
         return False
 
-    @classmethod
-    def is_labeled_on_creation(cls) -> bool:
+    @staticmethod
+    def is_labeled_on_creation() -> bool:
         """
         Only a few classes are  labeled on creation, and these classes should override this method.
         """
@@ -64,10 +64,8 @@ class Plugin(object, metaclass=ABCMeta):
     def _google_api_client(self):
         return discovery.build(*self.discovery_api())
 
-    @classmethod  # Implementations should cache the result
-    def _cloudclient(
-        cls, project_id=None
-    ):  # Implementations can have the 2d param or not
+    @staticmethod  # Implementations should cache the result
+    def _cloudclient(project_id=None):  # Implementations can have the 2d param or not
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
         )
@@ -145,15 +143,20 @@ class Plugin(object, metaclass=ABCMeta):
 
     @abstractmethod
     def label_resource(self, gcp_object: Dict, project_id: str):
-        """Tag a single new object based on its description that comes from alog-line"""
+        """Tag a single new object based on its description that comes from alog-line
+        TODO: Why not get the project_id out of the gcp_object?"""
         pass
 
+    @staticmethod
     @abstractmethod
-    def api_name(self):
+    def api_name():
+        """The name of the Google REST API for managing such resources"""
         pass
 
+    @staticmethod
     @abstractmethod
-    def method_names(self):
+    def method_names():
+        """The name of the methods inside the Google REST API that indicate th ecreation of such resources."""
         pass
 
     @classmethod
