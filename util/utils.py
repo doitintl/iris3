@@ -99,7 +99,7 @@ def init_logging():
 
 def __log_end_timer(tag, start, logger):
     logging.getLogger(logger).info(
-        f"{logger} {tag}: {int((time.time() - start) * 1000)} ms"
+        f"{logger}: {tag}: {int((time.time() - start) * 1000)} ms"
     )
 
 
