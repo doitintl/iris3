@@ -41,7 +41,7 @@
     - Ignore and let the cron do it
     - Implement Cloud Task with a delay. (Not clear if that will help.)
 
-* P3 Rethink the need for title case in class names. This is clumsy for `Bigtable` and `Cloudsql`.
+* P3 Rethink the need for title case in class names. This is clumsy for `Cloudsql`.
 
 * P3 Concurrent execution
     * Since all activity is highly network-constrained, it would speed up significantly with concurrent execution using

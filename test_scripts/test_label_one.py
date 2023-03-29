@@ -33,7 +33,7 @@ def __resource_name():
         raise ValueError(
             "Must specify 'resource' key in environment for name of "
             "resource, e.g. the name of the VM Instance, Disk, Subscription, Topic, "
-            "BigTable Instance, BigQuery Table or Dataset, "
+            "Instance, BigQuery Table or Dataset, "
             "Cloud Storage Bucket, or CloudSQL Instance"
         )
     return resource
@@ -116,11 +116,6 @@ def test_subscriptions():
         __parent_name(),
     )
 
-
-def test_bigtable():
-    from plugins.bigtable import Bigtable
-
-    label_one(__project(), __resource_name(), Bigtable().method_names()[0])
 
 
 def main():

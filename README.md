@@ -1,7 +1,6 @@
 # Iris
 
-In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. She
-was the handmaiden to Hera.
+In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. She was the handmaiden to Hera.
 
 # Blog post
 
@@ -53,7 +52,6 @@ These are also listed below.
 * Compute Engine Snapshots  (Labels name, zone, region)
 * BigQuery Datasets (Labels name, zone, region)
 * BigQuery Tables (Labels name, zone, region)
-* BigTable Instances (Labels name, zone, region)
 * PubSub Subscriptions (Labels name)
 * PubSub Topics (Labels name, zone)
 * CloudSQL (Labels name, zone, region)

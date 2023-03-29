@@ -9,7 +9,7 @@ projects: []
 
 # plugins: Only these plugins are enabled.
 # For example, add some of these to the list:
-#     bigquery, buckets, bigtable, disks,  cloudsql, instances, snapshots, subscriptions, topics
+#     bigquery, buckets, disks,  cloudsql, instances, snapshots, subscriptions, topics
 # But if the value is empty, *all* plugins are enabled
 plugins: []
 
@@ -31,7 +31,6 @@ specific_prefixes: {}
 # specific_prefixes:
 #  Buckets:
 #  Bigquery: ""
-#  Bigtable: bt
 #  Cloudsql: sql
 #  Disks: gcedisk
 #  Instances: gce

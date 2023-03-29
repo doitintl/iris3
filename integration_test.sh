@@ -114,7 +114,6 @@ function clean_resources() {
   gcloud compute disks delete "disk${RUN_ID}" -q --project "$TEST_PROJECT" --zone $GCE_ZONE
   gcloud pubsub topics delete "topic${RUN_ID}" -q --project "$TEST_PROJECT"
   gcloud pubsub subscriptions delete "subscription${RUN_ID}" -q --project "$TEST_PROJECT"
-  gcloud bigtable instances delete "bigtable${RUN_ID}" -q --project "$TEST_PROJECT"
   bq rm -f --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
@@ -136,7 +135,6 @@ gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GC
 gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
 gcloud pubsub topics create "topic${RUN_ID}" --project "$TEST_PROJECT"
 gcloud pubsub subscriptions create "subscription${RUN_ID}" --topic "topic${RUN_ID}" --project "$TEST_PROJECT"
-gcloud bigtable instances create "bigtable${RUN_ID}" --display-name="bigtable${RUN_ID}" --cluster="bigtable${RUN_ID}" --cluster-zone=us-east1-c --project "$TEST_PROJECT"
 bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
 bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
 gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
@@ -155,8 +153,6 @@ set +e
 gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-gcloud bigtable instances describe "bigtable${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi

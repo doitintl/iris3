@@ -107,8 +107,6 @@ required_svcs=(
   cloudresourcemanager.googleapis.com
   pubsub.googleapis.com
   compute.googleapis.com
-  bigtable.googleapis.com
-  bigtableadmin.googleapis.com
   storage-component.googleapis.com
   sql-component.googleapis.com
   sqladmin.googleapis.com
@@ -281,7 +279,7 @@ else
   log_filter+=('protoPayload.methodName:(')
   log_filter+=('"storage.buckets.create"')
   log_filter+=('OR "compute.instances.insert" OR "compute.instances.start" OR "datasetservice.insert"')
-  log_filter+=('OR "tableservice.insert" OR "google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance"')
+  log_filter+=('OR "tableservice.insert" ')
   log_filter+=('OR "cloudsql.instances.create" OR "v1.compute.disks.insert" OR "v1.compute.disks.createSnapshot"')
   log_filter+=('OR "v1.compute.snapshots.insert" OR "v1.compute.disks.createSnapshot"')
 

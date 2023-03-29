@@ -16,7 +16,6 @@ To use it.
 PLUGINS = [
     "Buckets",
     "Bigquery",
-    "Bigtable",
     "Cloudsql",
     "Disks",
     "Instances",
