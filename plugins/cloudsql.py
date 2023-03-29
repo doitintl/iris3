@@ -8,12 +8,12 @@ from util.utils import log_time, timing
 
 class Cloudsql(Plugin):
     @staticmethod
-    def discovery_api():
+    def _discovery_api():
         return "sqladmin", "v1beta4"
 
-    @staticmethod
-    def api_name():
-        return "sqladmin.googleapis.com"
+    # @staticmethod
+    # def api_name():
+    #     return "sqladmin.googleapis.com"
 
     @staticmethod
     def method_names():

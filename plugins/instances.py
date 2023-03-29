@@ -17,7 +17,7 @@ class Instances(GceZonalBase):
         return compute_v1.InstancesClient()
 
     @staticmethod
-    def method_names( ):
+    def method_names():
         return ["compute.instances.insert", "compute.instances.start"]
 
     def _gcp_instance_type(self, gcp_object: dict):

@@ -14,12 +14,12 @@ from util.utils import log_time, timing
 
 class Bigquery(Plugin):
     @staticmethod
-    def discovery_api() -> typing.Tuple[str, str]:
+    def _discovery_api() -> typing.Tuple[str, str]:
         return "bigquery", "v2"
 
-    @staticmethod
-    def api_name():
-        return "bigquery-json.googleapis.com"
+    # @staticmethod
+    # def api_name():
+    #     return "bigquery-json.googleapis.com"
 
     @staticmethod
     def method_names():
@@ -137,6 +137,8 @@ class Bigquery(Plugin):
                     page_token = response["nextPageToken"]
                 else:
                     more_results = False
+            if self.counter > 0:
+                self.do_batch()
 
     def __label_dataset_and_tables(self, project_id, dataset):
         self.__label_one_dataset(dataset, project_id)
@@ -215,8 +217,6 @@ class Bigquery(Plugin):
                 self.do_batch()
         except Exception as e:
             logging.exception(e)
-        if self.counter > 0:
-            self.do_batch()
 
     @log_time
     def label_resource(self, gcp_object, project_id):

@@ -27,7 +27,7 @@ PLUGINS_MODULE = "plugins"
 class Plugin(object, metaclass=ABCMeta):
     __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     # Underlying API  max is 1000; avoid off-by-one errors
-    # We send a batch when  _BATCH_SIZE or more tasks are in it.
+    # We send a batch when _BATCH_SIZE or more tasks are in it, or at the end of a label_all
     _BATCH_SIZE = 990
 
     # For a class to know its subclasses and their instances is generally bad.
@@ -36,12 +36,11 @@ class Plugin(object, metaclass=ABCMeta):
     plugins = {}
 
     def __init__(self):
-        # self._google_client = discovery.build(*self.discovery_api())
         self.__init_batch_req()
 
     @staticmethod
     @abstractmethod
-    def discovery_api() -> Tuple[str, str]:
+    def _discovery_api() -> Tuple[str, str]:
         pass
 
     @staticmethod
@@ -60,12 +59,13 @@ class Plugin(object, metaclass=ABCMeta):
         """
         return True
 
-    @lru_cache(maxsize=1)  # TODO make it a class method
-    def _google_api_client(self):
-        return discovery.build(*self.discovery_api())
+    @classmethod
+    @lru_cache(maxsize=1)
+    def _google_api_client(cls):
+        return discovery.build(*cls._discovery_api())
 
     @staticmethod  # Implementations should cache the result
-    def _cloudclient(project_id=None):  # Implementations can have the 2d param or not
+    def _cloudclient(project_id=None):  #  Some impl have project_id param, some don't
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
         )
@@ -96,7 +96,8 @@ class Plugin(object, metaclass=ABCMeta):
             return "".join(c if label_chars.match(c) else "_" for c in s).lower()[:62]
 
         def value(func, gcp_obj):
-            return legalize_value(func(gcp_obj))
+            val = func(gcp_obj)
+            return legalize_value(val)
 
         def key(func) -> str:
             resource_type = type(self).__name__
@@ -147,11 +148,11 @@ class Plugin(object, metaclass=ABCMeta):
         TODO: Why not get the project_id out of the gcp_object?"""
         pass
 
-    @staticmethod
-    @abstractmethod
-    def api_name():
-        """The name of the Google REST API for managing such resources"""
-        pass
+    # @staticmethod
+    # @abstractmethod
+    # def api_name():
+    #     """The name of the Google REST API for managing such resources"""
+    #     pass
 
     @staticmethod
     @abstractmethod

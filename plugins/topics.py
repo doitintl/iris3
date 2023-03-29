@@ -24,12 +24,12 @@ class Topics(Plugin):
         return pubsub_v1.PublisherClient()
 
     @staticmethod
-    def discovery_api() -> Tuple[str, str]:
+    def _discovery_api() -> Tuple[str, str]:
         return "pubsub", "v1"
 
-    @staticmethod
-    def api_name():
-        return "pubsub.googleapis.com"
+    # @staticmethod
+    # def api_name():
+    #     return "pubsub.googleapis.com"
 
     def method_names(self):
         # Actually longer name, but substring is allowed
@@ -47,7 +47,7 @@ class Topics(Plugin):
     def __get_topic(self, topic_path):
         try:
             assert self.__topic_path_regex.match(topic_path)
-            topic: Topic = pubsub_v1.PublisherClient().get_topic(topic=topic_path)
+            topic: Topic = self._cloudclient().get_topic(topic=topic_path)
             return cloudclient_pb_obj_to_dict(topic)
         except errors.HttpError as e:
             logging.exception(e)

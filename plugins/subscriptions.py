@@ -25,13 +25,13 @@ class Subscriptions(Plugin):
         return pubsub_v1.SubscriberClient()
 
     @staticmethod
-    def discovery_api() -> typing.Tuple[str, str]:
+    def _discovery_api() -> typing.Tuple[str, str]:
         """Not used"""
         return "pubsub", "v1"
 
-    @staticmethod
-    def api_name():
-        return "pubsub.googleapis.com"
+    # @staticmethod
+    # def api_name():
+    #     return "pubsub.googleapis.com"
 
     @staticmethod
     def method_names():
@@ -47,6 +47,8 @@ class Subscriptions(Plugin):
                     self.label_resource(sub, project_id)
                 except Exception as e:
                     logging.exception(e)
+            if self.counter > 0:
+                self.do_batch()
 
     def __get_subscription(self, subscription_path):
         assert self.__sub_path_regex.match(subscription_path)

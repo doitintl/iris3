@@ -12,12 +12,12 @@ from util.utils import log_time, timing, dict_to_camelcase
 
 class Buckets(Plugin):
     @staticmethod
-    def discovery_api() -> typing.Tuple[str, str]:
+    def _discovery_api() -> typing.Tuple[str, str]:
         return "storage", "v1"
 
-    @staticmethod
-    def api_name():
-        return "storage-component.googleapis.com"
+    # @staticmethod
+    # def api_name():
+    #     return "storage-component.googleapis.com"
 
     @staticmethod
     def method_names():

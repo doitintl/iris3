@@ -10,13 +10,13 @@ from util.utils import log_time, timing
 
 
 class Snapshots(GceBase):
-
     @staticmethod
     @lru_cache(maxsize=1)
     def _cloudclient():
         return compute_v1.SnapshotsClient()
+
     @staticmethod
-    def method_names( ):
+    def method_names():
         return ["compute.disks.createSnapshot"]
 
     def __list_snapshots(self, project_id):

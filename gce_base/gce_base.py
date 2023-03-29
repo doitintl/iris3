@@ -12,12 +12,12 @@ from util.gcp_utils import (
 
 class GceBase(Plugin, metaclass=ABCMeta):
     @staticmethod
-    def discovery_api() -> Tuple[str, str]:
+    def _discovery_api() -> Tuple[str, str]:
         return "compute", "v1"
 
-    @staticmethod
-    def api_name():
-        return "compute.googleapis.com"
+    # @staticmethod
+    # def api_name():
+    #     return "compute.googleapis.com"
 
     def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
