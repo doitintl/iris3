@@ -46,7 +46,7 @@ class Subscriptions(Plugin):
                 try:
                     self.label_resource(sub, project_id)
                 except Exception as e:
-                    logging.exception(e)
+                    logging.exception("")
             if self.counter > 0:
                 self.do_batch()
 
@@ -58,7 +58,7 @@ class Subscriptions(Plugin):
             return cloudclient_pb_obj_to_dict(subsc)
 
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def __list_subscriptions(self, project_id):
@@ -66,9 +66,7 @@ class Subscriptions(Plugin):
         subscriptions = self._cloudclient().list_subscriptions(
             request={"project": project_path}
         )
-        return cloudclient_pb_objects_to_list_of_dicts(
-            subscriptions
-        )  # TODO could make this lazy
+        return cloudclient_pb_objects_to_list_of_dicts(subscriptions)
 
     @log_time
     def label_resource(self, gcp_object: typing.Dict, project_id):
@@ -108,7 +106,7 @@ class Subscriptions(Plugin):
             subscription = self.__get_subscription(subscription_path)
             return subscription
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def _gcp_name(self, gcp_object):

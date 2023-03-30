@@ -36,7 +36,6 @@ class Disks(GceZonalBase):
         return True
 
     def _list_all(self, project_id, zone) -> typing.List[typing.Dict]:
-        # TODO could make this lazy
         request = compute_v1.ListDisksRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(request)
 
@@ -48,7 +47,7 @@ class Disks(GceZonalBase):
 
             return self._get_resource_as_dict(request)
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     @log_time

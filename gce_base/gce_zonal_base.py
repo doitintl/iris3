@@ -24,7 +24,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         try:
             return gcp_object["zone"].split("/")[-1]
         except KeyError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def _gcp_region(self, gcp_object):
@@ -33,7 +33,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             zone = self._gcp_zone(gcp_object)
             return gcp_utils.region_from_zone(zone)
         except KeyError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     @classmethod

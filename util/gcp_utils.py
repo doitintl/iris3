@@ -231,12 +231,10 @@ def predefined_zone_list():
 
 
 def cloudclient_pb_objects_to_list_of_dicts(objects):
-    return [cloudclient_pb_obj_to_dict(i) for i in objects]
+    return (cloudclient_pb_obj_to_dict(i) for i in objects)
 
 
-# todo move to GceZonalBase?
 def cloudclient_pb_obj_to_dict(o) -> Dict[str, str]:
-    # e.g. "labelFingerprint" and  "machine_type"
     keys = o.__dict__["_pb"].DESCRIPTOR.fields_by_name.keys()
     object_as_dict = {key: getattr(o, key) for key in keys}
     return dict_to_camelcase(object_as_dict)

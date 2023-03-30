@@ -3,13 +3,15 @@ Labeling BQ tables and datasets.
 """
 import logging
 import typing
+from functools import lru_cache
 
+from google.cloud import bigquery
 from googleapiclient import errors
 from ratelimit import limits, sleep_and_retry
 
 from plugin import Plugin
 from util import gcp_utils
-from util.utils import log_time, timing
+from util.utils import log_time, timing, dict_to_camelcase
 
 
 class Bigquery(Plugin):
@@ -20,6 +22,11 @@ class Bigquery(Plugin):
     # @staticmethod
     # def api_name():
     #     return "bigquery-json.googleapis.com"
+
+    @staticmethod
+    @lru_cache(maxsize=500)  # cached per project
+    def _cloudclient(project_id):
+        return bigquery.Client(project=project_id)
 
     @staticmethod
     def method_names():
@@ -36,65 +43,61 @@ class Bigquery(Plugin):
             name = name[index + 1 :]
             return name
         except KeyError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def _gcp_location(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
-            location = gcp_object["location"]
-            location = location.lower()
-            return location
+            return gcp_object["location"].lower()
         except KeyError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
-    def __get_dataset(self, project_id, name):
+    def __get_dataset(self, project_id, dataset_name):
         try:
-            result = (
-                self._google_api_client()
-                .datasets()
-                .get(projectId=project_id, datasetId=name)
-                .execute()
+            ds = self._cloudclient(project_id).get_dataset(
+                f"{project_id}.{dataset_name}"
             )
-            return result
+            return self.__response_obj_to_dict(ds)
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
+
+    def __response_obj_to_dict(self, ds_or_table):
+        d1 = ds_or_table._properties
+        d2 = {k: v for k, v in d1.items() if not k.startswith("_")}
+        d3 = dict_to_camelcase(d2)
+        return d3
 
     def __get_table(self, project_id, dataset, table):
         try:
-            result = (
-                self._google_api_client()
-                .tables()
-                .get(projectId=project_id, datasetId=dataset, tableId=table)
-                .execute()
+            table = self._cloudclient(project_id).get_table(
+                f"{project_id}.{dataset}.{table}"
             )
-            return result
+            return self.__response_obj_to_dict(table)
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def get_gcp_object(self, log_data):
         try:
-            proto_payload = log_data["protoPayload"]
-            service_data = proto_payload["serviceData"]
-            dataset_insert_request_ = service_data["datasetInsertRequest"]
-            resource = dataset_insert_request_["resource"]
+            resource = log_data["protoPayload"]["serviceData"]["datasetInsertRequest"][
+                "resource"
+            ]
             dataset_name = resource["datasetName"]
             datasetid = dataset_name["datasetId"]
             projectid = dataset_name["projectId"]
             dataset = self.__get_dataset(projectid, datasetid)
             return dataset
-        except Exception:
+        except Exception as e:
+            # KeyError datasetInsertRequest occurs if this is actually a table-insert
             # No such dataset; hoping for table
             pass
         try:
-            proto_payload_ = log_data["protoPayload"]
-            service_data_ = proto_payload_["serviceData"]
-            table_insert_request_ = service_data_["tableInsertRequest"]
-            resource_ = table_insert_request_["resource"]
-            table = resource_["tableName"]
+            table = log_data["protoPayload"]["serviceData"]["tableInsertRequest"][
+                "resource"
+            ]["tableName"]
             tableid = table["tableId"]
             projectid_ = table["projectId"]
             datasetid = table["datasetId"]
@@ -104,10 +107,10 @@ class Bigquery(Plugin):
             if "'serviceData'" in str(ke):
                 logging.info("Cannot find serviceData for table")
             else:
-                logging.exception(ke)
+                logging.exception("")
             return None
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def label_all(self, project_id):
@@ -115,57 +118,24 @@ class Bigquery(Plugin):
         Label both tables and data sets
         """
         with timing(f"label_all for BigQuery in {project_id}"):
-            page_token = None
-            more_results = True
-            while more_results:
-                response = (
-                    self._google_api_client()
-                    .datasets()
-                    .list(
-                        projectId=project_id,
-                        pageToken=page_token,
-                        # Though filters are supported here, "NOT" filters are
-                        # not
-                    )
-                    .execute()
-                )
+            datasets = self._cloudclient(project_id).list_datasets()
+            for dataset in datasets:
+                dataset_dict = dataset._properties
+                self.__label_dataset_and_tables(project_id, dataset_dict)
 
-                if "datasets" in response:
-                    for dataset in response["datasets"]:
-                        self.__label_dataset_and_tables(project_id, dataset)
-                if "nextPageToken" in response:
-                    page_token = response["nextPageToken"]
-                else:
-                    more_results = False
             if self.counter > 0:
                 self.do_batch()
 
     def __label_dataset_and_tables(self, project_id, dataset):
         self.__label_one_dataset(dataset, project_id)
-        page_token = None
-        more_results = True
-        while more_results:
-            response = (
-                self._google_api_client()
-                .tables()
-                .list(
-                    projectId=project_id,
-                    datasetId=dataset["datasetReference"]["datasetId"],
-                    pageToken=page_token,
-                    # filter not supported
-                )
-                .execute()
-            )
-            if "tables" in response:
-                for t in response["tables"]:
-                    t["location"] = dataset["location"]
-                    self.__label_one_table(t, project_id)
+        self.__label_tables_for_dataset(dataset, project_id)
 
-            if "nextPageToken" in response:
-                page_token = response["nextPageToken"]
-                more_results = True
-            else:
-                more_results = False
+    def __label_tables_for_dataset(self, dataset, project_id):
+        ds_id = dataset["id"].replace(":", ".")
+        for table in self._cloudclient(project_id).list_tables(dataset=ds_id):
+            properties = table._properties
+            properties["location"] = dataset["location"]
+            self.__label_one_table(properties, project_id)
 
     @sleep_and_retry
     @limits(calls=35, period=60)
@@ -180,8 +150,11 @@ class Bigquery(Plugin):
                 body=labels,
                 datasetId=dataset_reference["datasetId"],
             ).execute()
+            self.counter += 1
+            if self.counter >= self._BATCH_SIZE:
+                self.do_batch()
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")
 
     @sleep_and_retry
     @limits(calls=35, period=60)
@@ -216,7 +189,7 @@ class Bigquery(Plugin):
             if self.counter >= self._BATCH_SIZE:
                 self.do_batch()
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")
 
     @log_time
     def label_resource(self, gcp_object, project_id):
@@ -226,4 +199,4 @@ class Bigquery(Plugin):
             else:
                 self.__label_one_table(gcp_object, project_id)
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")

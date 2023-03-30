@@ -20,7 +20,6 @@ class Snapshots(GceBase):
         return ["compute.disks.createSnapshot"]
 
     def __list_snapshots(self, project_id):
-        # TODO could make this lazy
         snapshots = compute_v1.ListSnapshotsRequest(project=project_id)
         return self._list_resources_as_dicts(snapshots)
 
@@ -29,7 +28,7 @@ class Snapshots(GceBase):
             request = compute_v1.GetSnapshotRequest(project=project_id, snapshot=name)
             return self._get_resource_as_dict(request)
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def label_all(self, project_id):
@@ -39,7 +38,7 @@ class Snapshots(GceBase):
                 try:
                     self.label_resource(snapshot, project_id)
                 except Exception as e:
-                    logging.exception(e)
+                    logging.exception("")
             if self.counter > 0:
                 self.do_batch()
 
@@ -54,7 +53,7 @@ class Snapshots(GceBase):
             snapshot = self.__get_snapshot(project_id, name)
             return snapshot
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     @log_time

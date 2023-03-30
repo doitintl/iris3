@@ -28,12 +28,12 @@ class Instances(GceZonalBase):
             machine_type = machine_type[ind + 1 :]
             return machine_type
         except KeyError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def _list_all(self, project_id, zone) -> List[Dict]:
         page_result = compute_v1.ListInstancesRequest(project=project_id, zone=zone)
-        return self._list_resources_as_dicts(page_result)  # TODO could make this lazy
+        return self._list_resources_as_dicts(page_result)
 
     def _get_resource(self, project_id, zone, name) -> Optional[Dict]:
         try:
@@ -43,7 +43,7 @@ class Instances(GceZonalBase):
 
             return self._get_resource_as_dict(request)
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     @log_time

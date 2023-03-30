@@ -328,7 +328,7 @@ class FlaskException(Exception):
 
 @app.errorhandler(FlaskException)
 def handle_invalid_usage(error):
-    logging.exception(error)
+    logging.exception(exc_info=error)
     response = flask.jsonify(error.to_dict())
     response.status_code = error.status_code
     return response

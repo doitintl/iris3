@@ -26,7 +26,7 @@ def publish(msg: str, topic_id: str):
             except ValueError:  # not an int, failed
                 logging.info("PubSub publishing result %s", result)
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")
 
     future = __publisher.publish(topic_path, msg.encode("utf-8"))
     future.add_done_callback(on_publish)

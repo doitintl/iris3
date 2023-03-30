@@ -42,7 +42,7 @@ class Topics(Plugin):
                 try:
                     self.label_resource(topics, project_id)
                 except Exception as e:
-                    logging.exception(e)
+                    logging.exception("")
 
     def __get_topic(self, topic_path):
         try:
@@ -50,15 +50,13 @@ class Topics(Plugin):
             topic: Topic = self._cloudclient().get_topic(topic=topic_path)
             return cloudclient_pb_obj_to_dict(topic)
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def __list_topics(self, project_id) -> List[Dict]:
         project_path = f"projects/{project_id}"
         topics = self._cloudclient().list_topics(request={"project": project_path})
-        return cloudclient_pb_objects_to_list_of_dicts(
-            topics
-        )  # TODO could make this lazy
+        return cloudclient_pb_objects_to_list_of_dicts(topics)
 
     @log_time
     def label_resource(self, gcp_object: Dict, project_id):
@@ -96,7 +94,7 @@ class Topics(Plugin):
 
             return topic
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def _gcp_name(self, gcp_object):

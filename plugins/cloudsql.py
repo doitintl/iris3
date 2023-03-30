@@ -43,7 +43,7 @@ class Cloudsql(Plugin):
             region = region.lower()
             return region
         except KeyError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def __get_instance(self, project_id, name):
@@ -56,7 +56,7 @@ class Cloudsql(Plugin):
             )
             return result
         except errors.HttpError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def get_gcp_object(self, log_data):
@@ -69,7 +69,7 @@ class Cloudsql(Plugin):
             instance = self.__get_instance(labels_["project_id"], instance)
             return instance
         except Exception as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def label_all(self, project_id):
@@ -95,7 +95,7 @@ class Cloudsql(Plugin):
                     try:
                         self.label_resource(database_instance, project_id)
                     except Exception as e:
-                        logging.exception(e)
+                        logging.exception("")
                 if "nextPageToken" in response:
                     page_token = response["nextPageToken"]
                 else:
@@ -120,7 +120,6 @@ class Cloudsql(Plugin):
                 logging.exception(
                     "CloudSQL cannot accept labels until it is fully initialized, which is why"
                     "we do not label it on-demand in the usual way",
-                    exc_info=e,
                 )
 
             raise e

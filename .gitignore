@@ -12,3 +12,4 @@ virtenv*/
 .idea/
 __pycache__/
 /requirements-test.txt
+config.yaml

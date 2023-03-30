@@ -72,14 +72,9 @@ class Plugin(object, metaclass=ABCMeta):
 
     @timed_lru_cache(seconds=600, maxsize=512)
     def _project_labels(self, project_id) -> Dict:
-
-        assert self.__proj_regex.match(
-            project_id
-        ), f"Project ID is illegal: {project_id}"
         try:
             proj = gcp_utils.get_project(project_id)
-            labels = proj.get("labels", {})
-            return labels
+            return proj.get("labels", {})
         except errors.HttpError as e:
             logging.exception(f"Failing to get labels for project {project_id}: {e}")
             return {}
@@ -145,7 +140,8 @@ class Plugin(object, metaclass=ABCMeta):
     @abstractmethod
     def label_resource(self, gcp_object: Dict, project_id: str):
         """Tag a single new object based on its description that comes from alog-line
-        TODO: Why not get the project_id out of the gcp_object?"""
+        Not clear why we cannot get the project_id out of the gcp_object. Maybe one type of resource
+        does not include project_id"""
         pass
 
     # @staticmethod
@@ -191,7 +187,7 @@ class Plugin(object, metaclass=ABCMeta):
         :return dict including original labels, project labels (if the system is configured to add those)
         and new labels. But if that would result in no change, return None
         """
-        original_labels = gcp_object["labels"] if "labels" in gcp_object else {}
+        original_labels = gcp_object.get("labels", {})
         project_labels = (
             self._project_labels(project_id) if is_copying_labels_from_project() else {}
         )
@@ -222,7 +218,7 @@ class Plugin(object, metaclass=ABCMeta):
                 name = name[index + 1 :]
             return name
         except KeyError as e:
-            logging.exception(e)
+            logging.exception("")
             return None
 
     def __init_batch_req(self):
