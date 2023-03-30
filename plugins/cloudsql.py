@@ -16,15 +16,19 @@ class Cloudsql(Plugin):
         return ["cloudsql.instances.create"]
 
     @staticmethod
+    def _cloudclient():
+        raise Exception("There is no Cloud Client luibrary for CloudSQL")
+
+    @staticmethod
     def is_labeled_on_creation() -> bool:
         """
         Labels cannot be applied to CloudSQL during its long initialization phase.
-        Three log messages arrive (within 5 sec of each other) during initialization.
-         At the first two, the CloudSQL Instance does not exist, and at the third, it is still PENDING.
 
-        Maybe use Cloud Tasks instead of Pubsub to allow delay.
-        1. Though Iris(Py2) used TaskQueue, it did NOT use delayed delivery  though it easily could  have.
-        2. Apparently objects other than CloudSQL get correctly labeled 'on-creation' based on the log event.
+        Why:
+            During initialization of CloudSQL Instance, 3 log messages arrive (within 5 sec of each other)
+            At the first two, the CloudSQL Instance does not exist, and at the third, it is still PENDING.
+        How:
+            As an alternative, maybe use Cloud Tasks instead of Pubsub to allow delay.
         """
         return False
 
@@ -58,8 +62,8 @@ class Cloudsql(Plugin):
             if "response" not in log_data["protoPayload"]:
                 return None
             labels_ = log_data["resource"]["labels"]
-            ind = labels_["database_id"].rfind(":")
-            instance = labels_["database_id"][ind + 1 :]
+            database_id = labels_["database_id"]
+            instance = database_id[database_id.rfind(":") + 1:]
             instance = self.__get_instance(labels_["project_id"], instance)
             return instance
         except Exception as e:
@@ -70,7 +74,6 @@ class Cloudsql(Plugin):
         with timing(f"label_all(CloudSQL) in {project_id}"):
             page_token = None
             while True:
-
                 response = (
                     self._google_api_client()
                     .instances()
