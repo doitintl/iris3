@@ -117,7 +117,6 @@ def test_subscriptions():
     )
 
 
-
 def main():
     dir_ = dir(sys.modules[__name__])
     test_ = "test_"
@@ -144,7 +143,7 @@ def main():
         )
         exit(1)
 
-    print(__project(),__zone(raise_exc=False), __resource_name())
+    print(__project(), __zone(raise_exc=False), __resource_name())
     f = getattr(
         sys.modules[__name__],
         func_name,

@@ -29,10 +29,6 @@ class Subscriptions(Plugin):
         """Not used"""
         return "pubsub", "v1"
 
-    # @staticmethod
-    # def api_name():
-    #     return "pubsub.googleapis.com"
-
     @staticmethod
     def method_names():
         # Actually "google.pubsub.v1.Subscriber.CreateSubscription" but a

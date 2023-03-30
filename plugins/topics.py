@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Tuple, List, Dict
 
 from google.cloud import pubsub_v1
-from google.pubsub_v1 import Topic, ListTopicsRequest
+from google.pubsub_v1 import Topic
 from googleapiclient import errors
 
 from plugin import Plugin
@@ -27,16 +27,12 @@ class Topics(Plugin):
     def _discovery_api() -> Tuple[str, str]:
         return "pubsub", "v1"
 
-    # @staticmethod
-    # def api_name():
-    #     return "pubsub.googleapis.com"
-
     def method_names(self):
-        # Actually longer name, but substring is allowed
+        # Actually the name is longer  , but substring is allowed
         return ["Publisher.CreateTopic"]
 
     def label_all(self, project_id):
-        with timing(f"label_all(Topic)  in {project_id}"):
+        with timing(f"label_all(Topic  in {project_id}"):
             topics = self.__list_topics(project_id)
             for topics in topics:
                 try:
@@ -68,8 +64,7 @@ class Topics(Plugin):
 
         topic_name = self._gcp_name(gcp_object)
         topic_path = self._cloudclient().topic_path(project_id, topic_name)
-        # We use the Google Cloud Library. The older  Google Client API used
-        # elsewhere because the latter does not seem to support changing the label.
+
         topic_object_holding_update = pubsub_v1.types.Topic(
             name=topic_path, labels=labels
         )

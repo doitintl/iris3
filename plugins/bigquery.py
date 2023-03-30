@@ -10,7 +10,7 @@ from googleapiclient import errors
 from ratelimit import limits, sleep_and_retry
 
 from plugin import Plugin
-from util import gcp_utils
+from util import gcp_utils, utils
 from util.utils import log_time, timing, dict_to_camelcase
 
 
@@ -18,10 +18,6 @@ class Bigquery(Plugin):
     @staticmethod
     def _discovery_api() -> typing.Tuple[str, str]:
         return "bigquery", "v2"
-
-    # @staticmethod
-    # def api_name():
-    #     return "bigquery-json.googleapis.com"
 
     @staticmethod
     @lru_cache(maxsize=500)  # cached per project
@@ -64,7 +60,8 @@ class Bigquery(Plugin):
             logging.exception("")
             return None
 
-    def __response_obj_to_dict(self, ds_or_table):
+    @staticmethod
+    def __response_obj_to_dict(ds_or_table):
         d1 = ds_or_table._properties
         d2 = {k: v for k, v in d1.items() if not k.startswith("_")}
         d3 = dict_to_camelcase(d2)
@@ -145,14 +142,16 @@ class Bigquery(Plugin):
             return
         try:
             dataset_reference = gcp_object["datasetReference"]
-            self._google_api_client().datasets().patch(
-                projectId=dataset_reference["projectId"],
-                body=labels,
-                datasetId=dataset_reference["datasetId"],
-            ).execute()
-            self.counter += 1
-            if self.counter >= self._BATCH_SIZE:
-                self.do_batch()
+            dataset_id = dataset_reference["datasetId"]
+
+            assert (
+                project_id == dataset_reference["projectId"]
+            ), f"{project_id}!={dataset_reference['projectId']}"
+
+            client = self._cloudclient(project_id)
+            ds = client.get_dataset(f"{project_id}.{dataset_id}")
+            ds.labels = labels["labels"]
+            client.update_dataset(ds, ["labels"])
         except Exception as e:
             logging.exception("")
 

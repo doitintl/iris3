@@ -1,6 +1,8 @@
 """Entry point for Iris."""
 
 # Must init logging before any library code writes logs (which would overwide our config)
+from typing import Dict
+
 from util.utils import init_logging
 
 init_logging()
@@ -11,7 +13,6 @@ import base64
 import json
 import logging
 import os
-import typing
 
 import flask
 import googlecloudprofiler
@@ -119,10 +120,10 @@ def schedule():
         if not gcp_utils.detect_gae():
             max_project_in_localdev = 3
             if len(configured_projects) > max_project_in_localdev:
-                msg = """In development, we support no more than %d projects (out of the %d projects available) to avoid overwhelming the system. 
-                   One motivation for this safety measure is that if you are using your personal credentials, 
+                msg = """In development, we support no more than %d projects (out of the %d projects available) to avoid accidentally flooding the system. 
+                   If you are using your personal credentials, 
                    the system has access to *ALL* the projects that you have access to, possibly in multiple organizations.
-                   But you can increase the max_project_in_localdev variable above if you do want.
+                   But you can increase the max_project_in_localdev variable above.
                    """ % (
                     max_project_in_localdev,
                     len(configured_projects),
@@ -240,7 +241,7 @@ def __label_one_0(data, plugin):
         )
 
 
-def __extract_pubsub_content() -> typing.Dict:
+def __extract_pubsub_content() -> Dict:
     """Take the value at the relevant key in the logging message from PubSub,
     Base64-decode, convert to Python object."""
     __check_pubsub_verification_token()
@@ -256,7 +257,7 @@ def __extract_pubsub_content() -> typing.Dict:
     )
 
     if not envelope:
-        raise FlaskException("Expect JSON")
+        raise FlaskException("Expect JSON, was empty")
 
     data = json.loads(base64.b64decode(envelope["message"]["data"]))
     return data

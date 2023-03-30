@@ -1,15 +1,19 @@
+__pycache__/
 *.bak
 .DS_Store
 TEMP*
+.idea/
 
-test_scripts/
-fil-result/
-test_*
 # Environments
 .env
 .venv
 virtenv*/
-.idea/
-__pycache__/
+
+#Test stuff
+test_scripts/
+fil-result/
+test_*
 /requirements-test.txt
-config.yaml
+
+# When editing the config file, don't check it in
+config-test.yaml

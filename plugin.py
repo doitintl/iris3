@@ -28,11 +28,13 @@ class Plugin(object, metaclass=ABCMeta):
     __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     # Underlying API  max is 1000; avoid off-by-one errors
     # We send a batch when _BATCH_SIZE or more tasks are in it, or at the end of a label_all
-    _BATCH_SIZE = 990
+    _BATCH_SIZE = 2  # TODO Restore
 
     # For a class to know its subclasses and their instances is generally bad.
     # We could create a separate PluginManager but let's not get too Java-ish.
-    plugins: Dict[str, "Plugin"]
+    plugins: Dict[
+        str, "Plugin"
+    ]  # Need to write the classname in quotes to avoid circular loading
     plugins = {}
 
     def __init__(self):
@@ -65,7 +67,7 @@ class Plugin(object, metaclass=ABCMeta):
         return discovery.build(*cls._discovery_api())
 
     @staticmethod  # Implementations should cache the result
-    def _cloudclient(project_id=None):  #  Some impl have project_id param, some don't
+    def _cloudclient(project_id=None):  # Some impl have project_id param, some don't
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
         )
@@ -91,22 +93,18 @@ class Plugin(object, metaclass=ABCMeta):
             return "".join(c if label_chars.match(c) else "_" for c in s).lower()[:62]
 
         def value(func, gcp_obj):
-            val = func(gcp_obj)
-            return legalize_value(val)
+            return legalize_value(func(gcp_obj))
 
         def key(func) -> str:
-            resource_type = type(self).__name__
             general_pfx = iris_prefix()
             assert general_pfx is not None
-            specific_pfx = specific_prefix(resource_type)
+            specific_pfx = specific_prefix(type(self).__name__)
             pfx = specific_pfx if specific_pfx is not None else general_pfx
             pfx_full = pfx + "_" if pfx else ""
             return pfx_full + func.__name__[len(func_name_pfx) :]
 
         # noinspection PyTypeChecker
-        ret = {key(f): value(f, gcp_object) for f in methods(self, func_name_pfx)}
-
-        return ret
+        return {key(f): value(f, gcp_object) for f in methods(self, func_name_pfx)}
 
     # noinspection PyUnusedLocal
     def __batch_callback(self, request, response, exception):
@@ -139,16 +137,11 @@ class Plugin(object, metaclass=ABCMeta):
 
     @abstractmethod
     def label_resource(self, gcp_object: Dict, project_id: str):
-        """Tag a single new object based on its description that comes from alog-line
+        """Label a single new object based on its description that comes from alog-line.
+
         Not clear why we cannot get the project_id out of the gcp_object. Maybe one type of resource
         does not include project_id"""
         pass
-
-    # @staticmethod
-    # @abstractmethod
-    # def api_name():
-    #     """The name of the Google REST API for managing such resources"""
-    #     pass
 
     @staticmethod
     @abstractmethod

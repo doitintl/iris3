@@ -11,10 +11,6 @@ class Cloudsql(Plugin):
     def _discovery_api():
         return "sqladmin", "v1beta4"
 
-    # @staticmethod
-    # def api_name():
-    #     return "sqladmin.googleapis.com"
-
     @staticmethod
     def method_names():
         return ["cloudsql.instances.create"]
@@ -39,9 +35,7 @@ class Cloudsql(Plugin):
     def _gcp_region(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
-            region = gcp_object["region"]
-            region = region.lower()
-            return region
+            return gcp_object["region"].lower()
         except KeyError as e:
             logging.exception("")
             return None

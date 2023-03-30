@@ -1,6 +1,7 @@
 # Iris
 
-In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. She was the handmaiden to Hera.
+In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. She
+was the handmaiden to Hera.
 
 # Blog post
 

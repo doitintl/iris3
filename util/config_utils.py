@@ -1,4 +1,6 @@
 import functools
+import logging
+import os
 import re
 import typing
 
@@ -61,6 +63,12 @@ def pubsub_token() -> str:
 
 @functools.lru_cache
 def get_config() -> typing.Dict:
-    with open("config.yaml") as config_file:
+    test_config = "config-test.yaml"
+    if os.path.isfile(test_config):
+        config_filename = test_config
+        logging.info("Using test configuration")
+    else:
+        config_filename = "config.yaml"
+    with open(config_filename) as config_file:
         config = yaml.full_load(config_file)
     return config

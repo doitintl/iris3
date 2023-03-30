@@ -15,10 +15,6 @@ class Buckets(Plugin):
     def _discovery_api() -> typing.Tuple[str, str]:
         return "storage", "v1"
 
-    # @staticmethod
-    # def api_name():
-    #     return "storage-component.googleapis.com"
-
     @staticmethod
     def method_names():
         return ["storage.buckets.create"]

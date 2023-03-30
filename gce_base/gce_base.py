@@ -15,10 +15,6 @@ class GceBase(Plugin, metaclass=ABCMeta):
     def _discovery_api() -> Tuple[str, str]:
         return "compute", "v1"
 
-    # @staticmethod
-    # def api_name():
-    #     return "compute.googleapis.com"
-
     def _gcp_name(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         return self._name_no_separator(gcp_object)
