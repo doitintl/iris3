@@ -64,9 +64,14 @@ def pubsub_token() -> str:
 @functools.lru_cache
 def get_config() -> typing.Dict:
     test_config = "config-test.yaml"
+    dev_config = "config-dev.yaml"
     if os.path.isfile(test_config):
         config_filename = test_config
         logging.info("Using test configuration")
+    if os.path.isfile(dev_config):
+        config_filename = dev_config
+        logging.info("Using dev configuration")
+
     else:
         config_filename = "config.yaml"
     with open(config_filename) as config_file:

@@ -50,9 +50,7 @@ class Subscriptions(Plugin):
         assert self.__sub_path_regex.match(subscription_path)
         try:
             subsc = self._cloudclient().get_subscription(subscription=subscription_path)
-
             return cloudclient_pb_obj_to_dict(subsc)
-
         except errors.HttpError as e:
             logging.exception("")
             return None

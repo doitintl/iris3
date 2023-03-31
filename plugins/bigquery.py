@@ -121,7 +121,7 @@ class Bigquery(Plugin):
                 self.__label_dataset_and_tables(project_id, dataset_dict)
 
             if self.counter > 0:
-                self.do_batch()
+                self.do_batch()#Used for Tables, not Datasets
 
     def __label_dataset_and_tables(self, project_id, dataset):
         self.__label_one_dataset(dataset, project_id)
@@ -130,9 +130,9 @@ class Bigquery(Plugin):
     def __label_tables_for_dataset(self, dataset, project_id):
         ds_id = dataset["id"].replace(":", ".")
         for table in self._cloudclient(project_id).list_tables(dataset=ds_id):
-            properties = table._properties
-            properties["location"] = dataset["location"]
-            self.__label_one_table(properties, project_id)
+            table_dict = table._properties
+            table_dict["location"] = dataset["location"]
+            self.__label_one_table(table_dict, project_id)
 
     @sleep_and_retry
     @limits(calls=35, period=60)

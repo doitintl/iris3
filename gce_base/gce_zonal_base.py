@@ -52,9 +52,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
 
     def label_all(self, project_id):
         with timing(f"label_all {type(self).__name__} in {project_id}"):
-            zones = self._all_zones()
-            self.label_by_zones(project_id, zones)
-
+            self.label_by_zones(project_id, self._all_zones())
             if self.counter > 0:
                 self.do_batch()
 

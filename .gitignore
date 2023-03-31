@@ -15,5 +15,6 @@ fil-result/
 test_*
 /requirements-test.txt
 
-# When editing the config file, don't check it in
+# These are
 config-test.yaml
+config-dev.yaml
