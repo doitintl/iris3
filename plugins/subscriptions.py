@@ -43,8 +43,7 @@ class Subscriptions(Plugin):
                     self.label_resource(sub, project_id)
                 except Exception as e:
                     logging.exception("")
-            if self.counter > 0:
-                self.do_batch()
+
 
     def __get_subscription(self, subscription_path):
         assert self.__sub_path_regex.match(subscription_path)
@@ -75,8 +74,7 @@ class Subscriptions(Plugin):
         subscription_path = self._cloudclient().subscription_path(
             project_id, subscription_name
         )
-        # Use the Google Cloud Library instead of the Google Client API used
-        #   because the latter does not seem to support changing the label,
+
         subscription_object_holding_update = pubsub_v1.types.Subscription(
             name=subscription_path, topic=topic, labels=labels
         )

@@ -40,13 +40,11 @@ class Buckets(Plugin):
 
     def __get_bucket(self, bucket_name, project_id):
         try:
-            bucket = self._cloudclient(project_id).get_bucket(
+            bucket_response = self._cloudclient(project_id).get_bucket(
                 bucket_or_name=bucket_name
             )
-            d1 = bucket._properties | bucket.__dict__
-            d2 = {k: v for k, v in d1.items() if not k.startswith("_")}
-            d3 = dict_to_camelcase(d2)
-            return d3
+            ret = self.__response_obj_to_dict(bucket_response)
+            return ret
 
         except Exception as e:
             logging.exception("")
@@ -63,11 +61,20 @@ class Buckets(Plugin):
             logging.exception("")
             return None
 
+    @staticmethod
+    def __response_obj_to_dict(bucket_response):
+        d1 = bucket_response._properties  # Is this meeded:| bucket_response.__dict__
+        d2 = {k: v for k, v in d1.items() if not k.startswith("_")}
+        d3 = dict_to_camelcase(d2)
+        return d3
+
     def __list_buckets(self, project_id):
         buckets = self._cloudclient(project_id).list_buckets()
-        return cloudclient_pb_objects_to_list_of_dicts(buckets)
+        return (self.__response_obj_to_dict(
+            bucket_response) for bucket_response in buckets
+        )
 
-    def label_all(self, project_id):  # TODO extract this code for general use
+    def label_all(self, project_id):
         with timing(f"label_all(Bucket) in {project_id}"):
             buckets = self.__list_buckets(project_id)
             for bucket in buckets:
@@ -80,7 +87,6 @@ class Buckets(Plugin):
 
     @log_time
     def label_resource(self, gcp_object, project_id):
-
         labels = self._build_labels(gcp_object, project_id)
         if labels is None:
             return

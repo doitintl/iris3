@@ -121,7 +121,7 @@ class Bigquery(Plugin):
                 self.__label_dataset_and_tables(project_id, dataset_dict)
 
             if self.counter > 0:
-                self.do_batch()#Used for Tables, not Datasets
+                self.do_batch()  # Used for Tables, not Datasets
 
     def __label_dataset_and_tables(self, project_id, dataset):
         self.__label_one_dataset(dataset, project_id)

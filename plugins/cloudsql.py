@@ -63,7 +63,7 @@ class Cloudsql(Plugin):
                 return None
             labels_ = log_data["resource"]["labels"]
             database_id = labels_["database_id"]
-            instance = database_id[database_id.rfind(":") + 1:]
+            instance = database_id[database_id.rfind(":") + 1 :]
             instance = self.__get_instance(labels_["project_id"], instance)
             return instance
         except Exception as e:

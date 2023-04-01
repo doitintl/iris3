@@ -56,23 +56,6 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             if self.counter > 0:
                 self.do_batch()
 
-    # ef process_hello_world():
-    #     def f(serial):
-    #         time.sleep(1)
-    #         return f"ended {serial}"
-
-    #
-    #     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-    #         futs = [executor.submit(f, serial) for serial in range(10)]
-    #         rets = []
-    #         for future in concurrent.futures.as_completed(futs):
-    #             try:
-    #                 rets.append(future.result())
-    #             except Exception as exc:
-    #                 print('%r generated an exception: %s' % (exc))
-    #
-    #     return f"Hello , {3}  threads done "
-
     def label_by_zones(self, project_id, zones):
         def label_one_zone(zone):
             with timing(

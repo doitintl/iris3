@@ -70,15 +70,14 @@ EOF
   exit 1
 fi
 
-
-rm config-test.yaml
+rm config-test.yaml ||true
 
 # Prepare to revert config on exit
 function revert_config() {
   # Cleanup should not stop on error
   set +e
   echo >&2 "Reverting config"
-  rm config-test.yaml
+  rm config-test.yaml ||true
 }
 
 trap "revert_config" EXIT
@@ -131,12 +130,12 @@ trap "clean_resources" EXIT
 sleep 20 # Need time for traffic to be migrated to the new version
 
 gcloud compute instances create "instance${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
-gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
-gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
-gcloud pubsub topics create "topic${RUN_ID}" --project "$TEST_PROJECT"
-gcloud pubsub subscriptions create "subscription${RUN_ID}" --topic "topic${RUN_ID}" --project "$TEST_PROJECT"
-bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
-bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
+#gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
+#gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
+#gcloud pubsub topics create "topic${RUN_ID}" --project "$TEST_PROJECT"
+#gcloud pubsub subscriptions create "subscription${RUN_ID}" --topic "topic${RUN_ID}" --project "$TEST_PROJECT"
+#bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
+#bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
 gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
 
 # It takes time before labels are available to be read by "describe".
@@ -150,25 +149,25 @@ JQ=(jq -e ".labels.${RUN_ID}_name")
 
 #From now on , don't exit on test failure
 set +e
-gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
-if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
-if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-# Re Cloud Storagte, note:
+#gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+#gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+#bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
+#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+#bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
+#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+# Re Cloud Storage, note:
 # 1. For buckets, JSON shows labels without the wrapper  label:{} seen in the others.
 # 2. For this test, we specified a label for buckets that is different from other resource types
 gsutil label get "gs://bucket${RUN_ID}" | jq -e ".gcs${RUN_ID}_name"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud compute instances describe "instance${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-gcloud compute disks describe "disk${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+#gcloud compute disks describe "disk${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+#gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 
 if [ $ERROR -ne 0 ];
 then

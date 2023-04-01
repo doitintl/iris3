@@ -14,8 +14,8 @@ google-cloud-storage==2.7.0
 #CloudSQL Admin: In 3-2023, https://cloud.google.com/sql/docs/mysql/admin-api/libraries#python
 # Says to use the discovery based  google-api-python-client
 
-#For Google Cloud PRofiler, add the following line and set up app.yaml as
-#google-cloud-profiler
+#For Google Cloud PRofiler,  set up app.yaml as as below
+google-cloud-profiler
 # gunicorn is only needed if you add an entrypoint:
 # to app.yaml as a workaround to let Cloud Profiler work.
 # Do so as follows:
