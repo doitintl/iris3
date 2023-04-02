@@ -45,8 +45,9 @@ PUBSUB_TEST_TOKEN=$(hexdump -n 16 -e '4/4 "%08X" 1 "\n"' /dev/urandom| tr '[:upp
 export DEPLOYMENT_PROJECT=$1
 export TEST_PROJECT=$2
 
-GCE_REGION=europe-central2
+
 GCE_ZONE=europe-central2-b
+GCE_REGION=$(echo $GCE_ZONE |egrep -o "[a-z0-9]+-[a-z0-9]+-"|  rev | cut -c2- | rev)
 
 
 declare -a projects
@@ -117,7 +118,7 @@ function clean_resources() {
   bq rm -f --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
   gsutil rm -r "gs://bucket${RUN_ID}"
 
-   gcloud app services delete iris3 -q --project $DEPLOYMENT_PROJECT
+  gcloud app services delete iris3 -q --project $DEPLOYMENT_PROJECT
 
   FINISH_TEST=$(date "+%s")
   ELAPSED_SEC_TEST=$((FINISH_TEST - START_TEST))
@@ -127,47 +128,49 @@ function clean_resources() {
 }
 trap "clean_resources" EXIT
 
-sleep 20 # Need time for traffic to be migrated to the new version
+sleep 60 # Need time for traffic to be migrated to the new version
 
 gcloud compute instances create "instance${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
-#gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
-#gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
-#gcloud pubsub topics create "topic${RUN_ID}" --project "$TEST_PROJECT"
-#gcloud pubsub subscriptions create "subscription${RUN_ID}" --topic "topic${RUN_ID}" --project "$TEST_PROJECT"
-#bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
-#bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
+gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
+gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
+gcloud pubsub topics create "topic${RUN_ID}" --project "$TEST_PROJECT"
+gcloud pubsub subscriptions create "subscription${RUN_ID}" --topic "topic${RUN_ID}" --project "$TEST_PROJECT"
+bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
+bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
 gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
 
 # It takes time before labels are available to be read by "describe".
 #
 # jq -e generates exit code 1 on failure. Since we set -e, the script will fail appropriately if the value is not found
 
-sleep 30
+sleep 20
 
 DESCRIBE_FLAGS=(--project "$TEST_PROJECT" --format json)
 JQ=(jq -e ".labels.${RUN_ID}_name")
 
 #From now on , don't exit on test failure
 set +e
-#gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-#gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-#bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
-#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-#bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
-#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+gcloud pubsub topics describe "topic${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+gcloud pubsub subscriptions describe "subscription${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 # Re Cloud Storage, note:
 # 1. For buckets, JSON shows labels without the wrapper  label:{} seen in the others.
-# 2. For this test, we specified a label for buckets that is different from other resource types
-gsutil label get "gs://bucket${RUN_ID}" | jq -e ".gcs${RUN_ID}_name"
+# 2. As a test of labels that are specific to a resource type, in this test we
+# defined labels starting gcs
+#
+gsutil label get "gs://bucket${RUN_ID}"| jq -e ".gcs${RUN_ID}_name"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud compute instances describe "instance${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-#gcloud compute disks describe "disk${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
-#gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
-#if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+gcloud compute disks describe "disk${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
+gcloud compute snapshots describe "snapshot${RUN_ID}" "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"
+if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 
 if [ $ERROR -ne 0 ];
 then

@@ -65,15 +65,17 @@ def pubsub_token() -> str:
 def get_config() -> typing.Dict:
     test_config = "config-test.yaml"
     dev_config = "config-dev.yaml"
+
     if os.path.isfile(test_config):
         config_filename = test_config
         logging.info("Using test configuration")
-    if os.path.isfile(dev_config):
+    elif os.path.isfile(dev_config):
         config_filename = dev_config
         logging.info("Using dev configuration")
-
     else:
+        logging.info("Using projection configuration")
         config_filename = "config.yaml"
+
     with open(config_filename) as config_file:
         config = yaml.full_load(config_file)
     return config

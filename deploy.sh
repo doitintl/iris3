@@ -184,7 +184,7 @@ gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJEC
 if [[ $? -eq 0 ]]; then
   set -e
   echo >&2 "Updating $DO_LABEL_SUBSCRIPTION"
- # TODO avoid repetition here and in similar create-or-update cases
+
   gcloud pubsub subscriptions update "$DO_LABEL_SUBSCRIPTION" \
     --project="$PROJECT_ID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \

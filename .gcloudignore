@@ -14,3 +14,5 @@ README.md
 TEMP*
 *.template
 
+config-dev.yaml
+

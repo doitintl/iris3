@@ -28,7 +28,7 @@ class Plugin(object, metaclass=ABCMeta):
     __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     # Underlying API  max is 1000; avoid off-by-one errors
     # We send a batch when _BATCH_SIZE or more tasks are in it, or at the end of a label_all
-    _BATCH_SIZE = 2  # TODO Restore
+    _BATCH_SIZE = 990
 
     # For a class to know its subclasses and their instances is generally bad.
     # We could create a separate PluginManager but let's not get too Java-ish.
