@@ -128,7 +128,7 @@ function clean_resources() {
 }
 trap "clean_resources" EXIT
 
-sleep 60 # Need time for traffic to be migrated to the new version
+sleep 30 # Need time for traffic to be migrated to the new version
 
 gcloud compute instances create "instance${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
 gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
