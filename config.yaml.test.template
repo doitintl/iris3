@@ -1,7 +1,6 @@
-# If you see this comment, you are using a config file that was temporarily generated for a test.
-# You will probably want to use config.yaml.original to build your config.yaml
+# If you see this comment, you are using a config file that was generated for a test.
 #
-#  integration_test.sh, uses this template to make a temporary config.yaml, then config.yaml is reverted at the end.
+#  integration_test.sh uses this template to make a temporary config-test.yaml.
 #
 projects:
   - ${DEPLOYMENT_PROJECT}

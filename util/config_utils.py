@@ -1,10 +1,11 @@
 import functools
-import logging
 import os
 import re
 import typing
 
 import yaml
+
+is_test_or_dev = False
 
 
 def is_copying_labels_from_project() -> bool:
@@ -25,15 +26,16 @@ def specific_prefix(resource_type) -> str:
     return specific_prefixes.get(resource_type)
 
 
-def is_project_enabled(project_id) -> bool:
-    projects = enabled_projects()
-    return (project_id in projects) if projects else True
+def is_project_enabled(project_id: str) -> bool:
+    enabled_projs = enabled_projects()
+    if enabled_projs:
+        return project_id in enabled_projs
+    else:
+        return True
 
 
 def enabled_projects() -> typing.List[str]:
-    config = get_config()
-    projects = config.get("projects")
-    return projects
+    return get_config().get("projects")
 
 
 def enabled_plugins() -> typing.List[str]:
@@ -63,19 +65,25 @@ def pubsub_token() -> str:
 
 @functools.lru_cache
 def get_config() -> typing.Dict:
-    test_config = "config-test.yaml"
     dev_config = "config-dev.yaml"
+    test_config = "config-test.yaml"
+    prod_config = "config.yaml"
 
-    if os.path.isfile(test_config):
-        config_filename = test_config
-        logging.info("Using test configuration")
-    elif os.path.isfile(dev_config):
-        config_filename = dev_config
-        logging.info("Using dev configuration")
+    global is_test_or_dev
+    if os.path.isfile(dev_config):
+        config_name = dev_config
+        is_test_or_dev = True
+    elif os.path.isfile(test_config):
+        config_name = test_config
+        is_test_or_dev = True
     else:
-        logging.info("Using projection configuration")
-        config_filename = "config.yaml"
-
-    with open(config_filename) as config_file:
+        config_name = prod_config
+        is_test_or_dev = False
+    print("Using", config_name)  # logging not yet enabled
+    with open(config_name) as config_file:
         config = yaml.full_load(config_file)
     return config
+
+
+def test_or_dev():
+    return is_test_or_dev

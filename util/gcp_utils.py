@@ -1,20 +1,15 @@
 import os
+import os
 import re
 import uuid
-from functools import lru_cache
 from typing import List, Dict, Any
 
-# from googleapiclient import discovery
-# from oauth2client.client import GoogleCredentials
 from util import localdev_config
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase
 
 
-# resource_manager = discovery.build(
-#     "cloudresourcemanager",
-#     "v1",
-#     credentials=(GoogleCredentials.get_application_default()),
-# )
+# from googleapiclient import discovery
+# from oauth2client.client import GoogleCredentials
 
 
 def detect_gae():
@@ -49,12 +44,13 @@ def generate_uuid() -> str:
 
 
 def is_appscript_project(p) -> bool:
-    """With the Google Cloud Libraries, we don't get these appscript sys- project, as we do with the Google API Client Libraries,
+    """With the Google Cloud Libraries, we don't get these
+    appscript sys- project, as we do with the Google API Client Libraries,
     but the filtering won't hurt."""
     return bool(re.match(r"sys-\d{26}", p))
 
 
-@lru_cache(maxsize=1)
+# Not cached. Returns a generator, and so not reusable
 def all_projects() -> List[str]:
     from google.cloud import resourcemanager_v3
 
@@ -67,10 +63,13 @@ def all_projects() -> List[str]:
     parent_name = current_project.name
     org_name = get_org(parent_name)
 
-    projects = projects_client.list_projects(parent=org_name)
-    all_proj = [p.project_id for p in projects]
-    ret = sorted(all_proj)
-    return ret
+    project_objects = projects_client.list_projects(parent=org_name)
+    projects = (p.project_id for p in project_objects)
+    return projects
+
+
+def method_name(projects):
+    return projects
 
 
 @log_time

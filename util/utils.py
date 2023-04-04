@@ -191,3 +191,7 @@ def symdiff(dict1, dict2):
     print(items)
     set2 = set(items)
     return set1 ^ set2
+
+
+def curr_func() -> str:
+    return sys._getframe(1).f_code.co_name

@@ -40,7 +40,6 @@ class Topics(Plugin):
                 except Exception as e:
                     logging.exception("")
 
-
     def __get_topic(self, topic_path):
         try:
             assert self.__topic_path_regex.match(topic_path)

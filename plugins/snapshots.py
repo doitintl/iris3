@@ -17,7 +17,7 @@ class Snapshots(GceBase):
 
     @staticmethod
     def method_names():
-        return ["compute.disks.createSnapshot","compute.snapshots.insert"]
+        return ["compute.disks.createSnapshot", "compute.snapshots.insert"]
 
     def __list_snapshots(self, project_id):
         snapshots = compute_v1.ListSnapshotsRequest(project=project_id)

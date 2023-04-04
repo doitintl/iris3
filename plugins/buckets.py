@@ -2,11 +2,10 @@ import logging
 import typing
 from functools import lru_cache
 
-from google.cloud import storage
+from gigoogle.cloud import storage
 
 from plugin import Plugin
 from util import gcp_utils
-from util.gcp_utils import cloudclient_pb_objects_to_list_of_dicts
 from util.utils import log_time, timing, dict_to_camelcase
 
 
@@ -70,8 +69,8 @@ class Buckets(Plugin):
 
     def __list_buckets(self, project_id):
         buckets = self._cloudclient(project_id).list_buckets()
-        return (self.__response_obj_to_dict(
-            bucket_response) for bucket_response in buckets
+        return (
+            self.__response_obj_to_dict(bucket_response) for bucket_response in buckets
         )
 
     def label_all(self, project_id):

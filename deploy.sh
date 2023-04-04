@@ -218,6 +218,7 @@ if [[ "$CRON_ONLY" == "true" ]]; then
   echo >&2 "CRON_ONLY set to true."
   gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" 2>/dev/null || true
   gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID" 2>/dev/null || true
+  gcloud logging sinks delete -q  --organization="$ORGID" "$LOG_SINK" || true
 else
   # Create PubSub topic for receiving logs about new GCP objects
   gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECT_ID" ||

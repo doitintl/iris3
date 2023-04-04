@@ -39,11 +39,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
     @classmethod
     @lru_cache(maxsize=1)
     def _all_zones(cls):
-        """
-        Get all available zones.
-        The implementation gets the zones for one project only, but we assume that all GCP projects have the same zones.
-        TODO The above is slow, potentially use the hardcoded list in gcp_utils. But if GOogle creates new zones, that will fail
-        """
+
         with timing("_all_zones"):
             project_id = gcp_utils.current_project_id()
             request = compute_v1.ListZonesRequest(project=project_id)

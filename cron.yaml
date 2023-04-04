@@ -2,5 +2,5 @@
 cron:
   - description: "Invoke /schedule which sends out messages triggering do_label per project/plugin."
     url: /schedule
-    schedule: every day 13:00
+    schedule: every day 10:00
     target: iris3

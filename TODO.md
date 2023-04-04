@@ -1,7 +1,7 @@
 # Improvements and fixes
 
 * P2 PubSub push endpoint security:
-  Note: The token which is now used is not very secure, though it is an improvement on earlier versions of Iris, and
+  Note: The token by itself is not very secure, though  
   Google has at times recommended this approach.
 
   Alternatives:

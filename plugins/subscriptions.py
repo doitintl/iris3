@@ -44,7 +44,6 @@ class Subscriptions(Plugin):
                 except Exception as e:
                     logging.exception("")
 
-
     def __get_subscription(self, subscription_path):
         assert self.__sub_path_regex.match(subscription_path)
         try:

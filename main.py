@@ -1,11 +1,15 @@
 """Entry point for Iris."""
+from functools import lru_cache
 
-# Must init logging before any library code writes logs (which would overwide our config)
-from typing import Dict
+print("initializing ")
 
 from util.utils import init_logging
 
+# Must init logging before any library code writes logs (which would overwide our config)
+
 init_logging()
+from typing import Dict
+
 import time
 
 cold_start_begin = time.time()
@@ -18,7 +22,7 @@ import flask
 import googlecloudprofiler
 from plugin import Plugin
 from util import pubsub_utils, gcp_utils, utils, config_utils
-from util.gcp_utils import detect_gae
+from util.gcp_utils import detect_gae, is_appscript_project, all_projects
 
 from util.config_utils import iris_prefix, is_project_enabled, get_config, pubsub_token
 from util.utils import log_time, timing
@@ -58,12 +62,14 @@ Plugin.init()
 def index():
     msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
     logging.info("index(); config is %s", get_config())
+
     return msg, 200
 
 
 @app.route("/_ah/warmup")
 def warmup():
     logging.info("warmup() called")
+
     return "", 200, {}
 
 
@@ -75,90 +81,79 @@ def schedule():
     """
     try:
         logging.info("Schedule called")
+
         is_cron = flask.request.headers.get("X-Appengine-Cron")
         if not is_cron:
             return "Access Denied: No Cron header found", 403
 
-        all_projects = gcp_utils.all_projects()
-
-        appscript_projects = [
-            p for p in all_projects if gcp_utils.is_appscript_project(p)
-        ]
-
-        nonappscript_projects = [p for p in all_projects if p not in appscript_projects]
-
-        configured_projects = [
-            p for p in nonappscript_projects if config_utils.is_project_enabled(p)
-        ]
-
-        skipped_nonappscript_projects = [
-            p for p in nonappscript_projects if p not in configured_projects
-        ]
-        if appscript_projects:
-            logging.info(
-                "schedule() skipping %d appscript projects", len(appscript_projects)
-            )
-
-        logging.info(
-            "schedule() skipping %d non-appscript projects (See config.yaml): %s",
-            len(skipped_nonappscript_projects),
-            ", ".join(skipped_nonappscript_projects),
-        )
-
-        logging.info(
-            "schedule() processing %d projects: %s",
-            len(configured_projects),
-            ", ".join(configured_projects),
-        )
-        if not configured_projects:
-            raise Exception(
-                "No projects configured. This can happen when the config lists only projects"
-                "that are outside the current App Engine project's org. The config lists %s",
-                config_utils.enabled_projects(),
-            )
-        msg_count = 0
-        if not gcp_utils.detect_gae():
-            max_project_in_localdev = 3
-            if len(configured_projects) > max_project_in_localdev:
-                msg = """In development, we support no more than %d projects (out of the %d projects available) to avoid accidentally flooding the system. 
-                   If you are using your personal credentials, 
-                   the system has access to *ALL* the projects that you have access to, possibly in multiple organizations.
-                   But you can increase the max_project_in_localdev variable above.
-                   """ % (
-                    max_project_in_localdev,
-                    len(configured_projects),
-                )
-                logging.error(msg)
-                raise Exception(msg)
-
-        for project_id in configured_projects:
-            for _, plugin_ in Plugin.plugins.items():
-                if (
-                    not plugin_.is_labeled_on_creation()
-                    or plugin_.relabel_on_cron()
-                    or config_utils.label_all_on_cron()
-                ):
-                    pubsub_utils.publish(
-                        msg=json.dumps(
-                            {"project_id": project_id, "plugin": type(plugin_).__name__}
-                        ),
-                        topic_id=pubsub_utils.schedulelabeling_topic(),
-                    )
-                    logging.info(
-                        "Sent do_label message for %s , %s",
-                        project_id,
-                        type(plugin_).__name__,
-                    )
-                msg_count += 1
-        logging.info(
-            "schedule() sent messages to label %d projects, %d messages",
-            len(configured_projects),
-            msg_count,
-        )
+        enabled_projects = __get_enabled_projects()
+        __send_pubsub_per_projectplugin(enabled_projects)
         return "OK", 200
     except Exception as e:
         logging.exception("In schedule()", exc_info=e)
         return "Error", 500
+
+
+@lru_cache(maxsize=1)
+def __get_enabled_projects():
+    configured_as_enabled = config_utils.enabled_projects()
+    if configured_as_enabled:
+        enabled_projs = configured_as_enabled
+    else:
+        all_proj = all_projects()
+        # In my testing, we do NOT get appscript projects in the list.
+        # There is a small chance that with other permissions, these appscript projects would appear.
+
+        nonappscript_projects = (p for p in all_proj if not is_appscript_project(p))
+
+        enabled_only = (
+            p for p in nonappscript_projects if config_utils.is_project_enabled(p)
+        )
+        enabled_projs = list(enabled_only)
+    enabled_projs.sort()
+    if not enabled_projs:
+        raise Exception("No projects enabled at all")
+    if not gcp_utils.detect_gae() and config_utils.test_or_dev():
+        max_proj_in_dev = 3
+        if len(enabled_projs) > max_proj_in_dev:
+            msg = """In development or testing, we support no more than %d projects
+                    to avoid accidentally flooding the system. 
+                    %d projects are available, which exceeds that
+                   """ % (
+                max_proj_in_dev,
+                len(enabled_projs),
+            )
+            raise Exception(msg)
+    return enabled_projs
+
+
+def __send_pubsub_per_projectplugin(configured_projects):
+    msg_count = 0
+    for project_id in configured_projects:
+        for _, plugin in Plugin.plugins.items():
+            if (
+                not plugin.is_labeled_on_creation()
+                or plugin.relabel_on_cron()
+                or config_utils.label_all_on_cron()
+            ):
+                pubsub_utils.publish(
+                    msg=json.dumps(
+                        {"project_id": project_id, "plugin": type(plugin).__name__}
+                    ),
+                    topic_id=pubsub_utils.schedulelabeling_topic(),
+                )
+
+                logging.info(
+                    "Sent do_label message for %s , %s",
+                    project_id,
+                    type(plugin).__name__,
+                )
+            msg_count += 1
+    logging.info(
+        "schedule() sent %d messages to label %d projects",
+        msg_count,
+        len(configured_projects),
+    )
 
 
 @app.route("/label_one", methods=["POST"])
@@ -229,8 +224,9 @@ def __label_one_0(data, plugin):
             msg = (
                 f"Skipping label_one({plugin.__class__.__name__}) in unsupported "
                 f"project {project_id}; (Should not get here in current design, since the Sink filter should only include "
-                f"supported projects). However, if the Sink filter was not updated to match config.yaml, or in local development"
-                f"if a command is given to label an arbirary project that is not in config.yaml, this can happen"
+                f"supported projects; also, schedule() already filters for the enabled projects. "
+                f"However, if the Sink filter was not updated to match config.yaml, or in local development"
+                f"if a command is given to label an arbitrary project that is not in config.yaml, this can happen"
             )
             logging.info(msg)
     else:
@@ -335,6 +331,8 @@ def handle_invalid_usage(error):
     return response
 
 
+logging.info(f"Coldstart took {int((time.time() - cold_start_begin) * 1000)} ms")
+
 if __name__ in ["__main__"]:
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app. This
@@ -342,5 +340,3 @@ if __name__ in ["__main__"]:
     port = os.environ.get("PORT", 8000)
     logging.info("Running __main__ for main.py, port %s", port)
     app.run(host="127.0.0.1", port=port, debug=True)
-
-logging.info(f"Coldstart took {int((time.time() - cold_start_begin) * 1000)} ms")

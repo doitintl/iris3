@@ -160,9 +160,9 @@ bq show --format=json "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}" | "${JQ[
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 # Re Cloud Storage, note:
 # 1. For buckets, JSON shows labels without the wrapper  label:{} seen in the others.
-# 2. As a test of labels that are specific to a resource type, in this test we
-# defined labels starting gcs
-#
+# 2. To do a test of labels that are specific to a resource type, in this test we
+# defined labels starting gcs, just for buckets.
+
 gsutil label get "gs://bucket${RUN_ID}"| jq -e ".gcs${RUN_ID}_name"
 if [[ $? -ne 0 ]]; then ERROR=1 ; fi
 gcloud compute instances describe "instance${RUN_ID}" --zone $GCE_ZONE "${DESCRIBE_FLAGS[@]}" | "${JQ[@]}"

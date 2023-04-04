@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import typing
+from pathlib import Path
 from string import Template
 from textwrap import shorten
 from urllib import request
@@ -71,3 +72,7 @@ def label_one(project, name, method_name, parent_name="", zone="", extra_args=No
             project=project, name=name, parent_name=parent_name, zone=zone
         )
         do_local_http("label_one", json_s, extra_args=extra_args)
+
+
+def assert_root_path():
+    assert Path(__file__).parent.stem in os.listdir(os.getcwd()), "Should run in root; was " + os.getcwd()

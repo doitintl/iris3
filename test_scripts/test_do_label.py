@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from test_scripts.utils_for_tests import do_local_http
+from test_scripts.utils_for_tests import do_local_http, assert_root_path
 from util.utils import log_time
 
 """
@@ -70,4 +70,5 @@ def main():
 
 
 if __name__ == "__main__":
+    assert_root_path()
     main()

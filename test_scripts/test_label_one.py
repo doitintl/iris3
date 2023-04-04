@@ -2,7 +2,7 @@ import os
 import sys
 
 from plugins.snapshots import Snapshots
-from test_scripts.utils_for_tests import label_one
+from test_scripts.utils_for_tests import label_one, assert_root_path
 
 """
 
@@ -152,4 +152,5 @@ def main():
 
 
 if __name__ == "__main__":
+    assert_root_path()
     main()
