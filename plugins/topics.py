@@ -81,7 +81,7 @@ class Topics(Plugin):
 
         logging.info(f"Topic updated: {topic_path}")
 
-    def get_gcp_object(self, log_data):
+    def get_gcp_object(self, log_data: Dict) -> Dict:
         try:
             topic_path = log_data["protoPayload"]["request"]["name"]
             # path can be constructed with self._cloudclient().topic_path(project_id, topic_id)

@@ -277,6 +277,7 @@ else
   fi
 
   # Add methodName filter to the log sink
+  #TODO get this directly from the Python class to avoid duplication
   log_filter+=('protoPayload.methodName:(')
   log_filter+=('"storage.buckets.create"')
   log_filter+=('OR "compute.instances.insert" OR "compute.instances.start" OR "datasetservice.insert"')

@@ -8,7 +8,7 @@ from util.utils import init_logging
 # Must init logging before any library code writes logs (which would overwide our config)
 
 init_logging()
-from typing import Dict
+from typing import Dict, Type
 
 import time
 
@@ -20,7 +20,7 @@ import os
 
 import flask
 import googlecloudprofiler
-from plugin import Plugin
+from plugin import Plugin, PluginHolder
 from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import detect_gae, is_appscript_project, all_projects
 
@@ -55,7 +55,7 @@ logging.info(
 
 app = flask.Flask(__name__)
 
-Plugin.init()
+PluginHolder.init()
 
 
 @app.route("/")
@@ -130,15 +130,15 @@ def __get_enabled_projects():
 def __send_pubsub_per_projectplugin(configured_projects):
     msg_count = 0
     for project_id in configured_projects:
-        for _, plugin in Plugin.plugins.items():
+        for plugin_cls in PluginHolder.plugins:
             if (
-                not plugin.is_labeled_on_creation()
-                or plugin.relabel_on_cron()
+                not plugin_cls.is_labeled_on_creation()
+                or plugin_cls.relabel_on_cron()
                 or config_utils.label_all_on_cron()
             ):
                 pubsub_utils.publish(
                     msg=json.dumps(
-                        {"project_id": project_id, "plugin": type(plugin).__name__}
+                        {"project_id": project_id, "plugin": plugin_cls.__name__}
                     ),
                     topic_id=pubsub_utils.schedulelabeling_topic(),
                 )
@@ -146,7 +146,7 @@ def __send_pubsub_per_projectplugin(configured_projects):
                 logging.info(
                     "Sent do_label message for %s , %s",
                     project_id,
-                    type(plugin).__name__,
+                    plugin_cls.__name__,
                 )
             msg_count += 1
     logging.info(
@@ -158,7 +158,7 @@ def __send_pubsub_per_projectplugin(configured_projects):
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
-    plugin_name = ""  # set up variables to allow logging on exception
+    plugins_found = []
     data = {}
     try:
         """
@@ -175,15 +175,14 @@ def label_one():
 
         method_from_log = data["protoPayload"]["methodName"]
 
-        plugins_found = []
-        for plugin_name, plugin in Plugin.plugins.items():
-            for supported_method in plugin.method_names():
+        for plugin_cls in PluginHolder.plugins.keys():
+            for supported_method in plugin_cls.method_names():
                 if supported_method.lower() in method_from_log.lower():
-                    if plugin.is_labeled_on_creation():
-                        __label_one_0(data, plugin)
+                    if plugin_cls.is_labeled_on_creation():
+                        __label_one_0(data, plugin_cls)
 
                     plugins_found.append(
-                        plugin_name
+                        plugin_cls.__name__
                     )  # Append it even if not used due to is_labeled_on_creation False
 
         if not plugins_found:
@@ -203,12 +202,13 @@ def label_one():
     except Exception as e:
         project_id = data.get("resource", {}).get("labels", {}).get("project_id")
         logging.exception(
-            "Error on label_one %s %s", plugin_name, project_id, exc_info=e
+            "Error on label_one %s %s", plugins_found, project_id, exc_info=e
         )
         return "Error", 500
 
 
-def __label_one_0(data, plugin):
+def __label_one_0(data, plugin_cls: Type[Plugin]):
+    plugin = PluginHolder.get_plugin_instance(plugin_cls)
     gcp_object = plugin.get_gcp_object(data)
     if gcp_object is not None:
         project_id = data["resource"]["labels"]["project_id"]
@@ -222,7 +222,7 @@ def __label_one_0(data, plugin):
             plugin.do_batch()
         else:
             msg = (
-                f"Skipping label_one({plugin.__class__.__name__}) in unsupported "
+                f"Skipping label_one({plugin_cls.__name__}) in unsupported "
                 f"project {project_id}; (Should not get here in current design, since the Sink filter should only include "
                 f"supported projects; also, schedule() already filters for the enabled projects. "
                 f"However, if the Sink filter was not updated to match config.yaml, or in local development"
@@ -270,7 +270,7 @@ def do_label():
         data = __extract_pubsub_content()
         plugin_class_name = data["plugin"]
 
-        plugin = Plugin.get_plugin(plugin_class_name)
+        plugin = PluginHolder.get_plugin_instance_by_name(plugin_class_name)
         if not plugin:
             logging.info(
                 "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",

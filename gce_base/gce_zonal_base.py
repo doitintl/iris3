@@ -3,6 +3,7 @@ import threading
 from abc import ABCMeta, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
+from typing import Dict
 
 from google.cloud import compute_v1
 
@@ -71,7 +72,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
                 except Exception as exc:
                     logging.exception("in getting result for future", exc_info=exc)
 
-    def get_gcp_object(self, log_data):
+    def get_gcp_object(self, log_data: Dict) -> Dict:
         try:
             name = log_data["protoPayload"]["resourceName"]
             ind = name.rfind("/")

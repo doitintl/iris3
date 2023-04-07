@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 
 from googleapiclient import errors
 
@@ -57,7 +58,7 @@ class Cloudsql(Plugin):
             logging.exception("")
             return None
 
-    def get_gcp_object(self, log_data):
+    def get_gcp_object(self, log_data: Dict) -> Dict:
         try:
             if "response" not in log_data["protoPayload"]:
                 return None

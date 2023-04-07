@@ -1,6 +1,8 @@
 import logging
 import pkgutil
 import re
+import threading
+import typing
 from abc import ABCMeta, abstractmethod
 from functools import lru_cache
 from typing import Dict, Tuple, Type, Optional
@@ -30,19 +32,15 @@ class Plugin(object, metaclass=ABCMeta):
     # We send a batch when _BATCH_SIZE or more tasks are in it, or at the end of a label_all
     _BATCH_SIZE = 990
 
-    # For a class to know its subclasses and their instances is generally bad.
-    # We could create a separate PluginManager but let's not get too Java-ish.
-    plugins: Dict[
-        str, "Plugin"
-    ]  # Need to write the classname in quotes to avoid circular loading
-    plugins = {}
-
-    def __init__(self):
-        self.__init_batch_req()
-
     @staticmethod
     @abstractmethod
     def _discovery_api() -> Tuple[str, str]:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def method_names():
+        """The name of the methods inside the Google REST API that indicate the creation of such resources."""
         pass
 
     @staticmethod
@@ -71,6 +69,9 @@ class Plugin(object, metaclass=ABCMeta):
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
         )
+
+    def __init__(self):
+        self.__init_batch_req()
 
     @timed_lru_cache(seconds=600, maxsize=512)
     def _project_labels(self, project_id) -> Dict:
@@ -131,7 +132,7 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_gcp_object(self, log_data):
+    def get_gcp_object(self, log_data: Dict) -> Dict:
         """Parse logging data to get a GCP object"""
         pass
 
@@ -142,38 +143,6 @@ class Plugin(object, metaclass=ABCMeta):
         Not clear why we cannot get the project_id out of the gcp_object. Maybe one type of resource
         does not include project_id"""
         pass
-
-    @staticmethod
-    @abstractmethod
-    def method_names():
-        """The name of the methods inside the Google REST API that indicate th ecreation of such resources."""
-        pass
-
-    @classmethod
-    @log_time
-    def init(cls):
-        def load_plugin_class(name) -> Type:
-            module_name = PLUGINS_MODULE + "." + name
-            __import__(module_name)
-            assert name == name.lower(), name
-
-            plugin_cls = cls_by_name(PLUGINS_MODULE + "." + name + "." + name.title())
-            return plugin_cls
-
-        loaded = []
-        for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
-            if config_utils.is_plugin_enabled(module):
-                plugin_class = load_plugin_class(module)
-                instance = plugin_class()
-                Plugin.plugins[plugin_class.__name__] = instance
-                loaded.append(plugin_class.__name__)
-
-        logging.info("Loaded  plugins: %s", loaded)
-        assert Plugin.plugins, "No plugins defined"
-
-    @staticmethod
-    def get_plugin(plugin_name: str) -> "Plugin":
-        return Plugin.plugins.get(plugin_name)
 
     def _build_labels(self, gcp_object, project_id):
         """
@@ -219,3 +188,54 @@ class Plugin(object, metaclass=ABCMeta):
         self._batch = self._google_api_client().new_batch_http_request(
             callback=self.__batch_callback
         )
+
+
+class PluginHolder:
+    plugins: Dict[
+        Type[Plugin], Optional[Plugin]
+    ]  # Need to write the classname in quotes to avoid circular loading
+    plugins = {}
+    lock = threading.Lock()
+
+    @classmethod
+    def plugin_cls_by_name(cls, name) -> Type[Plugin]:
+        return cls_by_name(PLUGINS_MODULE + "." + name.lower() + "." + name.title())
+
+    @classmethod
+    @log_time
+    def init(cls):
+        def load_plugin_class(name) -> Type:
+            module_name = PLUGINS_MODULE + "." + name
+            __import__(module_name)
+            assert name == name.lower(), name
+            return cls.plugin_cls_by_name(name)
+
+        loaded = []
+        for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
+            if config_utils.is_plugin_enabled(module):
+                plugin_class = load_plugin_class(module)
+                # instance = plugin_class()
+                cls.plugins[
+                    plugin_class
+                ] = None  # Initialize with NO instance to avoid importing
+                loaded.append(plugin_class.__name__)
+
+        logging.info("Loaded  plugins: %s", loaded)
+        assert cls.plugins, "No plugins defined"
+
+    @classmethod
+    def get_plugin_instance(cls, plugin_cls):
+        with cls.lock:
+            assert plugin_cls in cls.plugins, plugin_cls + " " + cls.plugins
+            plugin_instance = cls.plugins[plugin_cls]
+            if plugin_instance is not None:
+                return plugin_instance
+            else:
+                plugin_instance = plugin_cls()
+                cls.plugins[plugin_cls] = plugin_instance
+                return plugin_instance
+
+    @classmethod
+    def get_plugin_instance_by_name(cls, plugin_class_name):
+        plugin_cls = cls.plugin_cls_by_name(plugin_class_name)
+        return cls.get_plugin_instance(plugin_cls)

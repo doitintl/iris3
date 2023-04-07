@@ -1,5 +1,6 @@
 title: "Iris3"
 description: "Iris auto tagging service for google cloud"
+#TODO get most value directly from the Python class to avoid duplication
 stage: "GA"
 includedPermissions:
   - bigquery.datasets.get

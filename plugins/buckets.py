@@ -2,7 +2,7 @@ import logging
 import typing
 from functools import lru_cache
 
-from gigoogle.cloud import storage
+from google.cloud import storage
 
 from plugin import Plugin
 from util import gcp_utils
