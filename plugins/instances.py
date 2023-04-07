@@ -1,4 +1,6 @@
 import logging
+import threading
+import traceback
 from functools import lru_cache
 from typing import Dict, Optional, List
 
@@ -10,9 +12,12 @@ from util.utils import log_time
 
 
 class Instances(GceZonalBase):
+    lock=threading.Lock()
     @staticmethod
     @lru_cache(maxsize=1)
     def _cloudclient(_=None):
+       with Instances.lock:
+
         logging.info("_cloudclient for Instances")
         from google.cloud import compute_v1
 

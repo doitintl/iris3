@@ -1,4 +1,5 @@
 import logging
+import threading
 import typing
 from functools import lru_cache
 
@@ -14,10 +15,13 @@ class Disks(GceZonalBase):
     Label GCE disks. Boot disks created with instances only get labeled on the cron schedule.
     Independently created disks get labeled on creation.
     """
+    lock=threading.Lock
+
 
     @staticmethod
     @lru_cache(maxsize=1)
     def _cloudclient(_=None):
+       with Disks.lock:
         logging.info("_cloudclient for Disks")
         from google.cloud import compute_v1
 
