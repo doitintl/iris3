@@ -87,7 +87,7 @@ class Plugin(object, metaclass=ABCMeta):
 
         def legalize_value(s):
             """
-            Only hyphens (-), underscores (_), lowercase characters,
+            Only hyphens (-), underscores (_=None), lowercase characters,
             and numbers are allowed in label values. International characters are allowed.
             """
             label_chars = re.compile(r"[\w\d_-]")  # cached
@@ -132,7 +132,7 @@ class Plugin(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_gcp_object(self, log_data: Dict) -> Dict:
+    def get_gcp_object(self, log_data: Dict) -> Optional[Dict]:
         """Parse logging data to get a GCP object"""
         pass
 

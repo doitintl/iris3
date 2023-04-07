@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 from googleapiclient import errors
 
@@ -17,8 +17,9 @@ class Cloudsql(Plugin):
         return ["cloudsql.instances.create"]
 
     @staticmethod
-    def _cloudclient():
-        raise Exception("There is no Cloud Client luibrary for CloudSQL")
+    def _cloudclient(_=None):
+        logging.info("_cloudclient for CloudSQL")
+        raise NotImplementedError("There is no Cloud Client library for CloudSQL")
 
     @staticmethod
     def is_labeled_on_creation() -> bool:
@@ -58,7 +59,7 @@ class Cloudsql(Plugin):
             logging.exception("")
             return None
 
-    def get_gcp_object(self, log_data: Dict) -> Dict:
+    def get_gcp_object(self, log_data: Dict) -> Optional[Dict]:
         try:
             if "response" not in log_data["protoPayload"]:
                 return None

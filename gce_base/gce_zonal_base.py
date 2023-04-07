@@ -3,9 +3,7 @@ import threading
 from abc import ABCMeta, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Dict
-
-from google.cloud import compute_v1
+from typing import Dict, Optional
 
 from gce_base.gce_base import GceBase
 from util import gcp_utils
@@ -13,8 +11,6 @@ from util.utils import timing
 
 
 class GceZonalBase(GceBase, metaclass=ABCMeta):
-    zones_cloudclient = compute_v1.ZonesClient()
-
     def __init__(self):
 
         super().__init__()
@@ -37,14 +33,18 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             logging.exception("")
             return None
 
-    @classmethod
     @lru_cache(maxsize=1)
-    def _all_zones(cls):
+    def _all_zones(self):
 
         with timing("_all_zones"):
             project_id = gcp_utils.current_project_id()
+            from google.cloud import compute_v1
+
             request = compute_v1.ListZonesRequest(project=project_id)
-            zones = cls.zones_cloudclient.list(request)
+            from google.cloud import compute_v1
+
+            zones_client = compute_v1.ZonesClient()
+            zones = zones_client.list(request)
             return [z.name for z in zones]
 
     def label_all(self, project_id):
@@ -72,7 +72,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
                 except Exception as exc:
                     logging.exception("in getting result for future", exc_info=exc)
 
-    def get_gcp_object(self, log_data: Dict) -> Dict:
+    def get_gcp_object(self, log_data: Dict) -> Optional[Dict]:
         try:
             name = log_data["protoPayload"]["resourceName"]
             ind = name.rfind("/")

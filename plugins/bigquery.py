@@ -1,14 +1,14 @@
 """
 Labeling BQ tables and datasets.
 """
+
 import logging
 import typing
 from functools import lru_cache
 
-from google.cloud import bigquery
-from googleapiclient import errors
-from ratelimit import limits, sleep_and_retry
 
+from ratelimit import limits, sleep_and_retry
+from googleapiclient import errors
 from plugin import Plugin
 from util import gcp_utils
 from util.utils import log_time, timing, dict_to_camelcase
@@ -22,6 +22,9 @@ class Bigquery(Plugin):
     @staticmethod
     @lru_cache(maxsize=500)  # cached per project
     def _cloudclient(project_id):
+        logging.info("_cloudclient for Bigquery")
+        from google.cloud import bigquery
+
         return bigquery.Client(project=project_id)
 
     @staticmethod

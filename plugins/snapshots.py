@@ -1,7 +1,7 @@
 import logging
 from functools import lru_cache
 
-from google.cloud import compute_v1
+
 from googleapiclient import errors
 
 from gce_base.gce_base import GceBase
@@ -12,7 +12,10 @@ from util.utils import log_time, timing
 class Snapshots(GceBase):
     @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient():
+    def _cloudclient(_=None):
+        logging.info("_cloudclient for Snapshots")
+        from google.cloud import compute_v1
+
         return compute_v1.SnapshotsClient()
 
     @staticmethod
@@ -20,11 +23,13 @@ class Snapshots(GceBase):
         return ["compute.disks.createSnapshot", "compute.snapshots.insert"]
 
     def __list_snapshots(self, project_id):
+        from google.cloud import compute_v1
         snapshots = compute_v1.ListSnapshotsRequest(project=project_id)
         return self._list_resources_as_dicts(snapshots)
 
     def __get_snapshot(self, project_id, name):
         try:
+            from google.cloud import compute_v1
             request = compute_v1.GetSnapshotRequest(project=project_id, snapshot=name)
             return self._get_resource_as_dict(request)
         except errors.HttpError as e:

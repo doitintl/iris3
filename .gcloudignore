@@ -1,4 +1,4 @@
-requirements-test.text
+
 test_scripts/
 test_*
 sample_data/
@@ -11,14 +11,9 @@ config-dev.yaml
 .github/
 .git/
 .idea/
-.env
 
-
-.venv
 virtenv*/
 venv/
-
-.idea/
 
 *.bak
 .DS_Store

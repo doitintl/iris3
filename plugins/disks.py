@@ -2,7 +2,6 @@ import logging
 import typing
 from functools import lru_cache
 
-from google.cloud import compute_v1
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
@@ -18,7 +17,10 @@ class Disks(GceZonalBase):
 
     @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient():
+    def _cloudclient(_=None):
+        logging.info("_cloudclient for Disks")
+        from google.cloud import compute_v1
+
         return compute_v1.DisksClient()
 
     @staticmethod
@@ -36,11 +38,13 @@ class Disks(GceZonalBase):
         return True
 
     def _list_all(self, project_id, zone) -> typing.List[typing.Dict]:
+        from google.cloud import compute_v1
         request = compute_v1.ListDisksRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(request)
 
     def _get_resource(self, project_id, zone, name):
         try:
+            from google.cloud import compute_v1
             request = compute_v1.GetDiskRequest(
                 project=project_id, zone=zone, disk=name
             )

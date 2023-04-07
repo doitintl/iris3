@@ -3,8 +3,7 @@ import re
 import typing
 from functools import lru_cache
 
-from google.cloud import pubsub_v1
-from google.pubsub_v1 import SubscriberClient
+
 from googleapiclient import errors
 
 from plugin import Plugin
@@ -21,7 +20,10 @@ class Subscriptions(Plugin):
 
     @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient() -> SubscriberClient:
+    def _cloudclient(_=None):
+        logging.info("_cloudclient for Subscriptions")
+        from google.cloud import pubsub_v1
+
         return pubsub_v1.SubscriberClient()
 
     @staticmethod
@@ -62,6 +64,8 @@ class Subscriptions(Plugin):
 
     @log_time
     def label_resource(self, gcp_object: typing.Dict, project_id):
+        from google.cloud import pubsub_v1
+
         labels_outer = self._build_labels(gcp_object, project_id)
         if labels_outer is None:
             return

@@ -8,10 +8,6 @@ from util import localdev_config
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase
 
 
-# from googleapiclient import discovery
-# from oauth2client.client import GoogleCredentials
-
-
 def detect_gae():
     gae_app = os.environ.get("GAE_APPLICATION", "")
     return "~" in gae_app

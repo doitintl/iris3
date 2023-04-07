@@ -2,7 +2,6 @@ import logging
 from functools import lru_cache
 from typing import Dict, Optional, List
 
-from google.cloud import compute_v1
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
@@ -13,7 +12,10 @@ from util.utils import log_time
 class Instances(GceZonalBase):
     @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient():
+    def _cloudclient(_=None):
+        logging.info("_cloudclient for Instances")
+        from google.cloud import compute_v1
+
         return compute_v1.InstancesClient()
 
     @staticmethod
@@ -32,11 +34,13 @@ class Instances(GceZonalBase):
             return None
 
     def _list_all(self, project_id, zone) -> List[Dict]:
+        from google.cloud import compute_v1
         page_result = compute_v1.ListInstancesRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(page_result)
 
     def _get_resource(self, project_id, zone, name) -> Optional[Dict]:
         try:
+            from google.cloud import compute_v1
             request = compute_v1.GetInstanceRequest(
                 project=project_id, zone=zone, instance=name
             )

@@ -2,7 +2,6 @@ import logging
 import typing
 from functools import lru_cache
 
-from google.cloud import storage
 
 from plugin import Plugin
 from util import gcp_utils
@@ -21,6 +20,9 @@ class Buckets(Plugin):
     @staticmethod
     @lru_cache(maxsize=500)  # cached per project
     def _cloudclient(project_id):
+        logging.info("_cloudclient for Buckets")
+        from google.cloud import storage
+
         return storage.Client(project=project_id)
 
     def _gcp_name(self, gcp_object):

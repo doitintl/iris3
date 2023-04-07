@@ -1,10 +1,8 @@
 import logging
 import re
 from functools import lru_cache
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 
-from google.cloud import pubsub_v1
-from google.pubsub_v1 import Topic
 from googleapiclient import errors
 
 from plugin import Plugin
@@ -20,7 +18,10 @@ class Topics(Plugin):
 
     @staticmethod
     @lru_cache(maxsize=1)
-    def _cloudclient():
+    def _cloudclient(_=None):
+        logging.info("_cloudclient for Topics")
+        from google.cloud import pubsub_v1
+
         return pubsub_v1.PublisherClient()
 
     @staticmethod
@@ -43,7 +44,7 @@ class Topics(Plugin):
     def __get_topic(self, topic_path):
         try:
             assert self.__topic_path_regex.match(topic_path)
-            topic: Topic = self._cloudclient().get_topic(topic=topic_path)
+            topic = self._cloudclient().get_topic(topic=topic_path)
             return cloudclient_pb_obj_to_dict(topic)
         except errors.HttpError as e:
             logging.exception("")
@@ -64,6 +65,7 @@ class Topics(Plugin):
 
         topic_name = self._gcp_name(gcp_object)
         topic_path = self._cloudclient().topic_path(project_id, topic_name)
+        from google.cloud import pubsub_v1
 
         topic_object_holding_update = pubsub_v1.types.Topic(
             name=topic_path, labels=labels
@@ -81,7 +83,7 @@ class Topics(Plugin):
 
         logging.info(f"Topic updated: {topic_path}")
 
-    def get_gcp_object(self, log_data: Dict) -> Dict:
+    def get_gcp_object(self, log_data: Dict) -> Optional[Dict]:
         try:
             topic_path = log_data["protoPayload"]["request"]["name"]
             # path can be constructed with self._cloudclient().topic_path(project_id, topic_id)
