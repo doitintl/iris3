@@ -47,7 +47,7 @@ from_project: True
 #    - return True on relabel_on_cron() (like Disks)
 #    - or return False in is_labeled_on_creation() (like Cloud SQL)
 # If label_all_on_cron is True, then all resource types will be labeled on every cron (Cloud Scheduler) cycle.
-#   This is usefulfor labeling existing resources when you first launch Iris3.
+#   This is useful for labeling existing resources when you first launch Iris3.
 
 label_all_on_cron: False
 
@@ -58,3 +58,14 @@ label_all_on_cron: False
 # However, so long as the GCP project running the Iris3 AppEngine service is otherwise secure,
 # this token protects against unwanted invocations of labeling.
 pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
+
+# If you run in a project that includes one of these markers in the name,
+# Iris will refuse to allow more than 3 enabled projects.
+# This is to prevent labeling dozens of projects by accident when you are developing or testing.
+# (though the only "harm" is lots of labels).
+# Configure the list of projects to fewer than three (see `projects` key above).
+test_or_dev_project_markers:
+  - playground
+  - test
+  - dev
+  - qa

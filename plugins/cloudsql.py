@@ -16,8 +16,8 @@ class Cloudsql(Plugin):
     def method_names():
         return ["cloudsql.instances.create"]
 
-    @staticmethod
-    def _cloudclient(_=None):
+    @classmethod
+    def _cloudclient(cls, _=None):
         logging.info("_cloudclient for CloudSQL")
         raise NotImplementedError("There is no Cloud Client library for CloudSQL")
 

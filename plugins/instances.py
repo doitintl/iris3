@@ -1,6 +1,5 @@
 import logging
 import threading
-import traceback
 from functools import lru_cache
 from typing import Dict, Optional, List
 
@@ -12,16 +11,23 @@ from util.utils import log_time
 
 
 class Instances(GceZonalBase):
-    lock=threading.Lock()
-    @staticmethod
-    @lru_cache(maxsize=1)
-    def _cloudclient(_=None):
-       with Instances.lock:
+    __lock = threading.Lock()
 
-        logging.info("_cloudclient for Instances")
-        from google.cloud import compute_v1
+    @classmethod
+    def _cloudclient(cls, _=None):
+        @lru_cache(maxsize=1)
+        def create():
+            logging.info("_cloudclient for Instances")
+            # Local import to avoid burdening AppEngine memory. Loading all
+            # Client libraries would be 100MB  means that the default AppEngine
+            # Instance crashes on out-of-memory even before actually serving a request.
 
-        return compute_v1.InstancesClient()
+            from google.cloud import compute_v1
+
+            return compute_v1.InstancesClient()
+
+        with cls.__lock:
+            return create()
 
     @staticmethod
     def method_names():
@@ -39,13 +45,23 @@ class Instances(GceZonalBase):
             return None
 
     def _list_all(self, project_id, zone) -> List[Dict]:
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+
         from google.cloud import compute_v1
+
         page_result = compute_v1.ListInstancesRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(page_result)
 
     def _get_resource(self, project_id, zone, name) -> Optional[Dict]:
         try:
+            # Local import to avoid burdening AppEngine memory. Loading all
+            # Client libraries would be 100MB  means that the default AppEngine
+            # Instance crashes on out-of-memory even before actually serving a request.
+
             from google.cloud import compute_v1
+
             request = compute_v1.GetInstanceRequest(
                 project=project_id, zone=zone, instance=name
             )

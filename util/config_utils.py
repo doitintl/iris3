@@ -5,8 +5,6 @@ import typing
 
 import yaml
 
-is_test_or_dev = False
-
 
 def is_copying_labels_from_project() -> bool:
     config = get_config()
@@ -69,21 +67,30 @@ def get_config() -> typing.Dict:
     test_config = "config-test.yaml"
     prod_config = "config.yaml"
 
-    global is_test_or_dev
     if os.path.isfile(dev_config):
         config_name = dev_config
-        is_test_or_dev = True
+        is_test_or_dev_ = True
     elif os.path.isfile(test_config):
         config_name = test_config
-        is_test_or_dev = True
+        is_test_or_dev_ = True
     else:
         config_name = prod_config
-        is_test_or_dev = False
+        is_test_or_dev_ = False
     print("Using", config_name)  # logging not yet enabled
     with open(config_name) as config_file:
         config = yaml.full_load(config_file)
+    config["is_test_or_dev_configuration"] = is_test_or_dev_
     return config
 
 
-def test_or_dev():
-    return is_test_or_dev
+def is_test_or_dev_configuration():
+    return get_config()["is_test_or_dev_configuration"]
+
+
+def is_in_test_or_dev_project(project_id):
+
+    markers = get_config().get("test_or_dev_project_markers", [])
+    for marker in markers:
+        if marker and marker in project_id:
+            return True
+    return False

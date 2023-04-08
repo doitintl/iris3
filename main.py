@@ -1,7 +1,7 @@
 """Entry point for Iris."""
 from functools import lru_cache
 
-print("initializing ")
+print("Initializing ")
 
 from util.utils import init_logging
 
@@ -22,9 +22,21 @@ import flask
 import googlecloudprofiler
 from plugin import Plugin, PluginHolder
 from util import pubsub_utils, gcp_utils, utils, config_utils
-from util.gcp_utils import detect_gae, is_appscript_project, all_projects
+from util.gcp_utils import (
+    detect_gae,
+    is_appscript_project,
+    all_projects,
+    current_project_id,
+)
 
-from util.config_utils import iris_prefix, is_project_enabled, get_config, pubsub_token
+from util.config_utils import (
+    iris_prefix,
+    is_project_enabled,
+    get_config,
+    pubsub_token,
+    is_in_test_or_dev_project,
+    is_test_or_dev_configuration,
+)
 from util.utils import log_time, timing
 
 # For Google Cloud Profiler,  set ENABLE_PROFILER to True, and edit requirements.txt and add a line to app.yaml as stated in requirements.txt
@@ -113,7 +125,12 @@ def __get_enabled_projects():
     enabled_projs.sort()
     if not enabled_projs:
         raise Exception("No projects enabled at all")
-    if not gcp_utils.detect_gae() and config_utils.test_or_dev():
+
+    if (
+        not detect_gae()
+        or is_test_or_dev_configuration()
+        or is_in_test_or_dev_project(current_project_id())
+    ):
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
             msg = """In development or testing, we support no more than %d projects
@@ -325,7 +342,7 @@ class FlaskException(Exception):
 
 @app.errorhandler(FlaskException)
 def handle_invalid_usage(error):
-    logging.exception(exc_info=error)
+    logging.exception("", exc_info=error)
     response = flask.jsonify(error.to_dict())
     response.status_code = error.status_code
     return response

@@ -10,10 +10,15 @@ from util.utils import log_time, timing
 
 
 class Snapshots(GceBase):
-    @staticmethod
+    @classmethod
     @lru_cache(maxsize=1)
-    def _cloudclient(_=None):
+    def _cloudclient(cls, _=None):
+
         logging.info("_cloudclient for Snapshots")
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+
         from google.cloud import compute_v1
 
         return compute_v1.SnapshotsClient()
@@ -23,13 +28,23 @@ class Snapshots(GceBase):
         return ["compute.disks.createSnapshot", "compute.snapshots.insert"]
 
     def __list_snapshots(self, project_id):
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+
         from google.cloud import compute_v1
+
         snapshots = compute_v1.ListSnapshotsRequest(project=project_id)
         return self._list_resources_as_dicts(snapshots)
 
     def __get_snapshot(self, project_id, name):
         try:
+            # Local import to avoid burdening AppEngine memory. Loading all
+            # Client libraries would be 100MB  means that the default AppEngine
+            # Instance crashes on out-of-memory even before actually serving a request.
+
             from google.cloud import compute_v1
+
             request = compute_v1.GetSnapshotRequest(project=project_id, snapshot=name)
             return self._get_resource_as_dict(request)
         except errors.HttpError as e:

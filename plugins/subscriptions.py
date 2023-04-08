@@ -18,10 +18,14 @@ from util.utils import timing
 class Subscriptions(Plugin):
     __sub_path_regex = re.compile(r"^projects/[^/]+/subscriptions/[^/]+$")
 
-    @staticmethod
+    @classmethod
     @lru_cache(maxsize=1)
-    def _cloudclient(_=None):
+    def _cloudclient(cls, _=None):
         logging.info("_cloudclient for Subscriptions")
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+
         from google.cloud import pubsub_v1
 
         return pubsub_v1.SubscriberClient()
@@ -64,6 +68,10 @@ class Subscriptions(Plugin):
 
     @log_time
     def label_resource(self, gcp_object: typing.Dict, project_id):
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+
         from google.cloud import pubsub_v1
 
         labels_outer = self._build_labels(gcp_object, project_id)

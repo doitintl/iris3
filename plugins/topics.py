@@ -16,10 +16,14 @@ from util.utils import log_time, timing
 class Topics(Plugin):
     __topic_path_regex = re.compile(r"^projects/[^/]+/topics/[^/]+$")
 
-    @staticmethod
+    @classmethod
     @lru_cache(maxsize=1)
-    def _cloudclient(_=None):
+    def _cloudclient(cls, _=None):
         logging.info("_cloudclient for Topics")
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+
         from google.cloud import pubsub_v1
 
         return pubsub_v1.PublisherClient()
@@ -65,6 +69,10 @@ class Topics(Plugin):
 
         topic_name = self._gcp_name(gcp_object)
         topic_path = self._cloudclient().topic_path(project_id, topic_name)
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+
         from google.cloud import pubsub_v1
 
         topic_object_holding_update = pubsub_v1.types.Topic(

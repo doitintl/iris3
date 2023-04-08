@@ -2,7 +2,7 @@ import os
 import os
 import re
 import uuid
-from typing import List, Dict, Any
+from typing import Dict, Any, Generator
 
 from util import localdev_config
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase
@@ -47,7 +47,11 @@ def is_appscript_project(p) -> bool:
 
 
 # Not cached. Returns a generator, and so not reusable
-def all_projects() -> List[str]:
+def all_projects() -> Generator[str, Any, None]:
+    # Local import to avoid burdening AppEngine memory. Loading all
+    # Client libraries would be 100MB  means that the default AppEngine
+    # Instance crashes on out-of-memory even before actually serving a request.
+
     from google.cloud import resourcemanager_v3
 
     projects_client = resourcemanager_v3.ProjectsClient()
@@ -98,6 +102,10 @@ def get_org(proj_name):
 
 
 def __create_folder_client():
+    # Local import to avoid burdening AppEngine memory. Loading all
+    # Client libraries would be 100MB  means that the default AppEngine
+    # Instance crashes on out-of-memory even before actually serving a request.
+
     from google.cloud import resourcemanager_v3
 
     folders_client = resourcemanager_v3.FoldersClient()
@@ -105,6 +113,10 @@ def __create_folder_client():
 
 
 def __create_project_client():
+    # Local import to avoid burdening AppEngine memory. Loading all
+    # Client libraries would be 100MB  means that the default AppEngine
+    # Instance crashes on out-of-memory even before actually serving a request.
+
     from google.cloud import resourcemanager_v3
 
     projects_client = resourcemanager_v3.ProjectsClient()

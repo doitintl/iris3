@@ -15,17 +15,23 @@ class Disks(GceZonalBase):
     Label GCE disks. Boot disks created with instances only get labeled on the cron schedule.
     Independently created disks get labeled on creation.
     """
-    lock=threading.Lock
 
+    __lock = threading.Lock()
 
-    @staticmethod
-    @lru_cache(maxsize=1)
-    def _cloudclient(_=None):
-       with Disks.lock:
-        logging.info("_cloudclient for Disks")
-        from google.cloud import compute_v1
+    @classmethod
+    def _cloudclient(cls, _=None):
+        @lru_cache(maxsize=1)
+        def create():
+            logging.info("_cloudclient for Disks")
+            # Local import to avoid burdening AppEngine memory. Loading all
+            # Client libraries would be 100MB  means that the default AppEngine
+            # Instance crashes on out-of-memory even before actually serving a request.
+            from google.cloud import compute_v1
 
-        return compute_v1.DisksClient()
+            return compute_v1.DisksClient()
+
+        with cls.__lock:
+            return create()
 
     @staticmethod
     def method_names():
@@ -42,13 +48,22 @@ class Disks(GceZonalBase):
         return True
 
     def _list_all(self, project_id, zone) -> typing.List[typing.Dict]:
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+
         from google.cloud import compute_v1
+
         request = compute_v1.ListDisksRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(request)
 
     def _get_resource(self, project_id, zone, name):
         try:
+            # Local import to avoid burdening AppEngine memory. Loading all
+            # Client libraries would be 100MB  means that the default AppEngine
+            # Instance crashes on out-of-memory even before actually serving a request.
             from google.cloud import compute_v1
+
             request = compute_v1.GetDiskRequest(
                 project=project_id, zone=zone, disk=name
             )

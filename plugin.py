@@ -64,8 +64,14 @@ class Plugin(object, metaclass=ABCMeta):
     def _google_api_client(cls):
         return discovery.build(*cls._discovery_api())
 
-    @staticmethod  # Implementations should cache the result
-    def _cloudclient(project_id=None):  # Some impl have project_id param, some don't
+    # TODO all implementations of _cloudclient and _google_api_client should be locked to avoid
+    # creating multiple Cloud Clients or Google API Clients.
+    # Still, there is no harm in occasional  multiple Clients.
+    # We lock it only there there is a large chance of multiple simultaneous access.
+    @classmethod  # Implementations should cache the result
+    def _cloudclient(
+        cls, project_id=None
+    ):  # Some impl have project_id param, some don't
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
         )

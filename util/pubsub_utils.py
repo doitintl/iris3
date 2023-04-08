@@ -1,10 +1,19 @@
 import logging
 
-from google.cloud import pubsub_v1
+from functools import lru_cache
 
 from util import gcp_utils, utils
 
-__publisher = pubsub_v1.PublisherClient()
+# This is not fully tread-safe, but at worst we get multiple PublisherClients; these are stateless
+@lru_cache(maxsize=1)
+def __get_publisher():
+
+    # Local import to avoid burdening AppEngine memory. Loading all
+    # Client libraries would be 100MB  means that the default AppEngine
+    # Instance crashes on out-of-memory even before actually serving a request.
+    from google.cloud import pubsub_v1
+
+    return pubsub_v1.PublisherClient()
 
 
 def logs_topic() -> str:
@@ -16,7 +25,7 @@ def schedulelabeling_topic() -> str:
 
 
 def publish(msg: str, topic_id: str):
-    topic_path = __publisher.topic_path(gcp_utils.current_project_id(), topic_id)
+    topic_path = __get_publisher().topic_path(gcp_utils.current_project_id(), topic_id)
 
     def on_publish(f):
         try:
@@ -28,7 +37,7 @@ def publish(msg: str, topic_id: str):
         except Exception as e:
             logging.exception("")
 
-    future = __publisher.publish(topic_path, msg.encode("utf-8"))
+    future = __get_publisher().publish(topic_path, msg.encode("utf-8"))
     future.add_done_callback(on_publish)
 
     logging.info("Published to %s: %s", topic_id, utils.shorten(msg, 200))

@@ -38,11 +38,13 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
 
         with timing("_all_zones"):
             project_id = gcp_utils.current_project_id()
+            # Local import to avoid burdening AppEngine memory. Loading all
+            # Client libraries would be 100MB  means that the default AppEngine
+            # Instance crashes on out-of-memory even before actually serving a request.
+
             from google.cloud import compute_v1
 
             request = compute_v1.ListZonesRequest(project=project_id)
-            from google.cloud import compute_v1
-
             zones_client = compute_v1.ZonesClient()
             zones = zones_client.list(request)
             return [z.name for z in zones]
