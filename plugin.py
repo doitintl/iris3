@@ -201,7 +201,7 @@ class PluginHolder:
         Type[Plugin], Optional[Plugin]
     ]  # Need to write the classname in quotes to avoid circular loading
     plugins = {}
-    lock = threading.Lock()
+    __lock = threading.Lock()
 
     @classmethod
     def plugin_cls_by_name(cls, name) -> Type[Plugin]:
@@ -231,9 +231,11 @@ class PluginHolder:
 
     @classmethod
     def get_plugin_instance(cls, plugin_cls):
-        with cls.lock:
+        with cls.__lock:
             assert plugin_cls in cls.plugins, plugin_cls + " " + cls.plugins
             plugin_instance = cls.plugins[plugin_cls]
+            assert isinstance(plugin_instance, Plugin)
+            assert isinstance(plugin_instance, plugin_cls)
             if plugin_instance is not None:
                 return plugin_instance
             else:
