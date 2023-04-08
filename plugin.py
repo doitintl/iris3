@@ -2,7 +2,6 @@ import logging
 import pkgutil
 import re
 import threading
-import typing
 from abc import ABCMeta, abstractmethod
 from functools import lru_cache
 from typing import Dict, Tuple, Type, Optional
@@ -70,7 +69,7 @@ class Plugin(object, metaclass=ABCMeta):
     # We lock it only there there is a large chance of multiple simultaneous access.
     @classmethod  # Implementations should cache the result
     def _cloudclient(
-        cls, project_id=None
+            cls, project_id=None
     ):  # Some impl have project_id param, some don't
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
@@ -108,7 +107,7 @@ class Plugin(object, metaclass=ABCMeta):
             specific_pfx = specific_prefix(type(self).__name__)
             pfx = specific_pfx if specific_pfx is not None else general_pfx
             pfx_full = pfx + "_" if pfx else ""
-            return pfx_full + func.__name__[len(func_name_pfx) :]
+            return pfx_full + func.__name__[len(func_name_pfx):]
 
         # noinspection PyTypeChecker
         return {key(f): value(f, gcp_object) for f in methods(self, func_name_pfx)}
@@ -183,7 +182,7 @@ class Plugin(object, metaclass=ABCMeta):
             name = gcp_object["name"]
             if separator:
                 index = name.rfind(separator)
-                name = name[index + 1 :]
+                name = name[index + 1:]
             return name
         except KeyError as e:
             logging.exception("")
@@ -234,8 +233,8 @@ class PluginHolder:
         with cls.__lock:
             assert plugin_cls in cls.plugins, plugin_cls + " " + cls.plugins
             plugin_instance = cls.plugins[plugin_cls]
-            assert isinstance(plugin_instance, Plugin)
-            assert isinstance(plugin_instance, plugin_cls)
+            assert not plugin_instance or isinstance(plugin_instance, Plugin) \
+                   and isinstance(plugin_instance, plugin_cls)
             if plugin_instance is not None:
                 return plugin_instance
             else:
