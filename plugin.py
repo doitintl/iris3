@@ -24,9 +24,11 @@ from util.utils import (
 
 PLUGINS_MODULE = "plugins"
 
+# TODO Since subclasses are already singletons, and we are already using
+# a lot of classmethods and staticmethods, , could convert this to
+# never use instance methods
+class Plugin(metaclass=ABCMeta):
 
-class Plugin(object, metaclass=ABCMeta):
-    __proj_regex = re.compile(r"[a-z]([-a-z0-9]*[a-z0-9])?")
     # Underlying API  max is 1000; avoid off-by-one errors
     # We send a batch when _BATCH_SIZE or more tasks are in it, or at the end of a label_all
     _BATCH_SIZE = 990
@@ -61,7 +63,12 @@ class Plugin(object, metaclass=ABCMeta):
     @classmethod
     @lru_cache(maxsize=1)
     def _google_api_client(cls):
-        return discovery.build(*cls._discovery_api())
+
+        discovery_api = cls._discovery_api()
+        if discovery_api is not None:
+            return discovery.build(*discovery_api)
+        else:
+            return None
 
     # TODO all implementations of _cloudclient and _google_api_client should be locked to avoid
     # creating multiple Cloud Clients or Google API Clients.
@@ -190,9 +197,11 @@ class Plugin(object, metaclass=ABCMeta):
 
     def __init_batch_req(self):
         self.counter = 0
-        self._batch = self._google_api_client().new_batch_http_request(
-            callback=self.__batch_callback
-        )
+        google_api_client = self._google_api_client()
+        if google_api_client is not None:
+            self._batch = google_api_client.new_batch_http_request(
+                callback=self.__batch_callback
+            )
 
 
 class PluginHolder:

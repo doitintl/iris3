@@ -29,12 +29,11 @@ class Topics(Plugin):
     @staticmethod
     def _discovery_api() -> Tuple[str, str]:
         """This API is not actually used"""
-        return "pubsub", "v1"
+        return None  # Would be "pubsub", "v1"
 
     @staticmethod
     def method_names():
-        # Actually"google.pubsub.v1.Subscriber.CreateTopic", but
-        # substring is allowed
+        # Actually"google.pubsub.v1.Subscriber.CreateTopic", but substring is allowed
         return ["Publisher.CreateTopic"]
 
     def label_all(self, project_id):
@@ -54,9 +53,8 @@ class Topics(Plugin):
             return None
 
     def _list_all(self, project_id) -> List[Dict]:
-        project_path = f"projects/{project_id}"
         all_resources = self._cloudclient().list_topics(
-            request={"project": project_path}
+            request={"project": f"projects/{project_id}"}
         )
         return cloudclient_pb_objects_to_list_of_dicts(all_resources)
 

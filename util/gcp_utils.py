@@ -1,7 +1,10 @@
+import logging
 import os
 import re
 import uuid
 from typing import Dict, Any, Generator
+
+from google.appengine.api.runtime import memory_usage
 
 from util import localdev_config
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase
@@ -47,6 +50,7 @@ def is_appscript_project(p) -> bool:
 
 # Not cached. Returns a generator, and so not reusable
 def all_projects() -> Generator[str, Any, None]:
+    """All projects to which the current user has access"""
     # Local import to avoid burdening AppEngine memory. Loading all
     # Client libraries would be 100MB  means that the default AppEngine
     # Instance crashes on out-of-memory even before actually serving a request.
@@ -76,9 +80,7 @@ def method_name(projects):
 def get_org(proj_name):
     projects_client = __create_project_client()
     folders_client = __create_folder_client()
-    assert proj_name.startswith(
-        "projects/"
-    ), f"Expect the form 'projects/123456789, was {proj_name}"
+
     parent_name = proj_name
     while True:
         if parent_name.startswith("projects/"):
@@ -129,112 +131,6 @@ def get_project(project_id: str) -> Dict[str, Any]:
     return proj_as_dict
 
 
-def predefined_zone_list():
-    return [
-        "asia-east1-a",
-        "asia-east1-b",
-        "asia-east1-c",
-        "asia-east2-a",
-        "asia-east2-b",
-        "asia-east2-c",
-        "asia-northeast1-a",
-        "asia-northeast1-b",
-        "asia-northeast1-c",
-        "asia-northeast2-a",
-        "asia-northeast2-b",
-        "asia-northeast2-c",
-        "asia-northeast3-a",
-        "asia-northeast3-b",
-        "asia-northeast3-c",
-        "asia-south1-a",
-        "asia-south1-b",
-        "asia-south1-c",
-        "asia-south2-a",
-        "asia-south2-b",
-        "asia-south2-c",
-        "asia-southeast1-a",
-        "asia-southeast1-b",
-        "asia-southeast1-c",
-        "asia-southeast2-a",
-        "asia-southeast2-b",
-        "asia-southeast2-c",
-        "australia-southeast1-a",
-        "australia-southeast1-b",
-        "australia-southeast1-c",
-        "australia-southeast2-a",
-        "australia-southeast2-b",
-        "australia-southeast2-c",
-        "europe-central2-a",
-        "europe-central2-b",
-        "europe-central2-c",
-        "europe-north1-a",
-        "europe-north1-b",
-        "europe-north1-c",
-        "europe-southwest1-a",
-        "europe-southwest1-b",
-        "europe-southwest1-c",
-        # No "europe-west1-a", https://groups.google.com/g/gce-announce/c/uAXw_yYLEhw
-        "europe-west1-b",
-        "europe-west1-c",
-        "europe-west1-d",
-        "europe-west2-a",
-        "europe-west2-b",
-        "europe-west2-c",
-        "europe-west3-a",
-        "europe-west3-b",
-        "europe-west3-c",
-        "europe-west4-a",
-        "europe-west4-b",
-        "europe-west4-c",
-        "europe-west6-a",
-        "europe-west6-b",
-        "europe-west6-c",
-        "europe-west8-a",
-        "europe-west8-b",
-        "europe-west8-c",
-        "europe-west9-a",
-        "europe-west9-b",
-        "europe-west9-c",
-        "me-west1-a",
-        "me-west1-b",
-        "me-west1-c",
-        "northamerica-northeast1-a",
-        "northamerica-northeast1-b",
-        "northamerica-northeast1-c",
-        "northamerica-northeast2-a",
-        "northamerica-northeast2-b",
-        "northamerica-northeast2-c",
-        "southamerica-east1-a",
-        "southamerica-east1-b",
-        "southamerica-east1-c",
-        "southamerica-west1-a",
-        "southamerica-west1-b",
-        "southamerica-west1-c",
-        "us-central1-a",
-        "us-central1-b",
-        "us-central1-c",
-        "us-central1-f",
-        "us-east5-a",
-        "us-east5-b",
-        "us-east5-c",
-        "us-south1-a",
-        "us-south1-b",
-        "us-south1-c",
-        "us-west1-a",
-        "us-west1-b",
-        "us-west1-c",
-        "us-west2-a",
-        "us-west2-b",
-        "us-west2-c",
-        "us-west3-a",
-        "us-west3-b",
-        "us-west3-c",
-        "us-west4-a",
-        "us-west4-b",
-        "us-west4-c",
-    ]
-
-
 def cloudclient_pb_objects_to_list_of_dicts(objects):
     return (cloudclient_pb_obj_to_dict(i) for i in objects)
 
@@ -243,3 +139,8 @@ def cloudclient_pb_obj_to_dict(o) -> Dict[str, str]:
     keys = o.__dict__["_pb"].DESCRIPTOR.fields_by_name.keys()
     object_as_dict = {key: getattr(o, key) for key in keys}
     return dict_to_camelcase(object_as_dict)
+
+
+def log_gae_memory(tag):
+    mem_str = str(memory_usage()).replace("\n", "; ")
+    logging.info("AppEngine Memory, %s: %s", tag, mem_str)

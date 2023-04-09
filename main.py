@@ -1,5 +1,6 @@
 """Entry point for Iris."""
 from functools import lru_cache
+import google.appengine.api
 
 print("Initializing ")
 
@@ -39,6 +40,7 @@ from util.config_utils import (
 )
 from util.utils import log_time, timing
 
+
 # For Google Cloud Profiler,  set ENABLE_PROFILER to True, and edit requirements.txt and add a line to app.yaml as stated in requirements.txt
 ENABLE_PROFILER = False
 
@@ -66,6 +68,8 @@ logging.info(
 )
 
 app = flask.Flask(__name__)
+if detect_gae():
+    app.wsgi_app = google.appengine.api.wrap_wsgi_app(app.wsgi_app)
 
 PluginHolder.init()
 
