@@ -6,9 +6,9 @@ import logging
 import typing
 from functools import lru_cache
 
-
-from ratelimit import limits, sleep_and_retry
 from googleapiclient import errors
+from ratelimit import limits, sleep_and_retry
+
 from plugin import Plugin
 from util import gcp_utils
 from util.utils import log_time, timing, dict_to_camelcase
@@ -23,7 +23,7 @@ class Bigquery(Plugin):
     @lru_cache(maxsize=500)  # cached per project
     def _cloudclient(cls, project_id=None):
         assert project_id, "'None' is only for the signature"
-        logging.info("_cloudclient for Bigquery")
+        logging.info("_cloudclient for %s", cls.__name__)
         # Local import to avoid burdening AppEngine memory. Loading all
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
@@ -125,8 +125,7 @@ class Bigquery(Plugin):
         with timing(f"label_all for BigQuery in {project_id}"):
             datasets = self._cloudclient(project_id).list_datasets()
             for dataset in datasets:
-                dataset_dict = dataset._properties
-                self.__label_dataset_and_tables(project_id, dataset_dict)
+                self.__label_dataset_and_tables(project_id, dataset._properties)
 
             if self.counter > 0:
                 self.do_batch()  # Used for Tables, not Datasets

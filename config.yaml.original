@@ -59,11 +59,14 @@ label_all_on_cron: False
 # this token protects against unwanted invocations of labeling.
 pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
 
-# If you run in a project that includes one of these markers in the name,
-# Iris will refuse to allow more than 3 enabled projects.
-# This is to prevent labeling dozens of projects by accident when you are developing or testing.
+# If you run Iris3 in App Engine in a project that includes one of these markers in the name,
+# Iris will refuse to allow more than 3 enabled projects for the schedule command.
+# (That is just for the schedule command: Labelling done on-creation or with direct invocation of
+# do_label in testing will still work, because for these you specify the project.
+# This limit is to prevent labeling dozens of projects by accident when you are developing or testing.
 # (though the only "harm" is lots of labels).
-# Configure the list of projects to fewer than three (see `projects` key above).
+# In this case, you should configure the list of projects to fewer than three (see `projects` key above)
+# to allow testing the schedule command.
 test_or_dev_project_markers:
   - playground
   - test

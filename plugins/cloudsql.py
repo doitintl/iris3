@@ -18,8 +18,10 @@ class Cloudsql(Plugin):
 
     @classmethod
     def _cloudclient(cls, _=None):
-        logging.info("_cloudclient for CloudSQL")
-        raise NotImplementedError("There is no Cloud Client library for CloudSQL")
+        logging.info("_cloudclient for %s", cls.__name__)
+        raise NotImplementedError(
+            "There is no Cloud Client library for " + cls.__name__
+        )
 
     @staticmethod
     def is_labeled_on_creation() -> bool:
@@ -46,7 +48,7 @@ class Cloudsql(Plugin):
             logging.exception("")
             return None
 
-    def __get_instance(self, project_id, name):
+    def _get_resource(self, project_id, name):
         try:
             result = (
                 self._google_api_client()
@@ -66,14 +68,14 @@ class Cloudsql(Plugin):
             labels_ = log_data["resource"]["labels"]
             database_id = labels_["database_id"]
             instance = database_id[database_id.rfind(":") + 1 :]
-            instance = self.__get_instance(labels_["project_id"], instance)
+            instance = self._get_resource(labels_["project_id"], instance)
             return instance
         except Exception as e:
             logging.exception("")
             return None
 
     def label_all(self, project_id):
-        with timing(f"label_all(CloudSQL) in {project_id}"):
+        with timing(f"label_all({type(self).__name__}) in {project_id}"):
             page_token = None
             while True:
                 response = (

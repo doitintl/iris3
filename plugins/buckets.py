@@ -2,7 +2,6 @@ import logging
 import typing
 from functools import lru_cache
 
-
 from plugin import Plugin
 from util import gcp_utils
 from util.utils import log_time, timing, dict_to_camelcase
@@ -21,7 +20,7 @@ class Buckets(Plugin):
     @lru_cache(maxsize=500)  # cached per project
     def _cloudclient(cls, project_id=None):
         assert project_id, "'None' is only for the signature"
-        logging.info("_cloudclient for Buckets")
+        logging.info("_cloudclient for %s", cls.__name__)
         # Local import to avoid burdening AppEngine memory. Loading all
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
@@ -43,7 +42,7 @@ class Buckets(Plugin):
             logging.exception("")
             return None
 
-    def __get_bucket(self, bucket_name, project_id):
+    def _get_resource(self, bucket_name, project_id):
         try:
             bucket_response = self._cloudclient(project_id).get_bucket(
                 bucket_or_name=bucket_name
@@ -59,7 +58,7 @@ class Buckets(Plugin):
         buck_name = log_data["resource"]["labels"]["bucket_name"]
         project_id = log_data["resource"]["labels"]["project_id"]
 
-        bucket = self.__get_bucket(buck_name, project_id)
+        bucket = self._get_resource(buck_name, project_id)
         try:
             return bucket
         except Exception as e:
@@ -73,7 +72,7 @@ class Buckets(Plugin):
         d3 = dict_to_camelcase(d2)
         return d3
 
-    def __list_buckets(self, project_id):
+    def _list_all(self, project_id):
         buckets = self._cloudclient(project_id).list_buckets()
         return (
             self.__response_obj_to_dict(bucket_response) for bucket_response in buckets
@@ -81,10 +80,9 @@ class Buckets(Plugin):
 
     def label_all(self, project_id):
         with timing(f"label_all(Bucket) in {project_id}"):
-            buckets = self.__list_buckets(project_id)
-            for bucket in buckets:
+            for o in self._list_all(project_id):
                 try:
-                    self.label_resource(bucket, project_id)
+                    self.label_resource(o, project_id)
                 except Exception as e:
                     logging.exception("")
             if self.counter > 0:

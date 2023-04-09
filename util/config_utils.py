@@ -88,7 +88,6 @@ def is_test_or_dev_configuration():
 
 
 def is_in_test_or_dev_project(project_id):
-
     markers = get_config().get("test_or_dev_project_markers", [])
     for marker in markers:
         if marker and marker in project_id:

@@ -133,14 +133,16 @@ def __get_enabled_projects():
     ):
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
-            msg = """In development or testing, we support no more than %d projects
+            raise Exception(
+                """In development or testing, we support no more than %d projects
                     to avoid accidentally flooding the system. 
                     %d projects are available, which exceeds that
-                   """ % (
-                max_proj_in_dev,
-                len(enabled_projs),
+                   """
+                % (
+                    max_proj_in_dev,
+                    len(enabled_projs),
+                )
             )
-            raise Exception(msg)
     return enabled_projs
 
 

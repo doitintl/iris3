@@ -1,8 +1,8 @@
 import logging
 import re
-import typing
-from functools import lru_cache
 
+from functools import lru_cache
+from typing import Tuple, List, Dict, Optional
 
 from googleapiclient import errors
 
@@ -11,17 +11,14 @@ from util.gcp_utils import (
     cloudclient_pb_obj_to_dict,
     cloudclient_pb_objects_to_list_of_dicts,
 )
-from util.utils import log_time
-from util.utils import timing
+from util.utils import log_time, timing
 
 
 class Subscriptions(Plugin):
-    __sub_path_regex = re.compile(r"^projects/[^/]+/subscriptions/[^/]+$")
-
     @classmethod
     @lru_cache(maxsize=1)
     def _cloudclient(cls, _=None):
-        logging.info("_cloudclient for Subscriptions")
+        logging.info("_cloudclient for %s", cls.__name__)
         # Local import to avoid burdening AppEngine memory. Loading all
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
@@ -31,8 +28,8 @@ class Subscriptions(Plugin):
         return pubsub_v1.SubscriberClient()
 
     @staticmethod
-    def _discovery_api() -> typing.Tuple[str, str]:
-        """Not used"""
+    def _discovery_api() -> Tuple[str, str]:
+        """This API is not actually used"""
         return "pubsub", "v1"
 
     @staticmethod
@@ -42,72 +39,66 @@ class Subscriptions(Plugin):
         return ["Subscriber.CreateSubscription"]
 
     def label_all(self, project_id):
-        with timing(f"label_all(Subscription)  in {project_id}"):
-            subs = self.__list_subscriptions(project_id)
-            for sub in subs:
+        with timing(f"label_all({type(self).__name__})  in {project_id}"):
+            for o in self._list_all(project_id):
                 try:
-                    self.label_resource(sub, project_id)
+                    self.label_resource(o, project_id)
                 except Exception as e:
                     logging.exception("")
 
-    def __get_subscription(self, subscription_path):
-        assert self.__sub_path_regex.match(subscription_path)
+    def __get_resource(self, path):
         try:
-            subsc = self._cloudclient().get_subscription(subscription=subscription_path)
-            return cloudclient_pb_obj_to_dict(subsc)
+            o = self._cloudclient().get_subscription(subscription=path)
+            return cloudclient_pb_obj_to_dict(o)
         except errors.HttpError as e:
             logging.exception("")
             return None
 
-    def __list_subscriptions(self, project_id):
+    def _list_all(self, project_id) -> List[Dict]:
         project_path = f"projects/{project_id}"
-        subscriptions = self._cloudclient().list_subscriptions(
+        all_resources = self._cloudclient().list_subscriptions(
             request={"project": project_path}
         )
-        return cloudclient_pb_objects_to_list_of_dicts(subscriptions)
+        return cloudclient_pb_objects_to_list_of_dicts(all_resources)
 
     @log_time
-    def label_resource(self, gcp_object: typing.Dict, project_id):
+    def label_resource(self, gcp_object: Dict, project_id):
+        # This API does not accept label-fingerprint, so extracting just labels
+        labels_outer = self._build_labels(gcp_object, project_id)
+        if labels_outer is None:
+            return
+        labels = labels_outer["labels"]
+
+        name = self._gcp_name(gcp_object)
+        parent_topic = gcp_object["topic"].split("/")[-1]
+
+        path = self._cloudclient().subscription_path(project_id, name)
         # Local import to avoid burdening AppEngine memory. Loading all
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
 
         from google.cloud import pubsub_v1
 
-        labels_outer = self._build_labels(gcp_object, project_id)
-        if labels_outer is None:
-            return
-        labels = labels_outer["labels"]
-
-        subscription_name = self._gcp_name(gcp_object)
-        topic = gcp_object["topic"].split("/")[-1]
-
-        subscription_path = self._cloudclient().subscription_path(
-            project_id, subscription_name
-        )
-
-        subscription_object_holding_update = pubsub_v1.types.Subscription(
-            name=subscription_path, topic=topic, labels=labels
+        update_obj = pubsub_v1.types.Subscription(
+            name=path, topic=parent_topic, labels=labels
         )
 
         update_mask = {"paths": {"labels"}}
 
-        with self._cloudclient():
-            with timing("update subscription"):
-                _ = self._cloudclient().update_subscription(
-                    request={
-                        "subscription": subscription_object_holding_update,
-                        "update_mask": update_mask,
-                    }
-                )
+        with timing("update " + type(self).__name__):
+            _ = self._cloudclient().update_subscription(
+                request={
+                    "subscription": update_obj,
+                    "update_mask": update_mask,
+                }
+            )
 
-        logging.info(f"Subscription updated: {subscription_path}")
+        logging.info(f"Updated: {path}")
 
     def get_gcp_object(self, log_data):
         try:
-            subscription_path = log_data["protoPayload"]["request"]["name"]
-            subscription = self.__get_subscription(subscription_path)
-            return subscription
+            path = log_data["protoPayload"]["request"]["name"]
+            return self.__get_resource(path)
         except Exception as e:
             logging.exception("")
             return None

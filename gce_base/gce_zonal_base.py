@@ -16,6 +16,14 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         super().__init__()
         self._write_lock = threading.Lock()
 
+    @staticmethod
+    @abstractmethod
+    def _create_cloudclient():
+        """This exists on GceZonalBase because of multithreaded access
+        to zones, requiring some locking. Implementations of this method
+        should cache the result."""
+        pass
+
     def _gcp_zone(self, gcp_object):
         """Method dynamically called in generating labels, so don't change name"""
         try:
@@ -51,11 +59,11 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
 
     def label_all(self, project_id):
         with timing(f"label_all {type(self).__name__} in {project_id}"):
-            self.label_by_zones(project_id, self._all_zones())
+            self.__label_by_zones(project_id, self._all_zones())
             if self.counter > 0:
                 self.do_batch()
 
-    def label_by_zones(self, project_id, zones):
+    def __label_by_zones(self, project_id, zones):
         def label_one_zone(zone):
             with timing(
                 f"zone {zone}, label_all {type(self).__name__} in {project_id}"
@@ -77,8 +85,8 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
     def get_gcp_object(self, log_data: Dict) -> Optional[Dict]:
         try:
             name = log_data["protoPayload"]["resourceName"]
-            ind = name.rfind("/")
-            name = name[ind + 1 :]
+            idx = name.rfind("/")
+            name = name[idx + 1 :]
             project_id = log_data["resource"]["labels"]["project_id"]
             zone = log_data["resource"]["labels"]["zone"]
             resource = self._get_resource(project_id, zone, name)

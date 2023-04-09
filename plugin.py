@@ -69,7 +69,7 @@ class Plugin(object, metaclass=ABCMeta):
     # We lock it only there there is a large chance of multiple simultaneous access.
     @classmethod  # Implementations should cache the result
     def _cloudclient(
-            cls, project_id=None
+        cls, project_id=None
     ):  # Some impl have project_id param, some don't
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
@@ -107,7 +107,7 @@ class Plugin(object, metaclass=ABCMeta):
             specific_pfx = specific_prefix(type(self).__name__)
             pfx = specific_pfx if specific_pfx is not None else general_pfx
             pfx_full = pfx + "_" if pfx else ""
-            return pfx_full + func.__name__[len(func_name_pfx):]
+            return pfx_full + func.__name__[len(func_name_pfx) :]
 
         # noinspection PyTypeChecker
         return {key(f): value(f, gcp_object) for f in methods(self, func_name_pfx)}
@@ -182,7 +182,7 @@ class Plugin(object, metaclass=ABCMeta):
             name = gcp_object["name"]
             if separator:
                 index = name.rfind(separator)
-                name = name[index + 1:]
+                name = name[index + 1 :]
             return name
         except KeyError as e:
             logging.exception("")
@@ -196,11 +196,13 @@ class Plugin(object, metaclass=ABCMeta):
 
 
 class PluginHolder:
-    plugins: Dict[
-        Type[Plugin], Optional[Plugin]
-    ]  # Need to write the classname in quotes to avoid circular loading
+    # Map from class to instance
+    plugins: Dict[Type[Plugin], Optional[Plugin]]
     plugins = {}
     __lock = threading.Lock()
+
+    def __init__(self):
+        raise NotImplementedError("Do not instantiate")
 
     @classmethod
     def plugin_cls_by_name(cls, name) -> Type[Plugin]:
@@ -233,8 +235,10 @@ class PluginHolder:
         with cls.__lock:
             assert plugin_cls in cls.plugins, plugin_cls + " " + cls.plugins
             plugin_instance = cls.plugins[plugin_cls]
-            assert not plugin_instance or isinstance(plugin_instance, Plugin) \
-                   and isinstance(plugin_instance, plugin_cls)
+
+            assert not plugin_instance or isinstance(
+                plugin_instance, (Plugin, plugin_cls)
+            )
             if plugin_instance is not None:
                 return plugin_instance
             else:
@@ -243,6 +247,6 @@ class PluginHolder:
                 return plugin_instance
 
     @classmethod
-    def get_plugin_instance_by_name(cls, plugin_class_name):
+    def get_plugin_instance_by_name(cls, plugin_class_name: str):
         plugin_cls = cls.plugin_cls_by_name(plugin_class_name)
         return cls.get_plugin_instance(plugin_cls)

@@ -1,7 +1,6 @@
 import logging
 from functools import lru_cache
 
-
 from googleapiclient import errors
 
 from gce_base.gce_base import GceBase
@@ -14,7 +13,7 @@ class Snapshots(GceBase):
     @lru_cache(maxsize=1)
     def _cloudclient(cls, _=None):
 
-        logging.info("_cloudclient for Snapshots")
+        logging.info("_cloudclient for %s", cls.__name__)
         # Local import to avoid burdening AppEngine memory. Loading all
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
@@ -27,17 +26,17 @@ class Snapshots(GceBase):
     def method_names():
         return ["compute.disks.createSnapshot", "compute.snapshots.insert"]
 
-    def __list_snapshots(self, project_id):
+    def _list_all(self, project_id):
         # Local import to avoid burdening AppEngine memory. Loading all
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
 
         from google.cloud import compute_v1
 
-        snapshots = compute_v1.ListSnapshotsRequest(project=project_id)
-        return self._list_resources_as_dicts(snapshots)
+        all_resources = compute_v1.ListSnapshotsRequest(project=project_id)
+        return self._list_resources_as_dicts(all_resources)
 
-    def __get_snapshot(self, project_id, name):
+    def _get_resource(self, project_id, name):
         try:
             # Local import to avoid burdening AppEngine memory. Loading all
             # Client libraries would be 100MB  means that the default AppEngine
@@ -53,10 +52,9 @@ class Snapshots(GceBase):
 
     def label_all(self, project_id):
         with timing(f"label_all in {project_id}"):
-            snapshots = self.__list_snapshots(project_id)
-            for snapshot in snapshots:
+            for o in self._list_all(project_id):
                 try:
-                    self.label_resource(snapshot, project_id)
+                    self.label_resource(o, project_id)
                 except Exception as e:
                     logging.exception("")
             if self.counter > 0:
@@ -70,8 +68,7 @@ class Snapshots(GceBase):
             name = request["name"]
             project_id = log_data["resource"]["labels"]["project_id"]
 
-            snapshot = self.__get_snapshot(project_id, name)
-            return snapshot
+            return self._get_resource(project_id, name)
         except Exception as e:
             logging.exception("")
             return None

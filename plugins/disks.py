@@ -18,20 +18,21 @@ class Disks(GceZonalBase):
 
     __lock = threading.Lock()
 
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _create_cloudclient():
+        logging.info("_cloudclient for %s", "Disks")
+        # Local import to avoid burdening AppEngine memory. Loading all
+        # Client libraries would be 100MB  means that the default AppEngine
+        # Instance crashes on out-of-memory even before actually serving a request.
+        from google.cloud import compute_v1
+
+        return compute_v1.DisksClient()
+
     @classmethod
     def _cloudclient(cls, _=None):
-        @lru_cache(maxsize=1)
-        def create():
-            logging.info("_cloudclient for Disks")
-            # Local import to avoid burdening AppEngine memory. Loading all
-            # Client libraries would be 100MB  means that the default AppEngine
-            # Instance crashes on out-of-memory even before actually serving a request.
-            from google.cloud import compute_v1
-
-            return compute_v1.DisksClient()
-
         with cls.__lock:
-            return create()
+            return cls._create_cloudclient()
 
     @staticmethod
     def method_names():
