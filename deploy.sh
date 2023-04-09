@@ -88,8 +88,15 @@ gcloud projects describe "$PROJECT_ID" || {
 echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
 
+# Must have one of these config (meanwhile, config-dev.yaml is only for local use)
+if [[ ! -f "config.yaml" &&   ! -f "config-test.yaml" ]]; then
+     echo >&2 "No config file found"
+    exit 1
+fi
+
+
 GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
-# This dependson the  the export PYTHON_PATH="." above.
+# The following line depends on the  the export PYTHON_PATH="." above.
 PUBSUB_VERIFICATION_TOKEN=$(python3 ./util/print_pubsub_token.py)
 LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
 DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"

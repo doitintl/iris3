@@ -7,6 +7,7 @@ from typing import Dict, Optional
 
 from gce_base.gce_base import GceBase
 from util import gcp_utils
+from util.gcp_utils import add_loaded_lib
 from util.utils import timing
 
 
@@ -51,6 +52,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             # Instance crashes on out-of-memory even before actually serving a request.
 
             from google.cloud import compute_v1
+            add_loaded_lib("compute_v1")
 
             request = compute_v1.ListZonesRequest(project=project_id)
             zones_client = compute_v1.ZonesClient()

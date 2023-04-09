@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from plugin import Plugin
 from util import gcp_utils
+from util.gcp_utils import add_loaded_lib
 from util.utils import log_time, timing, dict_to_camelcase
 
 
@@ -25,7 +26,7 @@ class Buckets(Plugin):
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import storage
-
+        add_loaded_lib("storage")
         return storage.Client(project=project_id)
 
     def _gcp_name(self, gcp_object):

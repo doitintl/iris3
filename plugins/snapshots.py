@@ -5,6 +5,7 @@ from googleapiclient import errors
 
 from gce_base.gce_base import GceBase
 from util import gcp_utils
+from util.gcp_utils import add_loaded_lib
 from util.utils import log_time, timing
 
 
@@ -19,7 +20,7 @@ class Snapshots(GceBase):
         # Instance crashes on out-of-memory even before actually serving a request.
 
         from google.cloud import compute_v1
-
+        add_loaded_lib("compute_v1")
         return compute_v1.SnapshotsClient()
 
     @staticmethod
@@ -32,7 +33,7 @@ class Snapshots(GceBase):
         # Instance crashes on out-of-memory even before actually serving a request.
 
         from google.cloud import compute_v1
-
+        add_loaded_lib("compute_v1")
         all_resources = compute_v1.ListSnapshotsRequest(project=project_id)
         return self._list_resources_as_dicts(all_resources)
 
@@ -43,7 +44,7 @@ class Snapshots(GceBase):
             # Instance crashes on out-of-memory even before actually serving a request.
 
             from google.cloud import compute_v1
-
+            add_loaded_lib("compute_v1")
             request = compute_v1.GetSnapshotRequest(project=project_id, snapshot=name)
             return self._get_resource_as_dict(request)
         except errors.HttpError as e:

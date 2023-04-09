@@ -7,7 +7,7 @@ from typing import Dict, Any, Generator
 
 from google.appengine.api.runtime import memory_usage
 
-from util import localdev_config
+from util import localdev_config, utils
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase
 
 
@@ -57,7 +57,7 @@ def all_projects() -> Generator[str, Any, None]:
     # Instance crashes on out-of-memory even before actually serving a request.
 
     from google.cloud import resourcemanager_v3
-
+    add_loaded_lib("resourcemanager_v3")
     projects_client = resourcemanager_v3.ProjectsClient()
 
     current_proj_id = current_project_id()
@@ -109,7 +109,7 @@ def __create_folder_client():
     # Instance crashes on out-of-memory even before actually serving a request.
 
     from google.cloud import resourcemanager_v3
-
+    add_loaded_lib("resourcemanager_v3")
     folders_client = resourcemanager_v3.FoldersClient()
     return folders_client
 
@@ -120,7 +120,7 @@ def __create_project_client():
     # Instance crashes on out-of-memory even before actually serving a request.
 
     from google.cloud import resourcemanager_v3
-
+    add_loaded_lib("resourcemanager_v3")
     projects_client = resourcemanager_v3.ProjectsClient()
     return projects_client
 
@@ -142,12 +142,23 @@ def cloudclient_pb_obj_to_dict(o) -> Dict[str, str]:
     return dict_to_camelcase(object_as_dict)
 
 
+__inst_id = utils.random_str(6)
+
+__loaded_libs = set()
+
+
+def add_loaded_lib(s):
+    __loaded_libs.add(s)
+
+
 def log_gae_memory(tag):
     """Use this only in   an AppEngine Request"""
     if detect_gae():
         try:
+            libs = ",".join(__loaded_libs)
             mem_str = str(memory_usage()).replace("\n", "; ")
-            logging.info("git Memory, %s: %s", tag, mem_str)
+            logging.info("Memory for GAE Instance %s (%s) %s: Loaded libs:[%s]",
+                         __inst_id, tag, mem_str, libs)
         except Exception as e:
             logging.exception("")
 

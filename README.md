@@ -1,3 +1,4 @@
+
 # Iris
 
 In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. She
@@ -206,17 +207,12 @@ examples.
    name (`zone` in that example), and a value returned by the function
    (in our example, the zone identifier).
 
-   d. For resources that cannot be labeled on creation (like CloudSQL, which takes too long to initialize),
-   override `is_labeled_on_creation()` and return `False`
-   (though if you don't, the only bad side effect will be errors in the logs).
+   d. For resources that cannot be labeled on creation (like CloudSQL, which takes too long to initialize), override `is_labeled_on_creation()` and return `False`  (though if you don't, the only bad side effect will be errors in the logs).
 
-   e. For resources with mutable labels  (like Disks, for which attachment state may have changed),
-   override `relabel_on_cron()` and return `True`. This will allow Cloud Scheduler cron to relabel them. (We label
+   e. For resources with mutable labels  (like Disks, for which attachment state may have changed), override `relabel_on_cron()` and return `True`. This will allow Cloud Scheduler cron to relabel them. (We label
    on-event only for creation events, so Cloud Scheduler is the way to relabel mutated state.)
 
-   f. For resources where labeling must be skipped under certain conditions, override `block_labeling()` and
-   return `True`
-   where needed.
+   f. For resources where labeling must be skipped under certain conditions, override `block_labeling()` and return `True`  where needed.
 
 2. Add your API to the `required_svcs`  in `deploy.sh`
 

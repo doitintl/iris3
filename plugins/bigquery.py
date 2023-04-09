@@ -11,6 +11,7 @@ from ratelimit import limits, sleep_and_retry
 
 from plugin import Plugin
 from util import gcp_utils
+from util.gcp_utils import add_loaded_lib
 from util.utils import log_time, timing, dict_to_camelcase
 
 
@@ -29,6 +30,7 @@ class Bigquery(Plugin):
         # Instance crashes on out-of-memory even before actually serving a request.
 
         from google.cloud import bigquery
+        add_loaded_lib("bigquery")
 
         return bigquery.Client(project=project_id)
 

@@ -1,15 +1,13 @@
 import logging
-import re
-
 from functools import lru_cache
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict
 
 from googleapiclient import errors
 
 from plugin import Plugin
 from util.gcp_utils import (
     cloudclient_pb_obj_to_dict,
-    cloudclient_pb_objects_to_list_of_dicts,
+    cloudclient_pb_objects_to_list_of_dicts, add_loaded_lib,
 )
 from util.utils import log_time, timing
 
@@ -24,7 +22,7 @@ class Subscriptions(Plugin):
         # Instance crashes on out-of-memory even before actually serving a request.
 
         from google.cloud import pubsub_v1
-
+        add_loaded_lib("pubsub_v1")
         return pubsub_v1.SubscriberClient()
 
     @staticmethod
@@ -76,7 +74,7 @@ class Subscriptions(Plugin):
         # Instance crashes on out-of-memory even before actually serving a request.
 
         from google.cloud import pubsub_v1
-
+        add_loaded_lib("pubsub_v1")
         update_obj = pubsub_v1.types.Subscription(
             name=path, topic=parent_topic, labels=labels
         )

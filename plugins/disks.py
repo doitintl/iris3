@@ -7,6 +7,7 @@ from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
 from util import gcp_utils
+from util.gcp_utils import add_loaded_lib
 from util.utils import log_time
 
 
@@ -26,7 +27,7 @@ class Disks(GceZonalBase):
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import compute_v1
-
+        add_loaded_lib("compute_v1")
         return compute_v1.DisksClient()
 
     @classmethod
@@ -54,7 +55,7 @@ class Disks(GceZonalBase):
         # Instance crashes on out-of-memory even before actually serving a request.
 
         from google.cloud import compute_v1
-
+        add_loaded_lib("compute_v1")
         request = compute_v1.ListDisksRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(request)
 
@@ -64,7 +65,7 @@ class Disks(GceZonalBase):
             # Client libraries would be 100MB  means that the default AppEngine
             # Instance crashes on out-of-memory even before actually serving a request.
             from google.cloud import compute_v1
-
+            add_loaded_lib("compute_v1")
             request = compute_v1.GetDiskRequest(
                 project=project_id, zone=zone, disk=name
             )
