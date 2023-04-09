@@ -1,9 +1,12 @@
+import logging
 import os
 import sys
 
 from plugins.snapshots import Snapshots
 from test_scripts.utils_for_tests import label_one, assert_root_path
+from util.utils import init_logging
 
+init_logging()
 """
 
 This is a debugging tool  useful in development. It simulates the action that happens when the log sink generates
@@ -143,7 +146,7 @@ def main():
         )
         exit(1)
 
-    print(__project(), __zone(raise_exc=False), __resource_name())
+    logging.info(__project(), __zone(raise_exc=False), __resource_name())
     f = getattr(
         sys.modules[__name__],
         func_name,

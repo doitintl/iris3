@@ -1,6 +1,7 @@
 import functools
 import os
 import re
+import sys
 import typing
 
 import yaml
@@ -76,7 +77,7 @@ def get_config() -> typing.Dict:
     else:
         config_name = prod_config
         is_test_or_dev_ = False
-    print("Using", config_name)  # logging not yet enabled
+    print("Using", config_name, file=sys.stderr)  # logging not yet enabled
     with open(config_name) as config_file:
         config = yaml.full_load(config_file)
     config["is_test_or_dev_configuration"] = is_test_or_dev_

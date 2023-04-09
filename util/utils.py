@@ -188,7 +188,7 @@ def dict_to_camelcase(d):
 def symdiff(dict1, dict2):
     set1 = set(dict1.items())
     items = list(dict2.items())
-    print(items)
+
     set2 = set(items)
     return set1 ^ set2
 

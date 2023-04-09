@@ -147,7 +147,7 @@ def log_gae_memory(tag):
     if detect_gae():
         try:
             mem_str = str(memory_usage()).replace("\n", "; ")
-            logging.info("AppEngine Memory, %s: %s", tag, mem_str)
+            logging.info("git Memory, %s: %s", tag, mem_str)
         except Exception as e:
             logging.exception("")
 

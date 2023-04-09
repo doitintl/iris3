@@ -1,10 +1,12 @@
 import json
+import logging
 import os
 import sys
 
 from test_scripts.utils_for_tests import do_local_http, assert_root_path
-from util.utils import log_time
+from util.utils import log_time, init_logging
 
+init_logging()
 """
 This is a debugging tool useful in development.
 It simulates the action that happens in response to a Cloud Scheduler call to /schedule.
@@ -43,7 +45,7 @@ def __project():
 @log_time
 def main():
     if len(sys.argv) > 1 and (sys.argv[1] == "-h" or sys.argv[1] == "--help"):
-        print(
+        logging.info(
             f"""Usage: {os.path.basename(sys.argv[0])} 
              Set environment with
              - required key project with GCP project-ID 
@@ -65,7 +67,7 @@ def main():
         if unsupported:
             raise Exception(f"Error: \"{', '.join(unsupported)}\" not a legal value. "
                             f"For this test, you can use these (comma-separated) in the env variable: {PLUGINS}")
-    print(f"Will do_label on{msg}: {', '.join(chosen_plugins)} ")
+    logging.info(f"Will do_label on{msg}: {', '.join(chosen_plugins)} ")
     test_do_label(chosen_plugins)
 
 

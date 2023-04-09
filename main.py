@@ -1,6 +1,7 @@
 """Entry point for Iris."""
+import sys
 
-print("Initializing ")
+print("Initializing ", file=sys.stderr)
 
 from util.utils import init_logging
 
@@ -20,7 +21,7 @@ import logging
 import os
 
 import flask
-import googlecloudprofiler
+
 from plugin import Plugin, PluginHolder
 from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import (
@@ -42,12 +43,18 @@ from util.config_utils import (
 from util.utils import log_time, timing
 
 
-# For Google Cloud Profiler,  set ENABLE_PROFILER to True, and edit requirements.txt and add a line to app.yaml as stated in requirements.txt
 ENABLE_PROFILER = False
 
-# Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
-if detect_gae() and ENABLE_PROFILER:
+
+def __enable_cloudprofiler():
+    """# For Google Cloud Profiler,
+    * set ENABLE_PROFILER to True above
+    * edit requirements.txt as stated in requirements.txt
+    * add a line to app.yaml as stated in requirements.txt
+    """
     try:
+        import googlecloudprofiler
+
         googlecloudprofiler.start()
     except (ValueError, NotImplementedError) as exc:
         localdev_error_msg = (
@@ -59,6 +66,11 @@ if detect_gae() and ENABLE_PROFILER:
         logging.info(
             "Exception initializing the Cloud Profiler %s, %s", exc, localdev_error_msg
         )
+
+
+# Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
+if detect_gae() and ENABLE_PROFILER:
+    __enable_cloudprofiler()
 else:
     logging.info("Cloud Profiler not in use")
 

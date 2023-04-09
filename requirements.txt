@@ -20,5 +20,9 @@ appengine-python-standard==1.0.0
 # - Edit main.py to set ENABLE_PROFILER True
 # - Configure up app.yaml
 # - Maybe add gunicorn to requirements.txt
-
+# The   gunicorn requirement below is only needed if you add this line to app.yaml
+# as a workaround to let Cloud Profiler work
+# entrypoint: gunicorn -b :$PORT --worker-class=sync --workers=1 main:app
+#
+#gunicorn==19.5.0
 

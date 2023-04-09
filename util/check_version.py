@@ -7,11 +7,14 @@ if __name__ == "__main__":
         sys.version_info.major == major_min and sys.version_info.minor >= minor_min
     ):
         print(
-            "This script requires Python {}.{} or higher!".format(major_min, minor_min)
+            "This script requires Python {}.{} or higher!".format(major_min, minor_min),
+            file=sys.stderr,
         )
         print(
             "You are using Python {}.{}.".format(
                 sys.version_info.major, sys.version_info.minor
-            )
+            ),
+            file=sys.stderr,
         )
+
         sys.exit(1)
