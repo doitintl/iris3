@@ -181,11 +181,11 @@ def label_one():
         """
         PubSub push endpoint for messages from the Log Sink
         """
-        # Performance question: There are multiple messages for each object-creation, for example
+        # Performance question: There are multiple log lines for each object-creation, for example,
         # one for request and one for response. So, we may be labeling each object multiple times,
         # which is a waste of resources.
         #
-        # Or maybe the first PubSub-triggered action fails, because the resource is not initialized, and
+        # Or maybe not. Maybe the first PubSub-triggered action fails, because the resource is not initialized, and
         # then the second one succeeds; need to check that.
 
         data = __extract_pubsub_content()
@@ -193,7 +193,9 @@ def label_one():
         method_from_log = data["protoPayload"]["methodName"]
 
         for plugin_cls in PluginHolder.plugins.keys():
-            for supported_method in plugin_cls.method_names():
+            method_names = plugin_cls.method_names()
+
+            for supported_method in method_names:
                 if supported_method.lower() in method_from_log.lower():
                     if plugin_cls.is_labeled_on_creation():
                         __label_one_0(data, plugin_cls)

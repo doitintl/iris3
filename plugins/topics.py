@@ -32,7 +32,8 @@ class Topics(Plugin):
     def _discovery_api() -> Tuple[str, str]:
         return "pubsub", "v1"
 
-    def method_names(self):
+    @staticmethod
+    def method_names( ):
         # Actually the name is longer  , but substring is allowed
         return ["Publisher.CreateTopic"]
 
