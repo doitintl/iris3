@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import uuid
+from contextlib import contextmanager
 from typing import Dict, Any, Generator
 
 from google.appengine.api.runtime import memory_usage
@@ -142,5 +143,17 @@ def cloudclient_pb_obj_to_dict(o) -> Dict[str, str]:
 
 
 def log_gae_memory(tag):
-    mem_str = str(memory_usage()).replace("\n", "; ")
-    logging.info("AppEngine Memory, %s: %s", tag, mem_str)
+    """Use this only in   an AppEngine Request"""
+    if detect_gae():
+        try:
+            mem_str = str(memory_usage()).replace("\n", "; ")
+            logging.info("AppEngine Memory, %s: %s", tag, mem_str)
+        except Exception as e:
+            logging.exception("")
+
+
+@contextmanager
+def gae_memory_logging(tag):
+    log_gae_memory("start " + tag)
+    yield
+    log_gae_memory("end " + tag)

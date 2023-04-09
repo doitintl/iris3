@@ -1,14 +1,14 @@
 """Entry point for Iris."""
-from functools import lru_cache
-import google.appengine.api
 
 print("Initializing ")
 
 from util.utils import init_logging
 
 # Must init logging before any library code writes logs (which would overwide our config)
-
 init_logging()
+
+from functools import lru_cache
+import google.appengine.api
 from typing import Dict, Type
 
 import time
@@ -28,6 +28,7 @@ from util.gcp_utils import (
     is_appscript_project,
     all_projects,
     current_project_id,
+    gae_memory_logging,
 )
 
 from util.config_utils import (
@@ -76,17 +77,19 @@ PluginHolder.init()
 
 @app.route("/")
 def index():
-    msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
-    logging.info("index(); config is %s", get_config())
+    with gae_memory_logging("index"):
+        msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
+        logging.info("index(); config is %s", get_config())
 
-    return msg, 200
+        return msg, 200
 
 
 @app.route("/_ah/warmup")
 def warmup():
-    logging.info("warmup() called")
+    with gae_memory_logging("warmup"):
+        logging.info("warmup() called")
 
-    return "", 200, {}
+        return "", 200, {}
 
 
 @app.route("/schedule", methods=["GET"])
@@ -95,19 +98,21 @@ def schedule():
     """
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
-    try:
-        logging.info("Schedule called")
+    with gae_memory_logging("schedule"):
 
-        is_cron = flask.request.headers.get("X-Appengine-Cron")
-        if not is_cron:
-            return "Access Denied: No Cron header found", 403
+        try:
+            logging.info("Schedule called")
 
-        enabled_projects = __get_enabled_projects()
-        __send_pubsub_per_projectplugin(enabled_projects)
-        return "OK", 200
-    except Exception as e:
-        logging.exception("In schedule()", exc_info=e)
-        return "Error", 500
+            is_cron = flask.request.headers.get("X-Appengine-Cron")
+            if not is_cron:
+                return "Access Denied: No Cron header found", 403
+
+            enabled_projects = __get_enabled_projects()
+            __send_pubsub_per_projectplugin(enabled_projects)
+            return "OK", 200
+        except Exception as e:
+            logging.exception("In schedule()", exc_info=e)
+            return "Error", 500
 
 
 @lru_cache(maxsize=1)
@@ -181,55 +186,57 @@ def __send_pubsub_per_projectplugin(configured_projects):
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
-    plugins_found = []
-    data = {}
-    try:
-        """
-        PubSub push endpoint for messages from the Log Sink
-        """
-        # Performance question: There are multiple log lines for each object-creation, for example,
-        # one for request and one for response. So, we may be labeling each object multiple times,
-        # which is a waste of resources.
-        #
-        # Or maybe not. Maybe the first PubSub-triggered action fails, because the resource is not initialized, and
-        # then the second one succeeds; need to check that.
+    with gae_memory_logging("label_one"):
 
-        data = __extract_pubsub_content()
+        plugins_found = []
+        data = {}
+        try:
+            """
+            PubSub push endpoint for messages from the Log Sink
+            """
+            # Performance question: There are multiple log lines for each object-creation, for example,
+            # one for request and one for response. So, we may be labeling each object multiple times,
+            # which is a waste of resources.
+            #
+            # Or maybe not. Maybe the first PubSub-triggered action fails, because the resource is not initialized, and
+            # then the second one succeeds; need to check that.
 
-        method_from_log = data["protoPayload"]["methodName"]
+            data = __extract_pubsub_content()
 
-        for plugin_cls in PluginHolder.plugins.keys():
-            method_names = plugin_cls.method_names()
+            method_from_log = data["protoPayload"]["methodName"]
 
-            for supported_method in method_names:
-                if supported_method.lower() in method_from_log.lower():
-                    if plugin_cls.is_labeled_on_creation():
-                        __label_one_0(data, plugin_cls)
+            for plugin_cls in PluginHolder.plugins.keys():
+                method_names = plugin_cls.method_names()
 
-                    plugins_found.append(
-                        plugin_cls.__name__
-                    )  # Append it even if not used due to is_labeled_on_creation False
+                for supported_method in method_names:
+                    if supported_method.lower() in method_from_log.lower():
+                        if plugin_cls.is_labeled_on_creation():
+                            __label_one_0(data, plugin_cls)
 
-        if not plugins_found:
-            logging.info(
-                "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
-                method_from_log,
-                config_utils.enabled_plugins(),
+                        plugins_found.append(
+                            plugin_cls.__name__
+                        )  # Append it even if not used due to is_labeled_on_creation False
+
+            if not plugins_found:
+                logging.info(
+                    "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                    method_from_log,
+                    config_utils.enabled_plugins(),
+                )
+
+            if len(plugins_found) > 1:
+                raise Exception(
+                    "Error: Multiple plugins found %s for %s"
+                    % (plugins_found, method_from_log)
+                )
+
+            return "OK", 200
+        except Exception as e:
+            project_id = data.get("resource", {}).get("labels", {}).get("project_id")
+            logging.exception(
+                "Error on label_one %s %s", plugins_found, project_id, exc_info=e
             )
-
-        if len(plugins_found) > 1:
-            raise Exception(
-                "Error: Multiple plugins found %s for %s"
-                % (plugins_found, method_from_log)
-            )
-
-        return "OK", 200
-    except Exception as e:
-        project_id = data.get("resource", {}).get("labels", {}).get("project_id")
-        logging.exception(
-            "Error on label_one %s %s", plugins_found, project_id, exc_info=e
-        )
-        return "Error", 500
+            return "Error", 500
 
 
 def __label_one_0(data, plugin_cls: Type[Plugin]):
@@ -286,36 +293,38 @@ def __extract_pubsub_content() -> Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
-    """Receive a push message from PubSub, sent from schedule() above,
-    with instructions to label all objects of a given plugin and project_id.
-    """
-    project_id = ""  # set up variables to allow logging in Exception block at end
-    plugin_class_name = ""
-    try:
-        data = __extract_pubsub_content()
-        plugin_class_name = data["plugin"]
+    with gae_memory_logging("do_label"):
 
-        plugin = PluginHolder.get_plugin_instance_by_name(plugin_class_name)
-        if not plugin:
-            logging.info(
-                "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
-                plugin_class_name,
-                config_utils.enabled_plugins(),
-            )
-        else:
-            project_id = data["project_id"]
-            with timing(f"do_label {plugin_class_name} {project_id}"):
+        """Receive a push message from PubSub, sent from schedule() above,
+        with instructions to label all objects of a given plugin and project_id.
+        """
+        project_id = ""  # set up variables to allow logging in Exception block at end
+        plugin_class_name = ""
+        try:
+            data = __extract_pubsub_content()
+            plugin_class_name = data["plugin"]
+
+            plugin = PluginHolder.get_plugin_instance_by_name(plugin_class_name)
+            if not plugin:
                 logging.info(
-                    "do_label() for %s in %s", plugin.__class__.__name__, project_id
+                    "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                    plugin_class_name,
+                    config_utils.enabled_plugins(),
                 )
-                plugin.label_all(project_id)
-            logging.info("OK on do_label %s %s", plugin_class_name, project_id)
-        return "OK", 200
-    except Exception as e:
-        logging.exception(
-            "Error on do_label %s %s", plugin_class_name, project_id, exc_info=e
-        )
-        return "Error", 500
+            else:
+                project_id = data["project_id"]
+                with timing(f"do_label {plugin_class_name} {project_id}"):
+                    logging.info(
+                        "do_label() for %s in %s", plugin.__class__.__name__, project_id
+                    )
+                    plugin.label_all(project_id)
+                logging.info("OK on do_label %s %s", plugin_class_name, project_id)
+            return "OK", 200
+        except Exception as e:
+            logging.exception(
+                "Error on do_label %s %s", plugin_class_name, project_id, exc_info=e
+            )
+            return "Error", 500
 
 
 def __check_pubsub_verification_token():
