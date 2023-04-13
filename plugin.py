@@ -223,7 +223,7 @@ class PluginHolder:
         def load_plugin_class(name) -> Type:
             module_name = PLUGINS_MODULE + "." + name
             __import__(module_name)
-            assert name == name.lower(), name
+            assert name == name.lower()
             return cls.plugin_cls_by_name(name)
 
         loaded = []

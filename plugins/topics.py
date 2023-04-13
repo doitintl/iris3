@@ -7,7 +7,8 @@ from googleapiclient import errors
 from plugin import Plugin
 from util.gcp_utils import (
     cloudclient_pb_obj_to_dict,
-    cloudclient_pb_objects_to_list_of_dicts, add_loaded_lib,
+    cloudclient_pb_objects_to_list_of_dicts,
+    add_loaded_lib,
 )
 from util.utils import log_time, timing
 
@@ -17,11 +18,11 @@ class Topics(Plugin):
     @lru_cache(maxsize=1)
     def _cloudclient(cls, _=None):
         logging.info("_cloudclient for %s", cls.__name__)
-        # Local import to avoid burdening AppEngine memory. Loading all
-        # Client libraries would be 100MB  means that the default AppEngine
-        # Instance crashes on out-of-memory even before actually serving a request.
-
+        # Local import to avoid burdening AppEngine memory.
+        # Loading all Cloud Client libraries would be 100MB  means that
+        # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import pubsub_v1
+
         add_loaded_lib("pubsub_v1")
 
         return pubsub_v1.PublisherClient()
@@ -68,11 +69,11 @@ class Topics(Plugin):
 
         name = self._gcp_name(gcp_object)
         path = self._cloudclient().topic_path(project_id, name)
-        # Local import to avoid burdening AppEngine memory. Loading all
-        # Client libraries would be 100MB  means that the default AppEngine
-        # Instance crashes on out-of-memory even before actually serving a request.
-
+        # Local import to avoid burdening AppEngine memory.
+        # Loading all Cloud Client libraries would be 100MB  means that
+        # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import pubsub_v1
+
         add_loaded_lib("pubsub_v1")
         update_obj = pubsub_v1.types.Topic(name=path, labels=labels)
 

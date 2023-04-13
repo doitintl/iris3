@@ -94,7 +94,7 @@ def init_logging():
     logging.getLogger("time-ctx-mgr").setLevel(logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
-    logging.info("logging: Initialized logger")
+    logging.info("logging: Initialized logger; config is  %s", get_config())
 
 
 def __log_end_timer(tag, start, logger):
@@ -195,5 +195,3 @@ def symdiff(dict1, dict2):
 
 def curr_func() -> str:
     return sys._getframe(1).f_code.co_name
-
-

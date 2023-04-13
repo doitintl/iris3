@@ -47,11 +47,11 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
 
         with timing("_all_zones"):
             project_id = gcp_utils.current_project_id()
-            # Local import to avoid burdening AppEngine memory. Loading all
-            # Client libraries would be 100MB  means that the default AppEngine
-            # Instance crashes on out-of-memory even before actually serving a request.
-
+            # Local import to avoid burdening AppEngine memory.
+            # Loading all Cloud Client libraries would be 100MB  means that
+            # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
             from google.cloud import compute_v1
+
             add_loaded_lib("compute_v1")
 
             request = compute_v1.ListZonesRequest(project=project_id)
@@ -67,9 +67,9 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
 
     def __label_by_zones(self, project_id, zones):
         def label_one_zone(zone):
-            with timing(
-                f"zone {zone}, label_all {type(self).__name__} in {project_id}"
-            ):
+            # with timing(
+            #     f"zone {zone}, label_all {type(self).__name__} in {project_id}"
+            # ):
                 for resource in self._list_all(project_id, zone):
                     try:
                         self.label_resource(resource, project_id)

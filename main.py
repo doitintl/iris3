@@ -91,7 +91,7 @@ PluginHolder.init()
 def index():
     with gae_memory_logging("index"):
         msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
-        logging.info("index(); config is %s", get_config())
+        logging.info("index() ")
 
         return msg, 200
 

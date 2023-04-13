@@ -52,11 +52,11 @@ def is_appscript_project(p) -> bool:
 # Not cached. Returns a generator, and so not reusable
 def all_projects() -> Generator[str, Any, None]:
     """All projects to which the current user has access"""
-    # Local import to avoid burdening AppEngine memory. Loading all
-    # Client libraries would be 100MB  means that the default AppEngine
-    # Instance crashes on out-of-memory even before actually serving a request.
-
+    # Local import to avoid burdening AppEngine memory.
+    # Loading all Cloud Client libraries would be 100MB  means that
+    # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
     from google.cloud import resourcemanager_v3
+
     add_loaded_lib("resourcemanager_v3")
     projects_client = resourcemanager_v3.ProjectsClient()
 
@@ -104,21 +104,21 @@ def get_org(proj_name):
 
 
 def __create_folder_client():
-    # Local import to avoid burdening AppEngine memory. Loading all
-    # Client libraries would be 100MB  means that the default AppEngine
-    # Instance crashes on out-of-memory even before actually serving a request.
+    # Local import to avoid burdening AppEngine memory.
+    # Loading all Cloud Client libraries would be 100MB  means that
+    # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
 
     from google.cloud import resourcemanager_v3
+
     add_loaded_lib("resourcemanager_v3")
     folders_client = resourcemanager_v3.FoldersClient()
     return folders_client
 
 
 def __create_project_client():
-    # Local import to avoid burdening AppEngine memory. Loading all
-    # Client libraries would be 100MB  means that the default AppEngine
-    # Instance crashes on out-of-memory even before actually serving a request.
-
+    # Local import to avoid burdening AppEngine memory.
+    # Loading all Cloud Client libraries would be 100MB  means that
+    # the default AppEngine Instance crashes on out-of-memory even before actually serving a request
     from google.cloud import resourcemanager_v3
     add_loaded_lib("resourcemanager_v3")
     projects_client = resourcemanager_v3.ProjectsClient()
@@ -157,8 +157,9 @@ def log_gae_memory(tag):
         try:
             libs = ",".join(__loaded_libs)
             mem_str = str(memory_usage()).replace("\n", "; ")
-            logging.info("Memory for GAE Instance %s (%s) %s: Loaded libs:[%s]",
-                         __inst_id, tag, mem_str, libs)
+            logging.info(
+                "RAM for GAEInstance %s (%s) %s: Libs:[%s]", __inst_id, tag, mem_str, libs
+            )
         except Exception as e:
             logging.exception("")
 

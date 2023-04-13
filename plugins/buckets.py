@@ -22,10 +22,11 @@ class Buckets(Plugin):
     def _cloudclient(cls, project_id=None):
         assert project_id, "'None' is only for the signature"
         logging.info("_cloudclient for %s", cls.__name__)
-        # Local import to avoid burdening AppEngine memory. Loading all
-        # Client libraries would be 100MB  means that the default AppEngine
-        # Instance crashes on out-of-memory even before actually serving a request.
+        # Local import to avoid burdening AppEngine memory.
+        # Loading all Cloud Client libraries would be 100MB  means that
+        # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import storage
+
         add_loaded_lib("storage")
         return storage.Client(project=project_id)
 

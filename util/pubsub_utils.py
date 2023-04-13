@@ -4,16 +4,19 @@ from functools import lru_cache
 from util import gcp_utils, utils
 
 
-# This is not fully tread-safe, but at worst we get multiple PublisherClients; these are stateless
+
 from util.gcp_utils import add_loaded_lib
 
 
 @lru_cache(maxsize=1)
 def __get_publisher():
-    # Local import to avoid burdening AppEngine memory. Loading all
-    # Client libraries would be 100MB  means that the default AppEngine
-    # Instance crashes on out-of-memory even before actually serving a request.
+    # This is not fully thread-safe, but at worst we get multiple PublisherClients, which are stateless
+    #
+    # Local import to avoid burdening AppEngine memory.
+    # Loading all Cloud Client libraries would be 100MB  means that
+    # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
     from google.cloud import pubsub_v1
+
     add_loaded_lib("pubsub_v1")
     return pubsub_v1.PublisherClient()
 

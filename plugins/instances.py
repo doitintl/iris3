@@ -19,11 +19,11 @@ class Instances(GceZonalBase):
     def _create_cloudclient():
 
         logging.info("_cloudclient for %s", "Instances")
-        # Local import to avoid burdening AppEngine memory. Loading all
-        # Client libraries would be 100MB  means that the default AppEngine
-        # Instance crashes on out-of-memory even before actually serving a request.
-
+        # Local import to avoid burdening AppEngine memory.
+        # Loading all Cloud Client libraries would be 100MB  means that
+        # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import compute_v1
+
         add_loaded_lib("compute_v1")
         return compute_v1.InstancesClient()
 
@@ -48,11 +48,11 @@ class Instances(GceZonalBase):
             return None
 
     def _list_all(self, project_id, zone) -> List[Dict]:
-        # Local import to avoid burdening AppEngine memory. Loading all
-        # Client libraries would be 100MB  means that the default AppEngine
-        # Instance crashes on out-of-memory even before actually serving a request.
-
+        # Local import to avoid burdening AppEngine memory.
+        # Loading all Cloud Client libraries would be 100MB  means that
+        # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import compute_v1
+
         add_loaded_lib("compute_v1")
         page_result = compute_v1.ListInstancesRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(page_result)
@@ -62,8 +62,8 @@ class Instances(GceZonalBase):
             # Local import to avoid burdening AppEngine memory. Loading all
             # Client libraries would be 100MB  means that the default AppEngine
             # Instance crashes on out-of-memory even before actually serving a request.
-
             from google.cloud import compute_v1
+
             add_loaded_lib("compute_v1")
             request = compute_v1.GetInstanceRequest(
                 project=project_id, zone=zone, instance=name

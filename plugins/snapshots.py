@@ -18,8 +18,8 @@ class Snapshots(GceBase):
         # Local import to avoid burdening AppEngine memory. Loading all
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
-
         from google.cloud import compute_v1
+
         add_loaded_lib("compute_v1")
         return compute_v1.SnapshotsClient()
 
@@ -31,19 +31,19 @@ class Snapshots(GceBase):
         # Local import to avoid burdening AppEngine memory. Loading all
         # Client libraries would be 100MB  means that the default AppEngine
         # Instance crashes on out-of-memory even before actually serving a request.
-
         from google.cloud import compute_v1
+
         add_loaded_lib("compute_v1")
         all_resources = compute_v1.ListSnapshotsRequest(project=project_id)
         return self._list_resources_as_dicts(all_resources)
 
     def _get_resource(self, project_id, name):
         try:
-            # Local import to avoid burdening AppEngine memory. Loading all
-            # Client libraries would be 100MB  means that the default AppEngine
-            # Instance crashes on out-of-memory even before actually serving a request.
-
+            # Local import to avoid burdening AppEngine memory.
+            # Loading all Cloud Client libraries would be 100MB  means that
+            # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
             from google.cloud import compute_v1
+
             add_loaded_lib("compute_v1")
             request = compute_v1.GetSnapshotRequest(project=project_id, snapshot=name)
             return self._get_resource_as_dict(request)

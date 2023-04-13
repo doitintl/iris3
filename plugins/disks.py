@@ -23,10 +23,11 @@ class Disks(GceZonalBase):
     @lru_cache(maxsize=1)
     def _create_cloudclient():
         logging.info("_cloudclient for %s", "Disks")
-        # Local import to avoid burdening AppEngine memory. Loading all
-        # Client libraries would be 100MB  means that the default AppEngine
-        # Instance crashes on out-of-memory even before actually serving a request.
+        # Local import to avoid burdening AppEngine memory.
+        # Loading all Cloud Client libraries would be 100MB  means that
+        # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import compute_v1
+
         add_loaded_lib("compute_v1")
         return compute_v1.DisksClient()
 
@@ -50,21 +51,22 @@ class Disks(GceZonalBase):
         return True
 
     def _list_all(self, project_id, zone) -> typing.List[typing.Dict]:
-        # Local import to avoid burdening AppEngine memory. Loading all
-        # Client libraries would be 100MB  means that the default AppEngine
-        # Instance crashes on out-of-memory even before actually serving a request.
-
+        # Local import to avoid burdening AppEngine memory.
+        # Loading all Cloud Client libraries would be 100MB  means that
+        # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
         from google.cloud import compute_v1
+
         add_loaded_lib("compute_v1")
         request = compute_v1.ListDisksRequest(project=project_id, zone=zone)
         return self._list_resources_as_dicts(request)
 
     def _get_resource(self, project_id, zone, name):
         try:
-            # Local import to avoid burdening AppEngine memory. Loading all
-            # Client libraries would be 100MB  means that the default AppEngine
-            # Instance crashes on out-of-memory even before actually serving a request.
+            # Local import to avoid burdening AppEngine memory.
+            # Loading all Cloud Client libraries would be 100MB  means that
+            # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
             from google.cloud import compute_v1
+
             add_loaded_lib("compute_v1")
             request = compute_v1.GetDiskRequest(
                 project=project_id, zone=zone, disk=name
