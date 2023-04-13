@@ -2,8 +2,6 @@ import logging
 from functools import lru_cache
 
 from util import gcp_utils, utils
-
-
 from util.gcp_utils import add_loaded_lib
 
 

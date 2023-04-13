@@ -24,11 +24,11 @@ from util.utils import (
 
 PLUGINS_MODULE = "plugins"
 
+
 # TODO Since subclasses are already singletons, and we are already using
 # a lot of classmethods and staticmethods, , could convert this to
 # never use instance methods
 class Plugin(metaclass=ABCMeta):
-
     # Underlying API  max is 1000; avoid off-by-one errors
     # We send a batch when _BATCH_SIZE or more tasks are in it, or at the end of a label_all
     _BATCH_SIZE = 990

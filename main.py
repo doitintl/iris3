@@ -35,13 +35,11 @@ from util.gcp_utils import (
 from util.config_utils import (
     iris_prefix,
     is_project_enabled,
-    get_config,
     pubsub_token,
     is_in_test_or_dev_project,
     is_test_or_dev_configuration,
 )
 from util.utils import log_time, timing
-
 
 ENABLE_PROFILER = False
 

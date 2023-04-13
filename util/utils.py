@@ -153,7 +153,7 @@ def timed_lru_cache(seconds: int, maxsize: int = 128):
 
 
 def truncate_middle(s, resulting_len, elipsis_len=3):
-    ellipsis_s = "."*elipsis_len
+    ellipsis_s = "." * elipsis_len
 
     if resulting_len < len(ellipsis_s) + 2:
         # "a...z" is shortest. The "+ 2" is for the starting and ending letters
