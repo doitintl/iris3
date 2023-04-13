@@ -11,7 +11,7 @@ from functools import lru_cache, wraps
 
 import flask
 
-from util.config_utils import iris_prefix
+from util.config_utils import iris_prefix, get_config
 
 
 def cls_by_name(fully_qualified_classname):
@@ -66,12 +66,12 @@ def init_logging():
                     trace_id = flask.request.headers.get(
                         "X-Cloud-Trace-Context", random_str(30)
                     )
-                    trace_id_trunc = truncate_middle(trace_id, 20)
-                    trace_msg = " [Trace: " + trace_id_trunc + "]"
+                    trace_id_trunc = truncate_middle(trace_id, 8, elipsis_len=2)
+                    trace_msg = " Trace: " + trace_id_trunc
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
                 if "outside of request context" in str(e):
-                    # Occurs in app tartup
+                    # Occurs in app startup
                     trace_msg = ""
                 else:
                     raise e
@@ -85,7 +85,7 @@ def init_logging():
     h1.addFilter(filter=f)
     logging.basicConfig(
         handlers=[h1],
-        format=f"%(levelname)s [{iris_prefix()}]%(trace_msg)s %(message)s",
+        format=f"%(levelname)s {iris_prefix()}%(trace_msg)s %(message)s",
         level=logging.INFO,
     )
     logging.getLogger().setLevel(logging.INFO)
@@ -152,8 +152,8 @@ def timed_lru_cache(seconds: int, maxsize: int = 128):
     return wrapper_cache
 
 
-def truncate_middle(s, resulting_len):
-    ellipsis_s = "..."
+def truncate_middle(s, resulting_len, elipsis_len=3):
+    ellipsis_s = "."*elipsis_len
 
     if resulting_len < len(ellipsis_s) + 2:
         # "a...z" is shortest. The "+ 2" is for the starting and ending letters
