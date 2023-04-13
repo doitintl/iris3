@@ -120,6 +120,7 @@ def __create_project_client():
     # Loading all Cloud Client libraries would be 100MB  means that
     # the default AppEngine Instance crashes on out-of-memory even before actually serving a request
     from google.cloud import resourcemanager_v3
+
     add_loaded_lib("resourcemanager_v3")
     projects_client = resourcemanager_v3.ProjectsClient()
     return projects_client
@@ -158,7 +159,11 @@ def log_gae_memory(tag):
             libs = ",".join(__loaded_libs)
             mem_str = str(memory_usage()).replace("\n", "; ")
             logging.info(
-                "RAM for GAEInstance %s (%s) %s: Libs:[%s]", __inst_id, tag, mem_str, libs
+                "RAM for GAEInstance %s (%s) %s: Libs:[%s]",
+                __inst_id,
+                tag,
+                mem_str,
+                libs,
             )
         except Exception as e:
             logging.exception("")

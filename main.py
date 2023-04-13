@@ -136,6 +136,7 @@ def __get_enabled_projects():
         all_proj = all_projects()
         # In my testing, we do NOT get appscript projects in the list.
         # There is a small chance that with other permissions, these appscript projects would appear.
+        # so here we filter them out.
 
         nonappscript_projects = (p for p in all_proj if not is_appscript_project(p))
 

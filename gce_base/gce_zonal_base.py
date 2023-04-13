@@ -70,11 +70,11 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             # with timing(
             #     f"zone {zone}, label_all {type(self).__name__} in {project_id}"
             # ):
-                for resource in self._list_all(project_id, zone):
-                    try:
-                        self.label_resource(resource, project_id)
-                    except Exception as e:
-                        logging.exception("in label_one_zone", exc_info=e)
+            for resource in self._list_all(project_id, zone):
+                try:
+                    self.label_resource(resource, project_id)
+                except Exception as e:
+                    logging.exception("in label_one_zone", exc_info=e)
 
         with ThreadPoolExecutor(max_workers=8) as executor:
             futs = [executor.submit(label_one_zone, zone) for zone in zones]
