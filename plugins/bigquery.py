@@ -3,7 +3,6 @@ Labeling BQ tables and datasets.
 """
 
 import logging
-import typing
 from functools import lru_cache
 
 from googleapiclient import errors
@@ -17,7 +16,7 @@ from util.utils import log_time, timing, dict_to_camelcase
 
 class Bigquery(Plugin):
     @staticmethod
-    def _discovery_api() -> typing.Tuple[str, str]:
+    def _discovery_api():
         return "bigquery", "v2"
 
     @classmethod
@@ -46,7 +45,7 @@ class Bigquery(Plugin):
             else:
                 name = gcp_object["tableReference"]["tableId"]
             index = name.rfind(":")
-            name = name[index + 1 :]
+            name = name[index + 1:]
             return name
         except KeyError as e:
             logging.exception("")
@@ -154,7 +153,7 @@ class Bigquery(Plugin):
             dataset_id = dataset_reference["datasetId"]
 
             assert (
-                project_id == dataset_reference["projectId"]
+                    project_id == dataset_reference["projectId"]
             ), f"{project_id}!={dataset_reference['projectId']}"
 
             client = self._cloudclient(project_id)
@@ -184,8 +183,8 @@ class Bigquery(Plugin):
             table_reference = gcp_object["tableReference"]
             self._batch.add(
                 self._google_api_client()
-                .tables()
-                .patch(
+                    .tables()
+                    .patch(
                     projectId=table_reference["projectId"],
                     body=labels,
                     datasetId=table_reference["datasetId"],

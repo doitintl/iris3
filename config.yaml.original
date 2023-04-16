@@ -61,8 +61,6 @@ pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
 
 # If running in a project with one of the strings in the name,
 # then scheduled labelings will fail if more than 3 projects are enabled.
-
-
 test_or_dev_project_markers:
   - playground
   - test

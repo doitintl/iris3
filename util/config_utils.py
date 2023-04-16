@@ -59,7 +59,15 @@ def label_all_on_cron() -> bool:
 
 def pubsub_token() -> str:
     config = get_config()
-    return config.get("pubsub_verification_token")
+    ret = config.get("pubsub_verification_token")
+
+    return ret
+
+
+def get_config_redact_token():
+    c = get_config().copy()
+    c["pubsub_verification_token"] = "[REDACTED]"
+    return c
 
 
 @functools.lru_cache
@@ -78,8 +86,13 @@ def get_config() -> typing.Dict:
         config_name = prod_config
         is_test_or_dev_ = False
     print("Using", config_name, file=sys.stderr)  # logging not yet enabled
-    with open(config_name) as config_file:
-        config = yaml.full_load(config_file)
+    try:
+        with open(config_name) as config_file:
+            config = yaml.full_load(config_file)
+    except FileNotFoundError as fnfe:
+        raise FileNotFoundError(
+            f"Could not find the config-*.yaml file, specifically {config_name}"
+        )
     config["is_test_or_dev_configuration"] = is_test_or_dev_
     return config
 

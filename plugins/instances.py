@@ -41,7 +41,7 @@ class Instances(GceZonalBase):
         try:
             machine_type = gcp_object["machineType"]
             ind = machine_type.rfind("/")
-            machine_type = machine_type[ind + 1 :]
+            machine_type = machine_type[ind + 1:]
             return machine_type
         except KeyError as e:
             logging.exception("")
@@ -85,8 +85,8 @@ class Instances(GceZonalBase):
 
             self._batch.add(
                 self._google_api_client()
-                .instances()
-                .setLabels(
+                    .instances()
+                    .setLabels(
                     project=project_id,
                     zone=zone,
                     instance=gcp_object["name"],

@@ -1,6 +1,6 @@
 import logging
 from functools import lru_cache
-from typing import Tuple, List, Dict
+from typing import List, Dict
 
 from googleapiclient import errors
 
@@ -27,9 +27,9 @@ class Subscriptions(Plugin):
         return pubsub_v1.SubscriberClient()
 
     @staticmethod
-    def _discovery_api() -> Tuple[str, str]:
-        """This API is not actually used"""
-        return None  # Would be "pubsub", "v1"
+    def _discovery_api():
+        """Discovery API not actually used with Subscriptions. Would be "pubsub", "v1"""
+        return None
 
     @staticmethod
     def method_names():

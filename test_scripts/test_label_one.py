@@ -146,7 +146,7 @@ def main():
         )
         exit(1)
 
-    logging.info(__project(), __zone(raise_exc=False), __resource_name())
+    logging.info("%s %s %s", __project(), __zone(raise_exc=False), __resource_name())
     f = getattr(
         sys.modules[__name__],
         func_name,

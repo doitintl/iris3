@@ -80,8 +80,8 @@ class Snapshots(GceBase):
 
         self._batch.add(  # Using Google Client API because CloudClient has, I think, no batch functionality
             self._google_api_client()
-            .snapshots()
-            .setLabels(project=project_id, resource=gcp_object["name"], body=labels),
+                .snapshots()
+                .setLabels(project=project_id, resource=gcp_object["name"], body=labels),
             request_id=gcp_utils.generate_uuid(),
         )
         self.counter += 1

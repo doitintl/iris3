@@ -74,7 +74,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
                 try:
                     self.label_resource(resource, project_id)
                 except Exception as e:
-                    logging.exception("in label_one_zone", exc_info=e)
+                    logging.exception("in label_one_zone")
 
         with ThreadPoolExecutor(max_workers=8) as executor:
             futs = [executor.submit(label_one_zone, zone) for zone in zones]
@@ -82,19 +82,19 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
                 try:
                     _ = future.result()  # We Do not use ret; just a way of waiting
                 except Exception as exc:
-                    logging.exception("in getting result for future", exc_info=exc)
+                    logging.exception("in getting result for future")
 
     def get_gcp_object(self, log_data: Dict) -> Optional[Dict]:
         try:
             name = log_data["protoPayload"]["resourceName"]
             idx = name.rfind("/")
-            name = name[idx + 1 :]
+            name = name[idx + 1:]
             project_id = log_data["resource"]["labels"]["project_id"]
             zone = log_data["resource"]["labels"]["zone"]
             resource = self._get_resource(project_id, zone, name)
             return resource
         except Exception as e:
-            logging.exception("get_gcp_object", exc_info=e)
+            logging.exception("get_gcp_object")
             return None
 
     @abstractmethod

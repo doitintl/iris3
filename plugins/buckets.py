@@ -1,5 +1,4 @@
 import logging
-import typing
 from functools import lru_cache
 
 from plugin import Plugin
@@ -10,7 +9,7 @@ from util.utils import log_time, timing, dict_to_camelcase
 
 class Buckets(Plugin):
     @staticmethod
-    def _discovery_api() -> typing.Tuple[str, str]:
+    def _discovery_api():
         return "storage", "v1"
 
     @staticmethod
@@ -101,8 +100,8 @@ class Buckets(Plugin):
 
             self._batch.add(
                 self._google_api_client()
-                .buckets()
-                .patch(bucket=bucket_name, body=labels),
+                    .buckets()
+                    .patch(bucket=bucket_name, body=labels),
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1

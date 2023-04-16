@@ -174,3 +174,25 @@ def gae_memory_logging(tag):
     log_gae_memory("start " + tag)
     yield
     log_gae_memory("end " + tag)
+
+
+def enable_cloudprofiler():
+    """# For Google Cloud Profiler,
+    * set ENABLE_PROFILER to True above
+    * edit requirements.txt as stated in requirements.txt
+    * add a line to app.yaml as stated in requirements.txt
+    """
+    try:
+        import googlecloudprofiler
+
+        googlecloudprofiler.start()
+    except (ValueError, NotImplementedError) as exc:
+        localdev_error_msg = (
+            ". Profiler is not supported in local development"
+            if "Service name must be provided" in str(exc)
+            else ""
+        )
+
+        logging.info(
+            "Exception initializing the Cloud Profiler %s, %s", exc, localdev_error_msg
+        )

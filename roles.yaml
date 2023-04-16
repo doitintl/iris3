@@ -1,6 +1,8 @@
 title: "Iris3"
-description: "Iris auto tagging service for google cloud"
-#TODO get most value directly from the Python class to avoid duplication
+description: "Roles needed by the Iris App Engine app"
+#TODO Generate most values directly from the Python class to avoid duplication
+# Below, where `update` rather than `setLabels`  is used, it is because there is no `setLabels`.
+# Note: Not clear that `setTags` is really needed.
 stage: "GA"
 includedPermissions:
   - bigquery.datasets.get

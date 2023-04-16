@@ -81,7 +81,7 @@ function revert_config() {
   rm config-test.yaml ||true
 }
 
-trap "revert_config" EXIT
+#trap "revert_config" EXIT #TODO Undo
 
 envsubst <config.yaml.test.template > config-test.yaml
 
@@ -89,6 +89,7 @@ envsubst <config.yaml.test.template > config-test.yaml
 export GAEVERSION=$RUN_ID
 
 ./deploy.sh $DEPLOYMENT_PROJECT
+
 
 ERROR=0
 
@@ -128,17 +129,17 @@ function clean_resources() {
 }
 trap "clean_resources" EXIT
 
+
 sleep 30 # Need time for traffic to be migrated to the new version
 
 gcloud compute instances create "instance${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
 gcloud compute disks create "disk${RUN_ID}" --project "$TEST_PROJECT" --zone $GCE_ZONE
-gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
 gcloud pubsub topics create "topic${RUN_ID}" --project "$TEST_PROJECT"
 gcloud pubsub subscriptions create "subscription${RUN_ID}" --topic "topic${RUN_ID}" --project "$TEST_PROJECT"
 bq mk --dataset "${TEST_PROJECT}:dataset${RUN_ID}"
 bq mk --table "${TEST_PROJECT}:dataset${RUN_ID}.table${RUN_ID}"
 gsutil mb -p $TEST_PROJECT "gs://bucket${RUN_ID}"
-
+gcloud compute snapshots create "snapshot${RUN_ID}" --source-disk "instance${RUN_ID}" --source-disk-zone $GCE_ZONE --storage-location $GCE_REGION --project $TEST_PROJECT
 # It takes time before labels are available to be read by "describe".
 #
 # jq -e generates exit code 1 on failure. Since we set -e, the script will fail appropriately if the value is not found

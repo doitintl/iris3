@@ -88,8 +88,8 @@ class Disks(GceZonalBase):
 
             self._batch.add(
                 self._google_api_client()
-                .disks()
-                .setLabels(
+                    .disks()
+                    .setLabels(
                     project=project_id,
                     zone=zone,
                     resource=gcp_object["name"],

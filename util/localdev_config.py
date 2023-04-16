@@ -1,19 +1,19 @@
-import functools
 import logging
 import os
 import subprocess
+from functools import lru_cache
 
 import yaml
 
 
-@functools.lru_cache
+@lru_cache(maxsize=1)
 def __load_app_yaml():
     with open("app.yaml") as file:
         documents = yaml.full_load(file)
         return documents
 
 
-@functools.lru_cache
+@lru_cache
 def localdev_project_id():
     if project_id := os.environ.get("IRIS_PROJECT"):
         logging.info("Project %s (from env)", project_id)

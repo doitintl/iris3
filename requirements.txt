@@ -12,7 +12,8 @@ google-cloud-resource-manager==1.9.1
 google-cloud-bigquery==3.9.0
 google-cloud-storage==2.8.0
 
-#Enable memory monitoring
+memray
+#Enable GAE's memory monitoring
 appengine-python-standard==1.0.0
 
 #For Google Cloud Profiler, you might need to

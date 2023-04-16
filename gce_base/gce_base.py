@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 
 import proto
 
@@ -12,7 +12,7 @@ from util.gcp_utils import (
 
 class GceBase(Plugin, metaclass=ABCMeta):
     @staticmethod
-    def _discovery_api() -> Tuple[str, str]:
+    def _discovery_api():
         return "compute", "v1"
 
     def _gcp_name(self, gcp_object):

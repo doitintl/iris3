@@ -35,7 +35,7 @@ class Plugin(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def _discovery_api() -> Tuple[str, str]:
+    def _discovery_api() -> Optional[Tuple[str, str]]:
         pass
 
     @staticmethod
@@ -70,13 +70,13 @@ class Plugin(metaclass=ABCMeta):
         else:
             return None
 
-    # TODO all implementations of _cloudclient and _google_api_client should be locked to avoid
+    # All implementations of _cloudclient and _google_api_client should be thread-locked to avoid
     # creating multiple Cloud Clients or Google API Clients.
     # Still, there is no harm in occasional  multiple Clients.
     # We lock it only there there is a large chance of multiple simultaneous access.
     @classmethod  # Implementations should cache the result
     def _cloudclient(
-        cls, project_id=None
+            cls, project_id=None
     ):  # Some impl have project_id param, some don't
         raise NotImplementedError(
             "Implement this if you want to use the Cloud Client libraries"
@@ -114,7 +114,7 @@ class Plugin(metaclass=ABCMeta):
             specific_pfx = specific_prefix(type(self).__name__)
             pfx = specific_pfx if specific_pfx is not None else general_pfx
             pfx_full = pfx + "_" if pfx else ""
-            return pfx_full + func.__name__[len(func_name_pfx) :]
+            return pfx_full + func.__name__[len(func_name_pfx):]
 
         # noinspection PyTypeChecker
         return {key(f): value(f, gcp_object) for f in methods(self, func_name_pfx)}
@@ -132,9 +132,10 @@ class Plugin(metaclass=ABCMeta):
         then all at once, but rather gather objects and process them in batches of
         self._BATCH_SIZE as we loop; then parse the remaining at the end of the loop"""
         try:
-            self._batch.execute()
+            if self._batch is not None:
+                self._batch.execute()
         except Exception as e:
-            logging.exception("Exception executing _batch()", e)
+            logging.exception("Exception executing _batch()")
 
         self.__init_batch_req()
 
@@ -189,7 +190,7 @@ class Plugin(metaclass=ABCMeta):
             name = gcp_object["name"]
             if separator:
                 index = name.rfind(separator)
-                name = name[index + 1 :]
+                name = name[index + 1:]
             return name
         except KeyError as e:
             logging.exception("")
@@ -198,7 +199,9 @@ class Plugin(metaclass=ABCMeta):
     def __init_batch_req(self):
         self.counter = 0
         google_api_client = self._google_api_client()
-        if google_api_client is not None:
+        if google_api_client is None:
+            self._batch = None
+        else:
             self._batch = google_api_client.new_batch_http_request(
                 callback=self.__batch_callback
             )

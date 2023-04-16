@@ -11,7 +11,7 @@ from functools import lru_cache, wraps
 
 import flask
 
-from util.config_utils import iris_prefix, get_config
+from util.config_utils import iris_prefix, get_config_redact_token
 
 
 def cls_by_name(fully_qualified_classname):
@@ -50,7 +50,7 @@ def methods(o, pfx="") -> typing.List[typing.Callable]:
 def random_str(length: int):
     return "".join(
         random.choices(
-            string.ascii_lowercase + string.digits + string.digits,  # more digits
+            string.ascii_lowercase + string.digits * 2,  # more digits
             k=length,
         )
     )
@@ -64,9 +64,9 @@ def init_logging():
                     trace_msg = flask.request.trace_msg
                 else:
                     trace_id = flask.request.headers.get(
-                        "X-Cloud-Trace-Context", random_str(30)
+                        "X-Cloud-Trace-Context", "df" + random_str(28)
                     )
-                    trace_id_trunc = truncate_middle(trace_id, 8, elipsis_len=2)
+                    trace_id_trunc = truncate_middle(trace_id, 8, elipsis_len=0)
                     trace_msg = " Trace: " + trace_id_trunc
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
@@ -94,7 +94,9 @@ def init_logging():
     logging.getLogger("time-ctx-mgr").setLevel(logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
-    logging.info("logging: Initialized logger; config is  %s", get_config())
+    logging.info(
+        "logging: Initialized logger; config is  %s", get_config_redact_token()
+    )
 
 
 def __log_end_timer(tag, start, logger):

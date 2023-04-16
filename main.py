@@ -2,14 +2,22 @@
 import sys
 
 print("Initializing ", file=sys.stderr)
+import flask
+from util.gcp_utils import detect_gae
+
+app = flask.Flask(__name__)
+if detect_gae():
+    import google.appengine.api
+
+    app.wsgi_app = google.appengine.api.wrap_wsgi_app(app.wsgi_app)
 
 from util.utils import init_logging
 
-# Must init logging before any library code writes logs (which would overwide our config)
+# Must init logging before any library code writes logs (which would then just override our config)
 init_logging()
 
 from functools import lru_cache
-import google.appengine.api
+
 from typing import Dict, Type
 
 import time
@@ -20,8 +28,6 @@ import json
 import logging
 import os
 
-import flask
-
 from plugin import Plugin, PluginHolder
 from util import pubsub_utils, gcp_utils, utils, config_utils
 from util.gcp_utils import (
@@ -30,6 +36,7 @@ from util.gcp_utils import (
     all_projects,
     current_project_id,
     gae_memory_logging,
+    enable_cloudprofiler,
 )
 
 from util.config_utils import (
@@ -43,32 +50,9 @@ from util.utils import log_time, timing
 
 ENABLE_PROFILER = False
 
-
-def __enable_cloudprofiler():
-    """# For Google Cloud Profiler,
-    * set ENABLE_PROFILER to True above
-    * edit requirements.txt as stated in requirements.txt
-    * add a line to app.yaml as stated in requirements.txt
-    """
-    try:
-        import googlecloudprofiler
-
-        googlecloudprofiler.start()
-    except (ValueError, NotImplementedError) as exc:
-        localdev_error_msg = (
-            ". Profiler is not supported in local development"
-            if "Service name must be provided" in str(exc)
-            else ""
-        )
-
-        logging.info(
-            "Exception initializing the Cloud Profiler %s, %s", exc, localdev_error_msg
-        )
-
-
 # Profiler initialization. It starts a daemon thread which continuously collects and uploads profiles.
 if detect_gae() and ENABLE_PROFILER:
-    __enable_cloudprofiler()
+    enable_cloudprofiler()
 else:
     logging.info("Cloud Profiler not in use")
 
@@ -77,10 +61,6 @@ gcp_utils.set_env()
 logging.info(
     "env GAE_USE_SOCKETS_HTTPLIB is %s", os.environ.get("GAE_USE_SOCKETS_HTTPLIB")
 )
-
-app = flask.Flask(__name__)
-if detect_gae():
-    app.wsgi_app = google.appengine.api.wrap_wsgi_app(app.wsgi_app)
 
 PluginHolder.init()
 
@@ -121,7 +101,7 @@ def schedule():
             __send_pubsub_per_projectplugin(enabled_projects)
             return "OK", 200
         except Exception as e:
-            logging.exception("In schedule()", exc_info=e)
+            logging.exception("In schedule()")
             return "Error", 500
 
 
@@ -147,9 +127,9 @@ def __get_enabled_projects():
         raise Exception("No projects enabled at all")
 
     if (
-        not detect_gae()
-        or is_test_or_dev_configuration()
-        or is_in_test_or_dev_project(current_project_id())
+            not detect_gae()
+            or is_test_or_dev_configuration()
+            or is_in_test_or_dev_project(current_project_id())
     ):
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
@@ -171,9 +151,9 @@ def __send_pubsub_per_projectplugin(configured_projects):
     for project_id in configured_projects:
         for plugin_cls in PluginHolder.plugins:
             if (
-                not plugin_cls.is_labeled_on_creation()
-                or plugin_cls.relabel_on_cron()
-                or config_utils.label_all_on_cron()
+                    not plugin_cls.is_labeled_on_creation()
+                    or plugin_cls.relabel_on_cron()
+                    or config_utils.label_all_on_cron()
             ):
                 pubsub_utils.publish(
                     msg=json.dumps(
@@ -244,9 +224,7 @@ def label_one():
             return "OK", 200
         except Exception as e:
             project_id = data.get("resource", {}).get("labels", {}).get("project_id")
-            logging.exception(
-                "Error on label_one %s %s", plugins_found, project_id, exc_info=e
-            )
+            logging.exception("Error on label_one %s %s", plugins_found, project_id)
             return "Error", 500
 
 
@@ -330,26 +308,27 @@ def do_label():
                     )
                     plugin.label_all(project_id)
                 logging.info("OK on do_label %s %s", plugin_class_name, project_id)
+
             return "OK", 200
         except Exception as e:
-            logging.exception(
-                "Error on do_label %s %s", plugin_class_name, project_id, exc_info=e
-            )
+            logging.exception("Error on do_label %s %s", plugin_class_name, project_id)
+
             return "Error", 500
 
 
 def __check_pubsub_verification_token():
     """Token verifying that only PubSub accesses PubSub push endpoints"""
-    known_token = pubsub_token()
-    if not known_token:
+    expected_token = pubsub_token()
+    if not expected_token:
         raise FlaskException(
-            f"Should define expected token in env. Keys were {list(os.environ.keys())}",
+            "Should define expected token in configuration.",
             400,
         )
 
     token_from_args = flask.request.args.get("token", "")
-    if known_token != token_from_args:
-        raise FlaskException(f'Access denied: Invalid token "{known_token}"', 403)
+    if expected_token != token_from_args:
+        logging.info("Token was %s but expected %s", token_from_args, expected_token)
+        raise FlaskException(f'Access denied: Invalid token "{expected_token}"', 403)
 
 
 class FlaskException(Exception):
@@ -370,7 +349,7 @@ class FlaskException(Exception):
 
 @app.errorhandler(FlaskException)
 def handle_invalid_usage(error):
-    logging.exception("", exc_info=error)
+    logging.exception("")
     response = flask.jsonify(error.to_dict())
     response.status_code = error.status_code
     return response

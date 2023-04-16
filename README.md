@@ -11,16 +11,17 @@ the [post that presents Iris](https://blog.doit-intl.com/iris-3-automatic-labeli
 
 ## What it does for you
 
-Iris automatically assigns labels to Google Cloud resources for manageability and easier billing reporting.
+Iris automatically assigns labels to Google Cloud Platform resources for manageability and easier billing reporting.
 
-Each resource of a supported type in a Google Cloud Platform Organization will get automatically-generated labels with
-keys like `iris_zone` (the prefix is configurable), and the relevant value.  
+Each supported resource in the GCP Organization will get automatically-generated labels with keys like `iris_zone` (the
+prefix is configurable), and the copied value.  
 For example, a Google Compute Engine instance would get labels like
 `[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`.
 
-Importantly, Iris cannot *add* information, only *copy* information. For example, it can label a VM instance with its
+Limitation: Iris cannot *add* information, only *copy* information. For example, it can label a VM instance with its
 zone, since this information is known; but it cannot add a "business unit" label because it does not know what business
-unit a resource is launched from.
+unit a resource should be attributed to. For that, you should label all resources when creating them, e.g. in your
+Terraform scripts.
 
 Iris is open-source: Feel free to add functionality and add new types of labels. See the `TODO.md` file for features and
 fixes you might do.
@@ -32,17 +33,22 @@ Iris adds labels:
 * On resource creation, by listening to Google Cloud Operations (Stackdriver) Logs.
     - You can disable this, see ["Deploy"](#deployment).
 * On schedule, using a Cloud Scheduler cron job that the deployer sets up for you.
-    - See  [Configuration section](#configuration) below for details.
-    - You can configure whether all resources get labeled during the cron run or just the ones that need it because they
-      cannot be labeled on-event. (See `label_all_on_cron` below.)
+    - By default, only some types of resources are labeled on Cloud Scheduler runs.
+    - This can be configured so that all resources are labeled. See  `label_all_on_cron` below.
+
+## Labeling existing resources
+
+* When you first use Iris, you may want to label all existing resources.
+* To do this, deploy it with `label_all_on_cron: True` and wait for the next scheduled run, or manually trigger a run.
+* You may want to then redeploy Iris with `label_all_on_cron: False` to avoid the daily resource consumption.
 
 ## Supported Google Cloud Products
 
-Right now, there are plugins for the following types of resources. To learn what label keys are added, search
-for `def _gcp_<LABEL_NAME>)`, i.e., functions whose names start `_gcp_`. The part of the function name after `_gcp_` is
-used for the label key.
+Right now, there are plugins for the following types of resources.
 
-These are also listed below.
+To learn from the code what resources and keys are added, search for `def _gcp_<LABEL_NAME>)`, i.e., functions whose
+names start `_gcp_`.  
+The part of the function name after `_gcp_` is used for the label key.
 
 * Compute Engine Instances (Labels name, zone, region, instance type)
     * Including preemptible instances or instances created by Managed Instance Groups.
@@ -74,7 +80,7 @@ These are also listed below.
     * *Organization Role Administrator* to create a custom IAM role for Iris that allows to get and set labels on the
       services.
       (Note that this is different from *Organization Administrator* and from Organization *Owner*.)
-    * *Security Admin* OR *Organization Administrator*  to allow Iris app engine service account to use the above role
+    * *Security Admin* OR *Organization Administrator* to allow Iris app engine service account to use the above role
     * *Logs Configuration Writer* to create an organization log sink that sends logs to PubSub
 
 * On the project where Iris is deployed, you will need Owner or these roles:
@@ -82,9 +88,9 @@ These are also listed below.
     * *App Engine Admin* to deploy to App Engine.
     * *Pub/Sub Admin* to create topics and subscriptions.
 
-#### Default AppEngine service needed
+#### Default  ine service needed
 
-AppEngine requires a "default service" to exist (even though Iris runs as the `iris3` service).
+App Engine requires a "default service" to exist (even though Iris runs as the `iris3` service).
 
 If your project does not have one, just deploy some trivial hello-world app as the default service. (Having this service
 online costs nothing.) Try [this](https://github.com/doitintl/QuickQuickstarts/tree/main/appengine_standard )
@@ -97,8 +103,8 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
 * Have Python 3.9+ as your default `python3`.
 * Install tools `envsubst` and `jq`.
 * Install and initialize `gcloud` using an account with the [above-mentioned](#before-deploying) roles.
-* Optionally configure by editing the configuration file ([see below re files](#configuration)
-  ;use `config.yaml.original` as an example)), `cron.yaml`, and `app.yaml`. See [Configuration](#configuration) below.
+* Copy `config.yaml.original` to `config.yaml`.
+* Optionally configure by editing the configuration files ([See more documentation below](#configuration).)
 * Run `./deploy.sh <PROJECT_ID>`.
     * To use *only* Cloud Scheduler cron (i.e., without labeling resources on-creation), put `-c` at the end of the
       command line.
@@ -111,37 +117,30 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
 
 ### Configuration
 
-* All values are optional.
-* The configuration file may be `config.yaml`,`config-test.yaml`, or `config-dev.yaml`.
-    * Which one is used:
-        * If `config-dev.yaml` is present, that is used;
-        * if not, and `config-dev.yaml` is present, that is used;
-        * otherwise `config.yaml` is used.
-    * Local vs in AppEngine
-        * `config-dev.yaml` is not uploaded to AppEngine and so is ignored there.
-        * `config-test.yaml` and  `config.yaml` are available for use in AppEngine
-    * See `config.yaml.template` for detailed documentation of the following options.
-
-    - What projects to include.
-    - A prefix for all label keys.
-    - Specific prefixes per resource type.
-    - Whether to copy all labels from the project into resources in the project.
-    - Whether the Cloud Scheduler cron job should label all types of resources (useful on first deployment) or skip
-      certain types.
-    - The secret token for PubSub invocations.
-
+* Iris' own config file `config*.yaml`
+    * The configuration file may be `config.yaml`,`config-test.yaml`, or `config-dev.yaml`.
+        * Which one is used:
+            * If `config-dev.yaml` is present, that is used;
+            * if not, and `config-dev.yaml` is present, that is used;
+            * otherwise `config.yaml` is used.
+        * Local vs App Engine
+            * `config-dev.yaml` is not uploaded to App Engine and so is ignored there.
+            * `config-test.yaml` and  `config.yaml` are available for use in App Engine.
+        * Copy `config.yaml.template` to the desired file name
+        * All values in the `config*.yaml` are optional.
 * `app.yaml` lets you configure App Engine, for example to set a maximum number of instances. See App Engine
   documentation.
-* `cron.yaml` lets you optionally change the timing for the Cloud Scheduler scheduled labelings.
+* `cron.yaml` lets you optionally change the timing for the Cloud Scheduler scheduled labelings. See App Engine
+  documentation.
 
 ## Architecture
 
 * Iris runs in Google App Engine Standard Environment (Python 3).
-* The Cloud Scheduler cron job triggers Iris at configured intervals. (see `cron.yaml`)
+* The Cloud Scheduler cron job triggers Iris at configured intervals. (See `cron.yaml`)
 * For newly created resources, a Log Sink on the organization level sends all logs about resource-creation to a PubSub
   topic.
-    * The Log Sink is filtered to include only supported resource types and, if so configured, to support only only
-      specific projects.
+    * The Log Sink is filtered to include only supported resource types and, if so configured, to support only specific
+      projects.
 * PubSub topics:
     * One topic receives the logs from the Log Sink on resource creation.
     * The other receives messages sent by the `/schedule` Cloud Scheduler handler in `main.py`, which is triggered by
@@ -171,23 +170,23 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
     * Set the projects you want to use in  `config-dev.yaml`
     * Use `test_do_label` and `test_label_one` and `test_schedule` to trigger against your localhost dev-server, to
       label actual Cloud resources that you pre-deploy.
-        * See these `test_...` files for instructions.
+        * See the `test_...` files for instructions.
 
-### Adding new labels
+### Adding new kinds of labels.
 
-Iris adds about twenty kinds of labels. More can be added, but don't add too many. Billing analytics work best when they
-are not swamped by excess labels. This is why GCP doesn't simply add these labels, and why Iris does not implement all
-possible labeling, say by automatically copying all fields from each resource into labels.
+Iris adds about twenty kinds of labels. More can be added, but don't add too many. Billing analytics work best when not
+swamped by excess labels. This is why GCP doesn't simply add these labels, and why Iris does not implement all possible
+labeling, say by automatically copying all fields from each resource into labels.
 
 #### Developing new labels for an existing resource type
 
-To add a new label key to an existing resource type, add `_gcp_<LABEL_NAME>` methods (like `_gcp_zone()`)  in the
+To add a new label key to an existing resource type, add `_gcp_<LABEL_NAME>` methods (like `_gcp_zone()`) in the
 relevant file in `/plugins`, following the example of the existing ones. Labels will be added with a key from the
 function name (`zone` in that example), and a value returned by the function
 (in our example, the zone identifier).
 
-For example, you might want to add a label identifying the creator of a resource, or add the name the topic to its
-subscription.
+For example, you might want to add a label identifying the creator of a resource, or add the name of the topic to its
+subscriptions.
 
 #### Supporting new resource types
 
@@ -215,9 +214,9 @@ examples.
    on-event only for creation events, so Cloud Scheduler is the way to relabel mutated state.)
 
    f. For resources where labeling must be skipped under certain conditions, override `block_labeling()` and
-   return `True`  where needed.
+   return `True` where needed.
 
-2. Add your API to the `required_svcs`  in `deploy.sh`
+2. Add your API to the `required_svcs` in `deploy.sh`
 
 3. Add your Google Cloud API "methods" to `log_filter` in `deploy.sh`.
     * `methodName` is part of the logs generated on creation.
@@ -227,7 +226,8 @@ examples.
           (Or create a bucket and look at the log.)
         * In that file you see `"methodName": "storage.buckets.create"`.
 
-4. Add roles in `roles.yaml` allowing Iris to list, get, and update (add labels to) your resources.
+4. Add roles in `roles.yaml` allowing Iris, for each resource type, to list, get, and update (permission setLabels, for
+   resources where it is available, or update where it is not).
 
 ### Testing
 
@@ -238,13 +238,13 @@ examples.
 * It's an easy sanity check to be sure that, for example, that you have the right permissions.
 * It works against two test projects that you specify.
 
-#### Testing the  Cloud Scheduler scheduled labeling
+#### Testing the Cloud Scheduler scheduled labeling
 
 - This is less automated than `integration_test.sh`, so do it only if you have special need to test this functionality.
 - Deploy some cloud resources like Cloud SQL instance. Or deploy an unattached disk and attach it.
 - Configuration
     * Optionally edit the configuration file to set `label_all_on_cron: True` or `False`.
-      `True`  will cause all resources to be labeled on the Cloud Scheduler cron job, while
+      `True` will cause all resources to be labeled on the Cloud Scheduler cron job, while
       `False` will cause only Cloud SQL and GCE Disks to be labeled.
     * Edit the configuration file to set `iris_prefix` to a unique value, so you can track the labels generated by this
       test.
