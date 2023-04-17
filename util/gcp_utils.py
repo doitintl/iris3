@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import uuid
+from collections import Counter
 from contextlib import contextmanager
 from typing import Dict, Any, Generator
 
@@ -9,6 +10,21 @@ from google.appengine.api.runtime import memory_usage
 
 from util import localdev_config, utils
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase
+
+
+__invocation_count = Counter()
+
+
+def increment_invocation_count(path: str):
+    global __invocation_count
+    __invocation_count[path] += 1
+
+
+def invocation_count():
+    d = dict(__invocation_count)
+    keys = sorted(list(d.keys()))
+    sorted_dict = {i: d[i] for i in keys}
+    return sorted_dict
 
 
 def detect_gae():
@@ -159,8 +175,9 @@ def log_gae_memory(tag):
             libs = ",".join(__loaded_libs)
             mem_str = str(memory_usage()).replace("\n", "; ")
             logging.info(
-                "RAM for GAEInstance %s (%s) %s: Libs:[%s]",
+                'RAM, GAEInst %s (invocations %s) "%s" %s: Libs:[%s];',
                 __inst_id,
+                invocation_count(),
                 tag,
                 mem_str,
                 libs,

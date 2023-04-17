@@ -1,9 +1,15 @@
 """Entry point for Iris."""
+
 import sys
+from datetime import datetime
+
+from flask import Response
+
+from util.deployment_time import deployment_time
 
 print("Initializing ", file=sys.stderr)
 import flask
-from util.gcp_utils import detect_gae
+from util.gcp_utils import detect_gae, increment_invocation_count, invocation_count
 
 app = flask.Flask(__name__)
 if detect_gae():
@@ -67,15 +73,21 @@ PluginHolder.init()
 
 @app.route("/")
 def index():
+    increment_invocation_count("index")
     with gae_memory_logging("index"):
         msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
-        logging.info("index() ")
+        if config_utils.is_test_or_dev_configuration():
+            msg += "\nI'm running in test or dev mode."
 
-        return msg, 200
+        msg += f"\nDeployed { datetime.fromtimestamp(deployment_time).isoformat() }"
+
+        logging.info("index(); invocations of GAE instance : %s", invocation_count())
+        return Response(msg, mimetype="text/plain", status=200)
 
 
 @app.route("/_ah/warmup")
 def warmup():
+    increment_invocation_count("warmup")
     with gae_memory_logging("warmup"):
         logging.info("warmup() called")
 
@@ -88,8 +100,9 @@ def schedule():
     """
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
-    with gae_memory_logging("schedule"):
 
+    increment_invocation_count()
+    with gae_memory_logging("schedule"):
         try:
             logging.info("Schedule called")
 
@@ -127,9 +140,9 @@ def __get_enabled_projects():
         raise Exception("No projects enabled at all")
 
     if (
-            not detect_gae()
-            or is_test_or_dev_configuration()
-            or is_in_test_or_dev_project(current_project_id())
+        not detect_gae()
+        or is_test_or_dev_configuration()
+        or is_in_test_or_dev_project(current_project_id())
     ):
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
@@ -151,9 +164,9 @@ def __send_pubsub_per_projectplugin(configured_projects):
     for project_id in configured_projects:
         for plugin_cls in PluginHolder.plugins:
             if (
-                    not plugin_cls.is_labeled_on_creation()
-                    or plugin_cls.relabel_on_cron()
-                    or config_utils.label_all_on_cron()
+                not plugin_cls.is_labeled_on_creation()
+                or plugin_cls.relabel_on_cron()
+                or config_utils.label_all_on_cron()
             ):
                 pubsub_utils.publish(
                     msg=json.dumps(
@@ -177,6 +190,7 @@ def __send_pubsub_per_projectplugin(configured_projects):
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
+    increment_invocation_count("label_one")
     with gae_memory_logging("label_one"):
 
         plugins_found = []
@@ -220,7 +234,7 @@ def label_one():
                     "Error: Multiple plugins found %s for %s"
                     % (plugins_found, method_from_log)
                 )
-
+            logging.info("OK for label_one %s", method_from_log)
             return "OK", 200
         except Exception as e:
             project_id = data.get("resource", {}).get("labels", {}).get("project_id")
@@ -252,7 +266,7 @@ def __label_one_0(data, plugin_cls: Type[Plugin]):
             logging.info(msg)
     else:
         logging.error(
-            "Cannot find gcp_object to label. (This usually does sometimes does not result in failure to label, "
+            "Cannot find gcp_object to label. (Sometimes still allows labeling, "
             + "e.g. for BQ datasets where serviceData is missing), based on %s",
             utils.shorten(str(data.get("resource")), 300),
         )
@@ -282,6 +296,7 @@ def __extract_pubsub_content() -> Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
+    increment_invocation_count("do_label")
     with gae_memory_logging("do_label"):
 
         """Receive a push message from PubSub, sent from schedule() above,
@@ -293,7 +308,7 @@ def do_label():
             data = __extract_pubsub_content()
             plugin_class_name = data["plugin"]
 
-            plugin = PluginHolder.get_plugin_instance_by_name(plugin_class_name)
+            plugin = PluginHolder.get_plugin_insatance_by_name(plugin_class_name)
             if not plugin:
                 logging.info(
                     "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",

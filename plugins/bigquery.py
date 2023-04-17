@@ -45,7 +45,7 @@ class Bigquery(Plugin):
             else:
                 name = gcp_object["tableReference"]["tableId"]
             index = name.rfind(":")
-            name = name[index + 1:]
+            name = name[index + 1 :]
             return name
         except KeyError as e:
             logging.exception("")
@@ -153,7 +153,7 @@ class Bigquery(Plugin):
             dataset_id = dataset_reference["datasetId"]
 
             assert (
-                    project_id == dataset_reference["projectId"]
+                project_id == dataset_reference["projectId"]
             ), f"{project_id}!={dataset_reference['projectId']}"
 
             client = self._cloudclient(project_id)
@@ -183,8 +183,8 @@ class Bigquery(Plugin):
             table_reference = gcp_object["tableReference"]
             self._batch.add(
                 self._google_api_client()
-                    .tables()
-                    .patch(
+                .tables()
+                .patch(
                     projectId=table_reference["projectId"],
                     body=labels,
                     datasetId=table_reference["datasetId"],

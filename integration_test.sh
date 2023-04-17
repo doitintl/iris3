@@ -81,7 +81,7 @@ function revert_config() {
   rm config-test.yaml ||true
 }
 
-#trap "revert_config" EXIT #TODO Undo
+trap "revert_config"
 
 envsubst <config.yaml.test.template > config-test.yaml
 

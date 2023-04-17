@@ -1,6 +1,7 @@
 import logging
 import random
 import string
+import subprocess
 import sys
 import textwrap
 import time
@@ -47,10 +48,21 @@ def methods(o, pfx="") -> typing.List[typing.Callable]:
     return [getattr(o, name) for name in names]
 
 
-def random_str(length: int):
+def random_str(length: int = 4):
+    return __random_str(length, string.ascii_lowercase + string.digits * 2)
+
+
+def random_hex_str(length: int = 10):
+    return __random_str(
+        length,
+        "0123456789abcde",
+    )
+
+
+def __random_str(length, s):
     return "".join(
         random.choices(
-            string.ascii_lowercase + string.digits * 2,  # more digits
+            s,  # more digits
             k=length,
         )
     )
@@ -66,7 +78,7 @@ def init_logging():
                     trace_id = flask.request.headers.get(
                         "X-Cloud-Trace-Context", "df" + random_str(28)
                     )
-                    trace_id_trunc = truncate_middle(trace_id, 8, elipsis_len=0)
+                    trace_id_trunc = truncate_middle(trace_id, 10, elipsis_len=0)
                     trace_msg = " Trace: " + trace_id_trunc
                     flask.request.trace_msg = trace_msg
             except RuntimeError as e:
@@ -197,3 +209,10 @@ def symdiff(dict1, dict2):
 
 def curr_func() -> str:
     return sys._getframe(1).f_code.co_name
+
+
+def run_command(command_s):
+    command = command_s.split(" ")
+    result = subprocess.run(command, stdout=subprocess.PIPE, check=True)
+    output = result.stdout.decode("utf-8")
+    return output.strip("\n")

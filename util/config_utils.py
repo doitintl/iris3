@@ -78,14 +78,15 @@ def get_config() -> typing.Dict:
 
     if os.path.isfile(dev_config):
         config_name = dev_config
-        is_test_or_dev_ = True
+
     elif os.path.isfile(test_config):
         config_name = test_config
-        is_test_or_dev_ = True
+
     else:
         config_name = prod_config
-        is_test_or_dev_ = False
+
     print("Using", config_name, file=sys.stderr)  # logging not yet enabled
+
     try:
         with open(config_name) as config_file:
             config = yaml.full_load(config_file)
@@ -93,12 +94,13 @@ def get_config() -> typing.Dict:
         raise FileNotFoundError(
             f"Could not find the config-*.yaml file, specifically {config_name}"
         )
-    config["is_test_or_dev_configuration"] = is_test_or_dev_
+    config["config_file"] = config_name
+
     return config
 
 
 def is_test_or_dev_configuration():
-    return get_config()["is_test_or_dev_configuration"]
+    return get_config()["config_file"] != "config.yaml"
 
 
 def is_in_test_or_dev_project(project_id):

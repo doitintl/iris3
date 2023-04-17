@@ -100,8 +100,8 @@ class Buckets(Plugin):
 
             self._batch.add(
                 self._google_api_client()
-                    .buckets()
-                    .patch(bucket=bucket_name, body=labels),
+                .buckets()
+                .patch(bucket=bucket_name, body=labels),
                 request_id=gcp_utils.generate_uuid(),
             )
             self.counter += 1

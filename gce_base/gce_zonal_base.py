@@ -88,7 +88,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         try:
             name = log_data["protoPayload"]["resourceName"]
             idx = name.rfind("/")
-            name = name[idx + 1:]
+            name = name[idx + 1 :]
             project_id = log_data["resource"]["labels"]["project_id"]
             zone = log_data["resource"]["labels"]["zone"]
             resource = self._get_resource(project_id, zone, name)

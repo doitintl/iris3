@@ -89,9 +89,16 @@ echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
 
 # Must have one of these config (meanwhile, config-dev.yaml is only for local use)
-if [[ ! -f "config.yaml" &&   ! -f "config-test.yaml" ]]; then
-     echo >&2 "No config file found"
-    exit 1
+if [[  -f "config-test.yaml" ]]; then
+  if [[  -f "config.yaml" ]]; then
+       echo >&2 "Cannot have config.yaml if config-test.yaml exists"
+       exit 1
+  fi
+else
+   if [[  ! -f "config.yaml" ]]; then
+       echo >&2 "Must have either  config.yaml or config-test.yaml"
+       exit 1
+  fi
 fi
 
 
@@ -320,6 +327,8 @@ else
   gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 fi
+
+sed -i '' "s|\=.*|= $(date +%s )|" util/deployment_time.py
 
 # GAEVERSION might be unbound, so disable this check.
 set +u
