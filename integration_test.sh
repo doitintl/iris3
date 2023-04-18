@@ -81,9 +81,9 @@ function revert_config() {
   rm config-test.yaml ||true
 }
 
-trap "revert_config"
+trap "revert_config" EXIT
 
-envsubst <config.yaml.test.template > config-test.yaml
+envsubst < config.yaml.test.template > config-test.yaml
 
 # GAEVERSION is exported to deploy.sh
 export GAEVERSION=$RUN_ID

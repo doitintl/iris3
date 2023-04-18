@@ -101,7 +101,7 @@ def schedule():
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
 
-    increment_invocation_count()
+    increment_invocation_count("schedule")
     with gae_memory_logging("schedule"):
         try:
             logging.info("Schedule called")
