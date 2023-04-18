@@ -12,7 +12,14 @@ from subprocess import CalledProcessError
 from typing import Union, List
 
 from test_scripts.utils_for_tests import assert_root_path
-from util.utils import random_str, random_hex_str, run_command, init_logging, log_time, set_log_levels
+from util.utils import (
+    random_str,
+    random_hex_str,
+    run_command,
+    init_logging,
+    log_time,
+    set_log_levels,
+)
 
 config_test_yaml = "config-test.yaml"
 
@@ -48,6 +55,7 @@ def run_command_or_commands_catch_exc(command_or_commands: Union[str, List[str]]
 
         return ret
 
+
 @log_time
 def describe_resources(test_project, run_id, gce_zone):
     describe_flags = f"--project {test_project} --format json"
@@ -61,9 +69,9 @@ def describe_resources(test_project, run_id, gce_zone):
         f"gcloud compute snapshots describe snapshot{run_id} {describe_flags}",
     ]
     with ThreadPoolExecutor(10) as executor:
-        zipped = list(zip(
-            commands, executor.map(run_command_or_commands_catch_exc, commands)
-        ))
+        zipped = list(
+            zip(commands, executor.map(run_command_or_commands_catch_exc, commands))
+        )
         failed = [cmd for cmd, result in zipped if isinstance(result, Exception)]
         succeeded = {
             cmd: result for cmd, result in zipped if not isinstance(result, Exception)
@@ -71,7 +79,6 @@ def describe_resources(test_project, run_id, gce_zone):
     if failed:
         print("Failed ", failed, "\nsucceeded", succeeded)
         set_failing()
-
 
     else:
         no_labels = []
@@ -88,10 +95,8 @@ def describe_resources(test_project, run_id, gce_zone):
     gcs_cmd = f"gsutil label get gs://bucket{run_id}"
     out = run_command_or_commands_catch_exc(gcs_cmd)
     if isinstance(out, Exception):
-        print("Did not have the right label:", gcs_cmd)
+        print("Failed to describe bucket:", gcs_cmd)
         set_failing()
-
-
     else:
         assert isinstance(out, str), type(out)
         j = json.loads(out)
@@ -122,14 +127,16 @@ def main():
     end = time.time()
     print("Time for integration test", int(end - start_test), "s")
 
+
 @log_time
 def deploy(deployment_project):
     _ = run_command(f"./deploy.sh {deployment_project}")  # can fail
     wait_for_traffic_shift(deployment_project)
 
+
 @log_time
 def setup_configuration():
- 
+
     count_command_line_params()
     deployment_project = sys.argv[1]
     test_project = sys.argv[2]
@@ -143,7 +150,12 @@ def setup_configuration():
     remove_config_file()
     atexit.register(remove_config_file)
     fill_in_config_template(run_id, deployment_project, test_project, pubsub_test_token)
-    return deployment_project, test_project, run_id, gce_zone,
+    return (
+        deployment_project,
+        test_project,
+        run_id,
+        gce_zone,
+    )
 
 
 def create_and_describe_resources(test_project, run_id, gce_zone):
@@ -171,21 +183,32 @@ def wait_for_traffic_shift(deployment_project):
             assert len(results) == 1
             on_site = datetime.datetime.fromisoformat(results[0])
             if on_site == this_version_deploy_time:
-                print("Wait for traffic shift took", int(1000 * (time.time() - start_wait_for_trafficshift)), "msec")
+                print(
+                    "Wait for traffic shift took",
+                    int(1000 * (time.time() - start_wait_for_trafficshift)),
+                    "msec",
+                )
                 return  # Could alternatively check for the iris_prefix, which is meant to be here unique.
-            print("Site is now at time", on_site, " which is not this version's time ", this_version_deploy_time)
+            print(
+                "Site is now at time",
+                on_site,
+                " which is not this version's time ",
+                this_version_deploy_time,
+            )
 
     raise TimeoutError(time.time() - start_wait_for_trafficshift)
 
 
 def fill_in_config_template(
-        run_id, deployment_project, test_project, pubsub_test_token
+    run_id, deployment_project, test_project, pubsub_test_token
 ):
     with open("config.yaml.test.template") as template_file:
         filled_template = template_file.read()
         local_variables = locals().copy()
         for name, val in local_variables.items():
-            filled_template = filled_template.replace("${" + name.upper() + "}", str(val))
+            filled_template = filled_template.replace(
+                "${" + name.upper() + "}", str(val)
+            )
 
     assert "${" not in filled_template, filled_template
     with open(config_test_yaml, "w") as config_test:
@@ -198,6 +221,7 @@ def remove_config_file():
         os.remove(config_test_yaml)
     except FileNotFoundError:
         pass  # OK
+
 
 @log_time
 def clean_resources(deployment_project, test_project, run_id, gce_zone):
@@ -253,6 +277,7 @@ def get_run_id():
         run_id = random_str(4)
     return run_id
 
+
 def check_legal_run_id(run_id):
     if any(x in run_id for x in "_-"):
         print(
@@ -284,6 +309,7 @@ def check_projects_exist(deployment_project, test_project):
 
     if failed:
         raise Exception("Illegal project(s)", ",".join(failed))
+
 
 @log_time
 def create_resources(test_project, run_id, gce_zone):

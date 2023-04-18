@@ -27,13 +27,13 @@ def __datastruct_for_pubsub_message(contents: str) -> bytes:
 
 
 def do_local_http(
-        path: str,
-        contents: typing.Optional[str] = None,
-        method="POST",
-        headers: typing.Optional[typing.Dict[str, str]] = None,
-        extra_args=None,
+    path: str,
+    contents: typing.Optional[str] = None,
+    method="POST",
+    headers: typing.Optional[typing.Dict[str, str]] = None,
+    extra_args=None,
 ):
-    url_ = ''
+    url_ = ""
     try:
         headers = headers or {}
         data_bytes = __datastruct_for_pubsub_message(contents) if contents else None
@@ -56,7 +56,7 @@ def do_local_http(
         resp = request.urlopen(req)  # Exception if Status >=300
         assert resp.status < 300, resp.status
         logging.info("OK for %s: %s", url_, shorten(str(contents), 150))
-    except  URLError as e:
+    except URLError as e:
         raise Exception("Cannot connect to local test-server " + url_) from e
 
 
@@ -72,6 +72,6 @@ def label_one(project, name, method_name, parent_name="", zone="", extra_args=No
 
 
 def assert_root_path():
-    assert Path(__file__).parent.stem in os.listdir(os.getcwd()), "Should run in root; was " + os.getcwd()
-
-
+    assert Path(__file__).parent.stem in os.listdir(os.getcwd()), (
+        "Should run in root; was " + os.getcwd()
+    )

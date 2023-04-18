@@ -65,8 +65,10 @@ def main():
         chosen_plugins = [s.strip() for s in chosen_plugins]
         unsupported = [p for p in chosen_plugins if p not in PLUGINS]
         if unsupported:
-            raise Exception(f"Error: \"{', '.join(unsupported)}\" not a legal value. "
-                            f"For this test, you can use these (comma-separated) in the env variable: {PLUGINS}")
+            raise Exception(
+                f"Error: \"{', '.join(unsupported)}\" not a legal value. "
+                f"For this test, you can use these (comma-separated) in the env variable: {PLUGINS}"
+            )
     logging.info(f"Will do_label on{msg}: {', '.join(chosen_plugins)} ")
     test_do_label(chosen_plugins)
 

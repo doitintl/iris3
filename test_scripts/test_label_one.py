@@ -44,9 +44,7 @@ def __resource_name():
 def __zone(raise_exc=True):
     zone = os.environ.get("zone")
     if not zone and raise_exc:
-        raise ValueError(
-            "Must specify 'zone' key in environment"
-        )
+        raise ValueError("Must specify 'zone' key in environment")
     return zone
 
 
@@ -83,7 +81,13 @@ def test_table():
 
 
 def test_instances():
-    label_one(__project(), __resource_name(), "compute.instances.insert", parent_name="", zone=__zone())
+    label_one(
+        __project(),
+        __resource_name(),
+        "compute.instances.insert",
+        parent_name="",
+        zone=__zone(),
+    )
 
 
 def test_snapshots():
@@ -98,7 +102,7 @@ def test_disks():
         __resource_name(),
         Disks().method_names()[0],
         parent_name="",
-        zone=__zone()
+        zone=__zone(),
     )
 
 
@@ -123,15 +127,15 @@ def main():
     dir_ = dir(sys.modules[__name__])
     test_ = "test_"
     test_func = [f for f in dir_ if f.startswith(test_)]
-    resource_types = [f[len(test_):] for f in test_func]
+    resource_types = [f[len(test_) :] for f in test_func]
     resource_types_s = ", ".join(sorted(resource_types))
     resource_type = os.environ.get("resource_type", "")
     func_name = test_ + resource_type
     if (
-            func_name not in dir_
-            or not resource_type
-            or len(sys.argv) > 1
-            and (sys.argv[1] == "-h" or sys.argv[1] == "--help")
+        func_name not in dir_
+        or not resource_type
+        or len(sys.argv) > 1
+        and (sys.argv[1] == "-h" or sys.argv[1] == "--help")
     ):
         print(
             f"""Usage: {os.path.basename(sys.argv[0])}  
