@@ -61,9 +61,6 @@ def do_local_http(
 
 
 def label_one(project, name, method_name, parent_name="", zone="", extra_args=None):
-    ls = os.listdir(".")
-    if "sample_data" not in ls:
-        raise ValueError("Run script in project root")
 
     with open(f"./sample_data/{method_name}.log_message.json") as f:
         file_contents = f.read()
@@ -76,3 +73,5 @@ def label_one(project, name, method_name, parent_name="", zone="", extra_args=No
 
 def assert_root_path():
     assert Path(__file__).parent.stem in os.listdir(os.getcwd()), "Should run in root; was " + os.getcwd()
+
+

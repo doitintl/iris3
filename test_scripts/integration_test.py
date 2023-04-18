@@ -1,0 +1,325 @@
+import atexit
+import datetime
+import json
+import logging
+import os
+import re
+import sys
+import time
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+from subprocess import CalledProcessError
+from typing import Union, List
+
+from test_scripts.utils_for_tests import assert_root_path
+from util.utils import random_str, random_hex_str, run_command, init_logging, log_time, set_log_levels
+
+config_test_yaml = "config-test.yaml"
+
+GCE_ZONE = "europe-central2-b"
+
+exit_code = 0
+
+
+def set_failing():
+    global exit_code
+    exit_code = 1
+
+
+def run_command_or_commands_catch_exc(command_or_commands: Union[str, List[str]]):
+    def run_cmd_catch_exc(cmd):
+        try:
+            return run_command(cmd)
+        except CalledProcessError as e:
+            logging.exception(f"Calling {cmd}")
+            return e
+
+    if isinstance(command_or_commands, str):
+        command = command_or_commands
+        return run_cmd_catch_exc(command)
+    else:
+        ret = []
+        for command in command_or_commands:
+            one_return_value = run_cmd_catch_exc(command)
+            if isinstance(one_return_value, Exception):
+                return one_return_value  # Return only the exception on first failure
+            else:
+                ret.append(one_return_value)
+
+        return ret
+
+@log_time
+def describe_resources(test_project, run_id, gce_zone):
+    describe_flags = f"--project {test_project} --format json"
+    commands = [
+        f"gcloud pubsub topics describe topic{run_id} {describe_flags}",
+        f"gcloud pubsub subscriptions describe subscription{run_id} {describe_flags}",
+        f"bq show --format=json {test_project}:dataset{run_id}",
+        f"bq show --format=json {test_project}:dataset{run_id}.table{run_id}",
+        f"gcloud compute instances describe instance{run_id} --zone {gce_zone} {describe_flags}",
+        f"gcloud compute disks describe disk{run_id} --zone {gce_zone} {describe_flags}",
+        f"gcloud compute snapshots describe snapshot{run_id} {describe_flags}",
+    ]
+    with ThreadPoolExecutor(10) as executor:
+        zipped = list(zip(
+            commands, executor.map(run_command_or_commands_catch_exc, commands)
+        ))
+        failed = [cmd for cmd, result in zipped if isinstance(result, Exception)]
+        succeeded = {
+            cmd: result for cmd, result in zipped if not isinstance(result, Exception)
+        }
+    if failed:
+        print("Failed ", failed, "\nsucceeded", succeeded)
+        set_failing()
+
+
+    else:
+        no_labels = []
+        for cmd, result in succeeded.items():
+            j = json.loads(result)
+            label = j["labels"]
+            label_val = label.get(f"{run_id}_name")
+            if not label_val:
+                no_labels.append(cmd)
+        if no_labels:
+            print("no labels", no_labels)
+            set_failing()
+
+    gcs_cmd = f"gsutil label get gs://bucket{run_id}"
+    out = run_command_or_commands_catch_exc(gcs_cmd)
+    if isinstance(out, Exception):
+        print("Did not have the right label:", gcs_cmd)
+        set_failing()
+
+
+    else:
+        assert isinstance(out, str), type(out)
+        j = json.loads(out)
+        # In GCS, no "labels" wrapper for the actual label
+        # Also, for a test of labels that are specific to a resource type,
+        # bucket labels start "gcs"
+        label_val = j.get(f"gcs{run_id}_name")
+        if not label_val:
+            print("GCS did not have the right label")
+            set_failing()
+
+    print("Success: All labels found")
+    assert not exit_code, "Should not get here if already failed"
+
+
+def main():
+    start_test = time.time()
+    set_log_levels()
+    deployment_project, test_project, run_id, gce_zone = setup_configuration()
+    deploy(deployment_project)
+
+    try:
+        create_and_describe_resources(test_project, run_id, gce_zone)
+    except Exception as e:
+        print(e)
+
+    clean_resources(deployment_project, test_project, run_id, gce_zone)
+    end = time.time()
+    print("Time for integration test", int(end - start_test), "s")
+
+@log_time
+def deploy(deployment_project):
+    _ = run_command(f"./deploy.sh {deployment_project}")  # can fail
+    wait_for_traffic_shift(deployment_project)
+
+@log_time
+def setup_configuration():
+ 
+    count_command_line_params()
+    deployment_project = sys.argv[1]
+    test_project = sys.argv[2]
+    run_id = get_run_id()
+
+    # pubsub_test_token is used for envsubst into config.yaml.test.template
+    pubsub_test_token = random_hex_str(20)
+    gce_zone = GCE_ZONE
+    check_projects_exist(deployment_project, test_project)
+    _ = run_command(f"gcloud config set project {test_project}")
+    remove_config_file()
+    atexit.register(remove_config_file)
+    fill_in_config_template(run_id, deployment_project, test_project, pubsub_test_token)
+    return deployment_project, test_project, run_id, gce_zone,
+
+
+def create_and_describe_resources(test_project, run_id, gce_zone):
+    create_resources(test_project, run_id, gce_zone)
+    describe_resources(test_project, run_id, gce_zone)
+
+
+def gce_region(gce_zone):
+    return gce_zone[: gce_zone.rfind("-")]
+
+
+def wait_for_traffic_shift(deployment_project):
+    start_wait_for_trafficshift = time.time()
+    from util.deployment_time import (
+        deployment_time,
+    )  # Import only now, after modification
+
+    this_version_deploy_time = datetime.datetime.utcfromtimestamp(deployment_time)
+    url = f"https://iris3-dot-{deployment_project}.uc.r.appspot.com/"
+    while time.time() - start_wait_for_trafficshift < 180:  # break after 180 sec
+        with urllib.request.urlopen(url) as response:
+            txt_b = response.read()
+            txt = str(txt_b, "UTF-8")
+            results = re.findall(r"Deployed (\S*)", txt)
+            assert len(results) == 1
+            on_site = datetime.datetime.fromisoformat(results[0])
+            if on_site == this_version_deploy_time:
+                print("Wait for traffic shift took", int(1000 * (time.time() - start_wait_for_trafficshift)), "msec")
+                return  # Could alternatively check for the iris_prefix, which is meant to be here unique.
+            print("Site is now at time", on_site, " which is not this version's time ", this_version_deploy_time)
+
+    raise TimeoutError(time.time() - start_wait_for_trafficshift)
+
+
+def fill_in_config_template(
+        run_id, deployment_project, test_project, pubsub_test_token
+):
+    with open("config.yaml.test.template") as template_file:
+        filled_template = template_file.read()
+        local_variables = locals().copy()
+        for name, val in local_variables.items():
+            filled_template = filled_template.replace("${" + name.upper() + "}", str(val))
+
+    assert "${" not in filled_template, filled_template
+    with open(config_test_yaml, "w") as config_test:
+        config_test.write(filled_template)
+
+
+# Revert config on exit
+def remove_config_file():
+    try:
+        os.remove(config_test_yaml)
+    except FileNotFoundError:
+        pass  # OK
+
+@log_time
+def clean_resources(deployment_project, test_project, run_id, gce_zone):
+    remove_config_file()
+    commands = [
+        f"gcloud compute instances delete -q instance{run_id} --project {test_project} --zone {gce_zone}",
+        f"gcloud compute snapshots delete -q snapshot{run_id} --project {test_project}",
+        f"gcloud compute disks delete -q disk{run_id} --project {test_project} --zone {gce_zone}",
+        f"gcloud pubsub topics delete -q topic{run_id} --project {test_project}",
+        f"gcloud pubsub subscriptions -q delete subscription{run_id} --project {test_project}",
+        [
+            f"bq rm -f --table {test_project}:dataset{run_id}.table{run_id}",
+            f"bq rm -f --dataset {test_project}:dataset{run_id}",
+        ],
+        f"gsutil rm -r gs://bucket{run_id}",
+        f"gcloud app services delete -q iris3 --project {deployment_project}",
+    ]
+    with ThreadPoolExecutor() as executor:
+        failed = [
+            cmd
+            for cmd, result in zip(
+                commands, executor.map(run_command_or_commands_catch_exc, commands)
+            )
+            if isinstance(result, Exception)
+        ]
+    if failed:
+        print("Failed to delete", failed)
+    # Do not set_failing. If we fail on cleanup,there is not much to do
+
+
+def count_command_line_params():
+    if len(sys.argv) < 3:
+        print(
+            """
+       Usage: integration_test.py deployment-project project-under-test [execution-id]
+          - The project to which Iris is deployed
+          - The project where resources will be labeled (can be the same project)
+          - An optional lower-case alphanumerical string to identify this run,
+               used as a prefix on Iris labels and as part of the name of launched resources.
+               If omitted, one will be generated.
+          Returns exit code 0 on test-success, non-zero on test-failure
+      """
+        )
+        set_failing()
+        sys.exit(1)
+
+
+def get_run_id():
+    if len(sys.argv) > 3:
+        run_id = sys.argv[3]
+    else:
+        # Random value to distinguish this test runs from others
+        run_id = random_str(4)
+    return run_id
+
+def check_legal_run_id(run_id):
+    if any(x in run_id for x in "_-"):
+        print(
+            """
+            Illegal run id $RUN_ID. No dashes or underlines permitted because
+            underlines are illegal in snapshot (and other) names
+            and dashes are illegal in BigQuery names.
+            """
+        )
+        set_failing()
+        sys.exit(1)
+
+
+def check_projects_exist(deployment_project, test_project):
+    projects = [deployment_project, test_project]
+
+    def check_project_exists(proj):
+        try:
+            return run_command(f"gcloud projects describe {proj}")
+        except CalledProcessError:
+            return None
+
+    with ThreadPoolExecutor(10) as executor:
+        failed = [
+            p
+            for p, result in zip(projects, executor.map(check_project_exists, projects))
+            if not result
+        ]
+
+    if failed:
+        raise Exception("Illegal project(s)", ",".join(failed))
+
+@log_time
+def create_resources(test_project, run_id, gce_zone):
+    commands = [  # Some must be run sequentially
+        f"gcloud compute instances create instance{run_id} --project {test_project} --zone {gce_zone}",
+        [
+            f"gcloud compute disks create disk{run_id} --project {test_project} --zone {gce_zone}",
+            f"gcloud compute snapshots create snapshot{run_id} --source-disk disk{run_id} --source-disk-zone {gce_zone} --storage-location {gce_region(gce_zone)} --project {test_project}",
+        ],
+        [
+            f"gcloud pubsub topics create topic{run_id} --project {test_project}",
+            f"gcloud pubsub subscriptions create subscription{run_id} --topic topic{run_id} --project {test_project}",
+        ],
+        [
+            f"bq mk --dataset {test_project}:dataset{run_id}",
+            f"bq mk --table {test_project}:dataset{run_id}.table{run_id}",
+        ],
+        f"gsutil mb -p {test_project} gs://bucket{run_id}",
+    ]
+
+    with ThreadPoolExecutor(10) as executor:
+        failed = [
+            cmd
+            for cmd, result in zip(
+                commands, executor.map(run_command_or_commands_catch_exc, commands)
+            )
+            if isinstance(result, Exception)
+        ]
+    if failed:
+        print("Failed ", failed)
+        set_failing()
+
+
+if __name__ == "__main__":
+    assert_root_path()
+
+    main()
+    print("Exiting with ", "failure" if exit_code else "success")
+    sys.exit(exit_code)

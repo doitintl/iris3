@@ -100,15 +100,18 @@ def init_logging():
         format=f"%(levelname)s {iris_prefix()}%(trace_msg)s %(message)s",
         level=logging.INFO,
     )
-    logging.getLogger().setLevel(logging.INFO)
+    set_log_levels()
+    logging.info(
+        "logging: Initialized logger; config is  %s", get_config_redact_token()
+    )
 
+
+def set_log_levels():
+    logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("time-wrapper").setLevel(logging.INFO)
     logging.getLogger("time-ctx-mgr").setLevel(logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
-    logging.info(
-        "logging: Initialized logger; config is  %s", get_config_redact_token()
-    )
 
 
 def __log_end_timer(tag, start, logger):
@@ -212,6 +215,7 @@ def curr_func() -> str:
 
 
 def run_command(command_s):
+    assert "  " not in command_s  # double-space diesrupts the split
     command = command_s.split(" ")
     result = subprocess.run(command, stdout=subprocess.PIPE, check=True)
     output = result.stdout.decode("utf-8")

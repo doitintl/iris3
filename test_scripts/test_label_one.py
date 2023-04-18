@@ -8,8 +8,7 @@ from util.utils import init_logging
 
 init_logging()
 """
-
-This is a debugging tool  useful in development. It simulates the action that happens when the log sink generates
+This is a debugging tool used in development. It simulates the action that happens when the log sink generates
 a PubSub message, when a resource is created.
 
 

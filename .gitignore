@@ -17,9 +17,4 @@ TEMP*
 .venv
 virtenv*/
 
-#Testing
-test_scripts/
-fil-result/
-test_*
-/requirements-test.txt
 

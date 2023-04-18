@@ -95,6 +95,7 @@ ERROR=0
 
 # Cleanup on exit
 function clean_resources() {
+  start_clean=$(date "+%s")
   STATUS_BEFORE_TRAPEXIT=$?
   if  (("$ERROR" == 0 )) ; then
     EXIT_CODE=$STATUS_BEFORE_TRAPEXIT
@@ -122,8 +123,9 @@ function clean_resources() {
   gcloud app services delete iris3 -q --project $DEPLOYMENT_PROJECT
 
   FINISH_TEST=$(date "+%s")
+  elapsed_sec_clean=$((FINISH_TEST - start_clean))
   ELAPSED_SEC_TEST=$((FINISH_TEST - START_TEST))
-  echo >&2 "Elapsed time for $(basename "$0") ${ELAPSED_SEC_TEST} s; exiting with $ERROR"
+  echo >&2 "Time for $(basename "$0") cleanup was  ${elapsed_sec_clean}s and for whole test  ${ELAPSED_SEC_TEST}s; exiting with $ERROR"
 
   exit $EXIT_CODE
 }

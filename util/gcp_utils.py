@@ -173,7 +173,12 @@ def log_gae_memory(tag):
     if detect_gae():
         try:
             libs = ",".join(__loaded_libs)
-            mem_str = str(memory_usage()).replace("\n", "; ")
+            try:
+                mem_usage = memory_usage()
+            except Exception:  # Can get google.appengine.runtime.apiproxy_errors.ApplicationError
+                mem_usage = "<Memory usage N/A>"
+
+            mem_str = str(mem_usage).replace("\n", "; ")
             logging.info(
                 'RAM, GAEInst %s (invocations %s) "%s" %s: Libs:[%s];',
                 __inst_id,

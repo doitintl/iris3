@@ -8,7 +8,7 @@ from util.utils import log_time, init_logging
 
 init_logging()
 """
-This is a debugging tool useful in development.
+This is a debugging tool used in development.
 It simulates the action that happens in response to a Cloud Scheduler call to /schedule.
 
 To use it.

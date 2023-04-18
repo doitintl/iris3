@@ -1,6 +1,6 @@
 
 test_scripts/
-test_*
+
 sample_data/
 README.md
 *.sh
