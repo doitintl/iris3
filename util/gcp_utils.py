@@ -4,13 +4,17 @@ import re
 import uuid
 from collections import Counter
 from contextlib import contextmanager
+from datetime import datetime
 from typing import Dict, Any, Generator
 
 from google.appengine.api.runtime import memory_usage
+from google.appengine.api.system.system_service_pb2 import SystemStat
 
 from util import localdev_config, utils
 from util.detect_gae import detect_gae
-from util.utils import timed_lru_cache, log_time, dict_to_camelcase
+from util.utils import timed_lru_cache, log_time, dict_to_camelcase, tmp_dir
+import flask
+
 
 __invocation_count = Counter()
 
@@ -168,12 +172,10 @@ def log_gae_memory(tag):
     if detect_gae():
         try:
             libs = ",".join(__loaded_libs)
-            try:
-                mem_usage = memory_usage()
-            except Exception:  # Can get google.appengine.runtime.apiproxy_errors.ApplicationError
-                mem_usage = "<Memory usage N/A>"
+            mem_usage = __mem_usage_gae_only()
 
-            mem_str = str(mem_usage).replace("\n", "; ")
+            mem_str = f"{memory_usage:.2f}m"
+
             logging.info(
                 'RAM, GAEInst %s (invocations %s) "%s" %s: Libs:[%s];',
                 __inst_id,
@@ -184,6 +186,19 @@ def log_gae_memory(tag):
             )
         except Exception:
             logging.exception("")
+
+
+def __mem_usage_gae_only()->float:
+    if detect_gae():
+        try:
+            mem_usage = memory_usage()
+            return mem_usage.current
+        except Exception:  # Can produce google.appengine.runtime.apiproxy_errors.ApplicationError
+            mem_usage = -1
+        return  mem_usage
+    else: return -1
+
+
 
 
 @contextmanager
@@ -213,3 +228,14 @@ def enable_cloudprofiler():
         logging.info(
             "Exception initializing the Cloud Profiler %s, %s", exc, localdev_error_msg
         )
+
+
+def __isonow_for_filename():
+    return  datetime.now().isoformat()[:-7].replace(":",".")+'Z'
+
+
+
+def memray_filename():
+  pth=flask.request.root_path.lstrip("/") or "index"
+  mem = f"{round(memory_usage())}m"
+  return f"{tmp_dir()}/{__isonow_for_filename()}_{pth}_{mem}.bin"

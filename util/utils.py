@@ -250,3 +250,5 @@ def run_command(command_s):
     result = subprocess.run(command, stdout=subprocess.PIPE, check=True)
     output = result.stdout.decode("utf-8")
     return output.strip("\n")
+def tmp_dir()->str:
+    return "/tmp"
