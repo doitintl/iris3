@@ -10,7 +10,7 @@ projects: []
 # plugins: Only these plugins are enabled.
 # For example, add some of these to the list:
 #     bigquery, buckets, disks,  cloudsql, instances, snapshots, subscriptions, topics
-# But if the value is empty, *all* plugins are enabled
+# But if the value is empty, *all* plugins are enabled.
 plugins: []
 
 # iris_prefix plus underscore is prefixed to the key of each label that is added.
@@ -20,10 +20,10 @@ iris_prefix: iris
 # specific_prefixes gives a prefix per resource type, overriding iris_prefix.
 # The default is that there is no override.
 # For an example, see the comment below.
-# Empty vs empty-string:
-#  - An empty value, as in the Buckets example below, is treated as "None"
-#   and will not replace the general iris_prefix.
-#  - Empty string, as in the Bigquery example below, overrides
+# Null (missing) value vs empty-string:
+#  - A null (missing) value, as in the Buckets example below,
+#   will not replace the general iris_prefix.
+#  -  Empty string as "", as in the Bigquery example below, overrides
 #   the iris_prefix, so that you get labels with no prefix.
 specific_prefixes: {}
 

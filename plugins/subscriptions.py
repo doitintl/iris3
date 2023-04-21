@@ -41,14 +41,14 @@ class Subscriptions(Plugin):
             for o in self._list_all(project_id):
                 try:
                     self.label_resource(o, project_id)
-                except Exception as e:
+                except Exception:
                     logging.exception("")
 
     def __get_resource(self, path):
         try:
             o = self._cloudclient().get_subscription(subscription=path)
             return cloudclient_pb_obj_to_dict(o)
-        except errors.HttpError as e:
+        except errors.HttpError:
             logging.exception("")
             return None
 
@@ -96,7 +96,7 @@ class Subscriptions(Plugin):
         try:
             path = log_data["protoPayload"]["request"]["name"]
             return self.__get_resource(path)
-        except Exception as e:
+        except Exception:
             logging.exception("")
             return None
 

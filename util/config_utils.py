@@ -19,6 +19,10 @@ def iris_prefix() -> str:
     return config["iris_prefix"]
 
 
+def iris_homepage_text():
+    return f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
+
+
 def specific_prefix(resource_type) -> str:
     config = get_config()
     specific_prefixes = config.get("specific_prefixes", {})

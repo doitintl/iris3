@@ -1,15 +1,13 @@
 """Entry point for Iris."""
 
 import sys
-from datetime import datetime
 
 from flask import Response
 
-from util.deployment_time import deployment_time
-
 print("Initializing ", file=sys.stderr)
 import flask
-from util.gcp_utils import detect_gae, increment_invocation_count, invocation_count
+from util.gcp_utils import increment_invocation_count, invocation_count
+from util.detect_gae import detect_gae
 
 app = flask.Flask(__name__)
 if detect_gae():
@@ -46,11 +44,11 @@ from util.gcp_utils import (
 )
 
 from util.config_utils import (
-    iris_prefix,
     is_project_enabled,
     pubsub_token,
     is_in_test_or_dev_project,
     is_test_or_dev_configuration,
+    iris_homepage_text,
 )
 from util.utils import log_time, timing
 
@@ -75,11 +73,9 @@ PluginHolder.init()
 def index():
     increment_invocation_count("index")
     with gae_memory_logging("index"):
-        msg = f"I'm {iris_prefix().capitalize()}, pleased to meet you!"
+        msg = iris_homepage_text()
         if config_utils.is_test_or_dev_configuration():
             msg += "\nI'm running in test or dev mode."
-
-        msg += f"\nDeployed { datetime.fromtimestamp(deployment_time).isoformat() }"
 
         logging.info("index(); invocations of GAE instance : %s", invocation_count())
         return Response(msg, mimetype="text/plain", status=200)
@@ -90,8 +86,11 @@ def warmup():
     increment_invocation_count("warmup")
     with gae_memory_logging("warmup"):
         logging.info("warmup() called")
-
-        return "", 200, {}
+    try:
+        1 / 0
+    except Exception:
+        logging.exception("eeeeee")
+    return "", 200, {}
 
 
 @app.route("/schedule", methods=["GET"])
@@ -112,8 +111,10 @@ def schedule():
 
             enabled_projects = __get_enabled_projects()
             __send_pubsub_per_projectplugin(enabled_projects)
+            # All errors are actually caught before this point,
+            # since most errors are unrecoverable.
             return "OK", 200
-        except Exception as e:
+        except Exception:
             logging.exception("In schedule()")
             return "Error", 500
 
@@ -147,14 +148,12 @@ def __get_enabled_projects():
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
             raise Exception(
-                """In development or testing, we support no more than %d projects
-                    to avoid accidentally flooding the system. 
-                    %d projects are available, which exceeds that
-                   """
-                % (
-                    max_proj_in_dev,
-                    len(enabled_projs),
-                )
+                f"In development or testing, we support no more than {len(enabled_projs)} projects"
+                + f"to avoid accidentally flooding the system."
+                + f"{max_proj_in_dev} projects are available, which exceeds that."
+                + f"To avoid this limit, use config.yaml rather than config-dev.yaml or config-test.yaml,"
+                f"edit test_or_dev_project_markers in the config file,"
+                f"and run in the cloud rather than locally."
             )
     return enabled_projs
 
@@ -235,8 +234,10 @@ def label_one():
                     % (plugins_found, method_from_log)
                 )
             logging.info("OK for label_one %s", method_from_log)
+            # All errors are actually caught before this point,
+            # since most errors are unrecoverable.
             return "OK", 200
-        except Exception as e:
+        except Exception:
             project_id = data.get("resource", {}).get("labels", {}).get("project_id")
             logging.exception("Error on label_one %s %s", plugins_found, project_id)
             return "Error", 500
@@ -308,7 +309,7 @@ def do_label():
             data = __extract_pubsub_content()
             plugin_class_name = data["plugin"]
 
-            plugin = PluginHolder.get_plugin_insatance_by_name(plugin_class_name)
+            plugin = PluginHolder.get_plugin_instance_by_name(plugin_class_name)
             if not plugin:
                 logging.info(
                     "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
@@ -323,11 +324,13 @@ def do_label():
                     )
                     plugin.label_all(project_id)
                 logging.info("OK on do_label %s %s", plugin_class_name, project_id)
+            # All errors are actually caught before this point, since most errors are unrecoverable.
+            # However, Subscription gets "InternalServerError"" "InactiveRpcError" on occasion
+            #  so retry could be relevant. B
 
             return "OK", 200
-        except Exception as e:
+        except Exception:
             logging.exception("Error on do_label %s %s", plugin_class_name, project_id)
-
             return "Error", 500
 
 

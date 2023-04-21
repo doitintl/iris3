@@ -126,7 +126,7 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
         * Local vs App Engine
             * `config-dev.yaml` is not uploaded to App Engine and so is ignored there.
             * `config-test.yaml` and  `config.yaml` are available for use in App Engine.
-        * Copy `config.yaml.template` to the desired file name
+        * Copy `config.yaml.original` to the desired file name
         * All values in the `config*.yaml` are optional.
 * `app.yaml` lets you configure App Engine, for example to set a maximum number of instances. See App Engine
   documentation.

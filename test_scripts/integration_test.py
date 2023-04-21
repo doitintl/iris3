@@ -1,9 +1,7 @@
 import atexit
-import datetime
 import json
 import logging
 import os
-import re
 import sys
 import time
 import urllib.request
@@ -12,11 +10,11 @@ from subprocess import CalledProcessError
 from typing import Union, List
 
 from test_scripts.utils_for_tests import assert_root_path
+from util.config_utils import iris_prefix, iris_homepage_text
 from util.utils import (
     random_str,
     random_hex_str,
     run_command,
-    init_logging,
     log_time,
     set_log_levels,
 )
@@ -120,8 +118,8 @@ def main():
 
     try:
         create_and_describe_resources(test_project, run_id, gce_zone)
-    except Exception as e:
-        print(e)
+    except Exception:
+        logging.exception("")
 
     clean_resources(deployment_project, test_project, run_id, gce_zone)
     end = time.time()
@@ -136,7 +134,6 @@ def deploy(deployment_project):
 
 @log_time
 def setup_configuration():
-
     count_command_line_params()
     deployment_project = sys.argv[1]
     test_project = sys.argv[2]
@@ -169,20 +166,13 @@ def gce_region(gce_zone):
 
 def wait_for_traffic_shift(deployment_project):
     start_wait_for_trafficshift = time.time()
-    from util.deployment_time import (
-        deployment_time,
-    )  # Import only now, after modification
 
-    this_version_deploy_time = datetime.datetime.utcfromtimestamp(deployment_time)
     url = f"https://iris3-dot-{deployment_project}.uc.r.appspot.com/"
     while time.time() - start_wait_for_trafficshift < 180:  # break after 180 sec
         with urllib.request.urlopen(url) as response:
             txt_b = response.read()
             txt = str(txt_b, "UTF-8")
-            results = re.findall(r"Deployed (\S*)", txt)
-            assert len(results) == 1
-            on_site = datetime.datetime.fromisoformat(results[0])
-            if on_site == this_version_deploy_time:
+            if iris_homepage_text() in txt:
                 print(
                     "Wait for traffic shift took",
                     int(1000 * (time.time() - start_wait_for_trafficshift)),
@@ -190,10 +180,10 @@ def wait_for_traffic_shift(deployment_project):
                 )
                 return  # Could alternatively check for the iris_prefix, which is meant to be here unique.
             print(
-                "Site is now at time",
-                on_site,
-                " which is not this version's time ",
-                this_version_deploy_time,
+                'Site now has "',
+                txt[:100],
+                '"not including the expected ',
+                iris_prefix(),
             )
 
     raise TimeoutError(time.time() - start_wait_for_trafficshift)

@@ -29,7 +29,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             return gcp_object["zone"].split("/")[-1]
-        except KeyError as e:
+        except KeyError:
             logging.exception("")
             return None
 
@@ -38,7 +38,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
         try:
             zone = self._gcp_zone(gcp_object)
             return gcp_utils.region_from_zone(zone)
-        except KeyError as e:
+        except KeyError:
             logging.exception("")
             return None
 
@@ -73,7 +73,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             for resource in self._list_all(project_id, zone):
                 try:
                     self.label_resource(resource, project_id)
-                except Exception as e:
+                except Exception:
                     logging.exception("in label_one_zone")
 
         with ThreadPoolExecutor(max_workers=8) as executor:
@@ -81,8 +81,8 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             for future in as_completed(futs):
                 try:
                     _ = future.result()  # We Do not use ret; just a way of waiting
-                except Exception as exc:
-                    logging.exception("in getting result for future")
+                except Exception:
+                    logging.exception("Error getting result for future")
 
     def get_gcp_object(self, log_data: Dict) -> Optional[Dict]:
         try:
@@ -93,7 +93,7 @@ class GceZonalBase(GceBase, metaclass=ABCMeta):
             zone = log_data["resource"]["labels"]["zone"]
             resource = self._get_resource(project_id, zone, name)
             return resource
-        except Exception as e:
+        except Exception:
             logging.exception("get_gcp_object")
             return None
 

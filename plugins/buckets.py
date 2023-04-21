@@ -39,7 +39,7 @@ class Buckets(Plugin):
             location = gcp_object["location"]
             location = location.replace(".", "_").lower()
             return location
-        except KeyError as e:
+        except KeyError:
             logging.exception("")
             return None
 
@@ -51,7 +51,7 @@ class Buckets(Plugin):
             ret = self.__response_obj_to_dict(bucket_response)
             return ret
 
-        except Exception as e:
+        except Exception:
             logging.exception("")
             return None
 
@@ -62,7 +62,7 @@ class Buckets(Plugin):
         bucket = self._get_resource(buck_name, project_id)
         try:
             return bucket
-        except Exception as e:
+        except Exception:
             logging.exception("")
             return None
 
@@ -84,7 +84,7 @@ class Buckets(Plugin):
             for o in self._list_all(project_id):
                 try:
                     self.label_resource(o, project_id)
-                except Exception as e:
+                except Exception:
                     logging.exception("")
             if self.counter > 0:
                 self.do_batch()
@@ -107,5 +107,5 @@ class Buckets(Plugin):
             self.counter += 1
             if self.counter >= self._BATCH_SIZE:
                 self.do_batch()
-        except Exception as e:
+        except Exception:
             logging.exception("")

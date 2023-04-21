@@ -61,7 +61,6 @@ def do_local_http(
 
 
 def label_one(project, name, method_name, parent_name="", zone="", extra_args=None):
-
     with open(f"./sample_data/{method_name}.log_message.json") as f:
         file_contents = f.read()
         temp_obj = Template(file_contents)

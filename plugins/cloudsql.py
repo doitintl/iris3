@@ -44,7 +44,7 @@ class Cloudsql(Plugin):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             return gcp_object["region"].lower()
-        except KeyError as e:
+        except KeyError:
             logging.exception("")
             return None
 
@@ -57,7 +57,7 @@ class Cloudsql(Plugin):
                 .execute()
             )
             return result
-        except errors.HttpError as e:
+        except errors.HttpError:
             logging.exception("")
             return None
 
@@ -70,7 +70,7 @@ class Cloudsql(Plugin):
             instance = database_id[database_id.rfind(":") + 1 :]
             instance = self._get_resource(labels_["project_id"], instance)
             return instance
-        except Exception as e:
+        except Exception:
             logging.exception("")
             return None
 
@@ -95,7 +95,7 @@ class Cloudsql(Plugin):
                 for database_instance in response["items"]:
                     try:
                         self.label_resource(database_instance, project_id)
-                    except Exception as e:
+                    except Exception:
                         logging.exception("")
                 if "nextPageToken" in response:
                     page_token = response["nextPageToken"]

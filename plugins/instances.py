@@ -43,7 +43,7 @@ class Instances(GceZonalBase):
             ind = machine_type.rfind("/")
             machine_type = machine_type[ind + 1 :]
             return machine_type
-        except KeyError as e:
+        except KeyError:
             logging.exception("")
             return None
 
@@ -70,7 +70,7 @@ class Instances(GceZonalBase):
             )
 
             return self._get_resource_as_dict(request)
-        except errors.HttpError as e:
+        except errors.HttpError:
             logging.exception("")
             return None
 

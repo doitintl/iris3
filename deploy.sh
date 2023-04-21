@@ -44,8 +44,8 @@ DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
 
 ACK_DEADLINE=60
-MAX_DELIVERY_ATTEMPTS=5
-MIN_RETRY=60s
+MAX_DELIVERY_ATTEMPTS=10
+MIN_RETRY=30s
 MAX_RETRY=600s
 
 if [[ $# -eq 0 ]]; then
@@ -96,7 +96,7 @@ if [[  -f "config-test.yaml" ]]; then
   fi
 else
    if [[  ! -f "config.yaml" ]]; then
-       echo >&2 "Must have either  config.yaml or config-test.yaml"
+       echo >&2 "config.yaml Must have either config.yaml (use config.yaml.original as an example) or config-test.yaml"
        exit 1
   fi
 fi
@@ -328,7 +328,6 @@ else
     --member="$svcaccount" --role=roles/pubsub.publisher --quiet
 fi
 
-sed -i '' "s|\=.*|= $(date +%s )|" util/deployment_time.py
 
 # GAEVERSION might be unbound, so disable this check.
 set +u

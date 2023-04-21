@@ -1,0 +1,14 @@
+https://cloudlogging.app.goo.gl/Y1U6q9nJZrKiHw7HA
+
+severity=ERROR
+AND
+(
+OR   DECRYPTION_FAILED_OR_BAD_RECORD_MAC -- do_batch
+OR  "SSLError" -- in do_batch
+OR  KeyError -- do_batch
+
+OR  "google.appengine.runtime.apiproxy_errors.ApplicationError" -- in memory_usage
+OR  "Internal error. Please try again" --googleapiclient but perhaps not caused by googleapiclient
+OR  InternalServerError -  cloudclient for Subscription,  in update_subscription
+   _InactiveRpcError -- _cloudclient for Subscription , getting the resource
+)

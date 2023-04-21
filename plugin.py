@@ -90,8 +90,8 @@ class Plugin(metaclass=ABCMeta):
         try:
             proj = gcp_utils.get_project(project_id)
             return proj.get("labels", {})
-        except errors.HttpError as e:
-            logging.exception(f"Failing to get labels for project {project_id}: {e}")
+        except errors.HttpError:
+            logging.exception("Failing to get labels for project {project_id}")
             return {}
 
     def __iris_labels(self, gcp_object) -> Dict[str, str]:
@@ -134,7 +134,7 @@ class Plugin(metaclass=ABCMeta):
         try:
             if self._batch is not None:
                 self._batch.execute()
-        except Exception as e:
+        except Exception:
             logging.exception("Exception executing _batch()")
 
         self.__init_batch_req()
@@ -192,7 +192,7 @@ class Plugin(metaclass=ABCMeta):
                 index = name.rfind(separator)
                 name = name[index + 1 :]
             return name
-        except KeyError as e:
+        except KeyError:
             logging.exception("")
             return None
 
@@ -233,7 +233,6 @@ class PluginHolder:
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
             if config_utils.is_plugin_enabled(module):
                 plugin_class = load_plugin_class(module)
-                # instance = plugin_class()
                 cls.plugins[
                     plugin_class
                 ] = None  # Initialize with NO instance to avoid importing

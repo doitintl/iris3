@@ -36,7 +36,7 @@ def publish(msg: str, topic_id: str):
                 int(result)  # Int results indicate success, no need to log
             except ValueError:  # not an int, failed
                 logging.info("PubSub publishing result %s", result)
-        except Exception as e:
+        except Exception:
             logging.exception("")
 
     future = __get_publisher().publish(topic_path, msg.encode("utf-8"))

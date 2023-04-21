@@ -9,8 +9,8 @@ from typing import Dict, Any, Generator
 from google.appengine.api.runtime import memory_usage
 
 from util import localdev_config, utils
+from util.detect_gae import detect_gae
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase
-
 
 __invocation_count = Counter()
 
@@ -25,11 +25,6 @@ def invocation_count():
     keys = sorted(list(d.keys()))
     sorted_dict = {i: d[i] for i in keys}
     return sorted_dict
-
-
-def detect_gae():
-    gae_app = os.environ.get("GAE_APPLICATION", "")
-    return "~" in gae_app
 
 
 def current_project_id():
@@ -187,7 +182,7 @@ def log_gae_memory(tag):
                 mem_str,
                 libs,
             )
-        except Exception as e:
+        except Exception:
             logging.exception("")
 
 

@@ -12,7 +12,8 @@ from functools import lru_cache, wraps
 
 import flask
 
-from util.config_utils import iris_prefix, get_config_redact_token
+from util.config_utils import iris_prefix
+from util.detect_gae import detect_gae
 
 
 def cls_by_name(fully_qualified_classname):
@@ -71,7 +72,14 @@ def __random_str(length, s):
 def init_logging():
     class ContextFilter(logging.Filter):
         def filter(self, record):
-            try:
+
+            record.trace_msg = ""
+            record.path = ""
+
+            def get_path():
+                record.path = flask.request.path
+
+            def get_or_gen_trace():
                 if hasattr(flask.request, "trace_msg"):
                     trace_msg = flask.request.trace_msg
                 else:
@@ -79,31 +87,54 @@ def init_logging():
                         "X-Cloud-Trace-Context", "df" + random_str(28)
                     )
                     trace_id_trunc = truncate_middle(trace_id, 10, elipsis_len=0)
-                    trace_msg = " Trace: " + trace_id_trunc
+                    trace_msg = "Trace: " + trace_id_trunc
                     flask.request.trace_msg = trace_msg
-            except RuntimeError as e:
-                if "outside of request context" in str(e):
-                    # Occurs in app startup
-                    trace_msg = ""
-                else:
-                    raise e
+                record.trace_msg = trace_msg
 
-            record.trace_msg = trace_msg
+            for f in get_path, get_or_gen_trace:
+                try:
+                    f()
+                except RuntimeError as e:
+                    if "outside of request context" in str(e):
+                        pass  # Occurs in app startup
+                    else:
+                        raise e
+
             return True
 
-    f = ContextFilter()
+    ctx_fltr = ContextFilter()
 
-    h1 = logging.StreamHandler(sys.stdout)
-    h1.addFilter(filter=f)
+    class OneLineExceptionFormatter(logging.Formatter):
+        def formatException(self, exc_info):
+            fmtr = super(OneLineExceptionFormatter, self)
+            return fmtr.formatException(
+                exc_info
+            )  # or format into one line however you want to
+
+        def format(self, record):
+            fmtr = super(OneLineExceptionFormatter, self)
+            s = fmtr.format(record)
+            s = s.replace("\n", "\\n")
+            return s
+
+    fmt_str = f"%(levelname)s; {iris_prefix()}; %(trace_msg)s; %(path)s; %(message)s"
+    if detect_gae():
+        fmt = OneLineExceptionFormatter(fmt_str)
+    else:
+        fmt = logging.Formatter(fmt_str)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.addFilter(filter=ctx_fltr)
+    handler.setFormatter(fmt)
     logging.basicConfig(
-        handlers=[h1],
-        format=f"%(levelname)s {iris_prefix()}%(trace_msg)s %(message)s",
+        handlers=[handler],
         level=logging.INFO,
     )
+
     set_log_levels()
-    logging.info(
-        "logging: Initialized logger; config is  %s", get_config_redact_token()
-    )
+    # # logging.info(
+    # #     "Initialized logger; config is  %s", get_config_redact_token()
+    # )
 
 
 def set_log_levels():
@@ -146,7 +177,6 @@ def log_time(func):
 def timing(tag: str) -> None:
     start = time.time()
     yield
-
     __log_end_timer(tag, start, "time")
 
 

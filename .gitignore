@@ -1,4 +1,3 @@
-util/deployment_time.py
 
 # See config.yaml.original in git; the others are dynamic and so not put in git.
 config-test.yaml

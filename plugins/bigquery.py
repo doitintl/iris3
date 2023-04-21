@@ -47,7 +47,7 @@ class Bigquery(Plugin):
             index = name.rfind(":")
             name = name[index + 1 :]
             return name
-        except KeyError as e:
+        except KeyError:
             logging.exception("")
             return None
 
@@ -55,7 +55,7 @@ class Bigquery(Plugin):
         """Method dynamically called in generating labels, so don't change name"""
         try:
             return gcp_object["location"].lower()
-        except KeyError as e:
+        except KeyError:
             logging.exception("")
             return None
 
@@ -65,7 +65,7 @@ class Bigquery(Plugin):
                 f"{project_id}.{dataset_name}"
             )
             return self.__response_obj_to_dict(ds)
-        except errors.HttpError as e:
+        except errors.HttpError:
             logging.exception("")
             return None
 
@@ -82,7 +82,7 @@ class Bigquery(Plugin):
                 f"{project_id}.{dataset}.{table}"
             )
             return self.__response_obj_to_dict(table)
-        except errors.HttpError as e:
+        except errors.HttpError:
             logging.exception("")
             return None
 
@@ -96,7 +96,7 @@ class Bigquery(Plugin):
             projectid = dataset_name["projectId"]
             dataset = self.__get_dataset(projectid, datasetid)
             return dataset
-        except Exception as e:
+        except Exception:
             # KeyError datasetInsertRequest occurs if this is actually a table-insert
             # No such dataset; hoping for table
             pass
@@ -115,7 +115,7 @@ class Bigquery(Plugin):
             else:
                 logging.exception("")
             return None
-        except Exception as e:
+        except Exception:
             logging.exception("")
             return None
 
@@ -160,7 +160,7 @@ class Bigquery(Plugin):
             ds = client.get_dataset(f"{project_id}.{dataset_id}")
             ds.labels = labels["labels"]
             client.update_dataset(ds, ["labels"])
-        except Exception as e:
+        except Exception:
             logging.exception("")
 
     @sleep_and_retry
@@ -195,7 +195,7 @@ class Bigquery(Plugin):
             self.counter += 1
             if self.counter >= self._BATCH_SIZE:
                 self.do_batch()
-        except Exception as e:
+        except Exception:
             logging.exception("")
 
     @log_time
@@ -205,5 +205,5 @@ class Bigquery(Plugin):
                 self.__label_one_dataset(gcp_object, project_id)
             else:
                 self.__label_one_table(gcp_object, project_id)
-        except Exception as e:
+        except Exception:
             logging.exception("")

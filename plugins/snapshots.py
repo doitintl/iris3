@@ -47,7 +47,7 @@ class Snapshots(GceBase):
             add_loaded_lib("compute_v1")
             request = compute_v1.GetSnapshotRequest(project=project_id, snapshot=name)
             return self._get_resource_as_dict(request)
-        except errors.HttpError as e:
+        except errors.HttpError:
             logging.exception("")
             return None
 
@@ -56,7 +56,7 @@ class Snapshots(GceBase):
             for o in self._list_all(project_id):
                 try:
                     self.label_resource(o, project_id)
-                except Exception as e:
+                except Exception:
                     logging.exception("")
             if self.counter > 0:
                 self.do_batch()
@@ -70,7 +70,7 @@ class Snapshots(GceBase):
             project_id = log_data["resource"]["labels"]["project_id"]
 
             return self._get_resource(project_id, name)
-        except Exception as e:
+        except Exception:
             logging.exception("")
             return None
 

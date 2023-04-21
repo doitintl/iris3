@@ -73,7 +73,7 @@ class Disks(GceZonalBase):
             )
 
             return self._get_resource_as_dict(request)
-        except errors.HttpError as e:
+        except errors.HttpError:
             logging.exception("")
             return None
 
