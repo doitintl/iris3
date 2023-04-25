@@ -7,7 +7,11 @@ from flask import Response
 
 print("Initializing ", file=sys.stderr)
 import flask
-from util.gcp_utils import increment_invocation_count, invocation_count, memray_filename
+from util.gcp_utils import (
+    increment_invocation_count,
+    count_invocations_by_path,
+    memray_filename,
+)
 from util.detect_gae import detect_gae
 
 app = flask.Flask(__name__)
@@ -66,6 +70,9 @@ gcp_utils.set_env()
 logging.info(
     "env GAE_USE_SOCKETS_HTTPLIB is %s", os.environ.get("GAE_USE_SOCKETS_HTTPLIB")
 )
+logging.info(
+    "env PYTHONMALLOC is %s", os.environ.get("PYTHONMALLOC")
+)
 
 PluginHolder.init()
 
@@ -74,42 +81,43 @@ PluginHolder.init()
 def list_memray():
     s = ""
     for f in os.listdir(tmp_dir()):
-        s += f"<a href='/tmpfile?filename={f}'></a><br>"
-    return s, 200
+        s += f"<a href='/memrayfiles/{f}'>{f}</a><br>\n"
+    if not s:
+        s = "NONE FOUND"
+    return Response(s, mimetype="text/html", status=200)
 
 
-@app.route("/tmpfile")
-def tmpfile():
-    fn = flask.request.args['filename']
-    with open(f"{tmp_dir()}/{fn}", 'b') as f:
+@app.route("/memrayfiles/<filename>")
+def memrayfiles(filename):
+
+    with open(f"{tmp_dir()}/{filename}", "rb") as f:
         content = f.read()
-    return Response(content, mimetype='application/octet-stream', status=200)
+
+    return Response(content, mimetype="application/octet-stream", status=200)
 
 
 @app.route("/")
 def index():
-    with memray.Tracker(memray_filename()):
+    with memray.Tracker(memray_filename("index")):
         increment_invocation_count("index")
         with gae_memory_logging("index"):
             msg = iris_homepage_text()
             if config_utils.is_test_or_dev_configuration():
                 msg += "\nI'm running in test or dev mode."
 
-            logging.info("index(); invocations of GAE instance : %s", invocation_count())
+            logging.info(
+                "index(); invocations of GAE instance : %s", count_invocations_by_path()
+            )
             return Response(msg, mimetype="text/plain", status=200)
 
 
 @app.route("/_ah/warmup")
 def warmup():
-    with memray.Tracker(memray_filename()):
-
+    with memray.Tracker(memray_filename("warmup")):
         increment_invocation_count("warmup")
         with gae_memory_logging("warmup"):
             logging.info("warmup() called")
-        try:
-            1 / 0
-        except Exception:
-            logging.exception("eeeeee")
+
         return "", 200, {}
 
 
@@ -119,7 +127,7 @@ def schedule():
     """
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
-    with memray.Tracker(memray_filename):
+    with memray.Tracker(memray_filename("schedule")):
 
         increment_invocation_count("schedule")
         with gae_memory_logging("schedule"):
@@ -162,9 +170,9 @@ def __get_enabled_projects():
         raise Exception("No projects enabled at all")
 
     if (
-            not detect_gae()
-            or is_test_or_dev_configuration()
-            or is_in_test_or_dev_project(current_project_id())
+        not detect_gae()
+        or is_test_or_dev_configuration()
+        or is_in_test_or_dev_project(current_project_id())
     ):
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
@@ -173,8 +181,8 @@ def __get_enabled_projects():
                 + f"to avoid accidentally flooding the system."
                 + f"{max_proj_in_dev} projects are available, which exceeds that."
                 + f"To avoid this limit, use config.yaml rather than config-dev.yaml or config-test.yaml,"
-                  f"edit test_or_dev_project_markers in the config file,"
-                  f"and run in the cloud rather than locally."
+                f"edit test_or_dev_project_markers in the config file,"
+                f"and run in the cloud rather than locally."
             )
     return enabled_projs
 
@@ -184,9 +192,9 @@ def __send_pubsub_per_projectplugin(configured_projects):
     for project_id in configured_projects:
         for plugin_cls in PluginHolder.plugins:
             if (
-                    not plugin_cls.is_labeled_on_creation()
-                    or plugin_cls.relabel_on_cron()
-                    or config_utils.label_all_on_cron()
+                not plugin_cls.is_labeled_on_creation()
+                or plugin_cls.relabel_on_cron()
+                or config_utils.label_all_on_cron()
             ):
                 pubsub_utils.publish(
                     msg=json.dumps(
@@ -210,7 +218,7 @@ def __send_pubsub_per_projectplugin(configured_projects):
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
-    with memray.Tracker(memray_filename()):
+    with memray.Tracker(memray_filename("label_one")):
 
         increment_invocation_count("label_one")
         with gae_memory_logging("label_one"):
@@ -261,7 +269,9 @@ def label_one():
                 # since most errors are unrecoverable.
                 return "OK", 200
             except Exception:
-                project_id = data.get("resource", {}).get("labels", {}).get("project_id")
+                project_id = (
+                    data.get("resource", {}).get("labels", {}).get("project_id")
+                )
                 logging.exception("Error on label_one %s %s", plugins_found, project_id)
                 return "Error", 500
 
@@ -320,14 +330,16 @@ def __extract_pubsub_content() -> Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
-    with memray.Tracker(memray_filename()):
+    with memray.Tracker(memray_filename("do_label")):
         increment_invocation_count("do_label")
         with gae_memory_logging("do_label"):
 
             """Receive a push message from PubSub, sent from schedule() above,
             with instructions to label all objects of a given plugin and project_id.
             """
-            project_id = ""  # set up variables to allow logging in Exception block at end
+            project_id = (
+                ""  # set up variables to allow logging in Exception block at end
+            )
             plugin_class_name = ""
             try:
                 data = __extract_pubsub_content()
@@ -344,7 +356,9 @@ def do_label():
                     project_id = data["project_id"]
                     with timing(f"do_label {plugin_class_name} {project_id}"):
                         logging.info(
-                            "do_label() for %s in %s", plugin.__class__.__name__, project_id
+                            "do_label() for %s in %s",
+                            plugin.__class__.__name__,
+                            project_id,
                         )
                         plugin.label_all(project_id)
                     logging.info("OK on do_label %s %s", plugin_class_name, project_id)
@@ -354,7 +368,9 @@ def do_label():
 
                 return "OK", 200
             except Exception:
-                logging.exception("Error on do_label %s %s", plugin_class_name, project_id)
+                logging.exception(
+                    "Error on do_label %s %s", plugin_class_name, project_id
+                )
                 return "Error", 500
 
 

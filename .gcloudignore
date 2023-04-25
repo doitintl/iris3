@@ -2,6 +2,7 @@
 test_scripts/
 
 sample_data/
+memray/
 README.md
 *.sh
 TEMP*

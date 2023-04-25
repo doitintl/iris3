@@ -6,17 +6,17 @@ from collections import Counter
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Dict, Any, Generator
+from zoneinfo import ZoneInfo
 
 from google.appengine.api.runtime import memory_usage
-from google.appengine.api.system.system_service_pb2 import SystemStat
 
 from util import localdev_config, utils
 from util.detect_gae import detect_gae
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase, tmp_dir
-import flask
-
 
 __invocation_count = Counter()
+
+global_counter = 0
 
 
 def increment_invocation_count(path: str):
@@ -24,7 +24,7 @@ def increment_invocation_count(path: str):
     __invocation_count[path] += 1
 
 
-def invocation_count():
+def count_invocations_by_path():
     d = dict(__invocation_count)
     keys = sorted(list(d.keys()))
     sorted_dict = {i: d[i] for i in keys}
@@ -168,37 +168,32 @@ def add_loaded_lib(s):
 
 
 def log_gae_memory(tag):
-    """Use this only in   an AppEngine Request"""
+    """Use this only in an AppEngine Request"""
     if detect_gae():
         try:
             libs = ",".join(__loaded_libs)
-            mem_usage = __mem_usage_gae_only()
-
-            mem_str = f"{memory_usage:.2f}m"
-
+            curr_mem = __current_mem_usage_gae()
             logging.info(
-                'RAM, GAEInst %s (invocations %s) "%s" %s: Libs:[%s];',
+                "GAEInst %s %s; %s; RAM %s; Libs:[%s];",
                 __inst_id,
-                invocation_count(),
+                count_invocations_by_path(),
                 tag,
-                mem_str,
+                f"{curr_mem}m",
                 libs,
             )
         except Exception:
             logging.exception("")
 
 
-def __mem_usage_gae_only()->float:
+def __current_mem_usage_gae() -> int:
     if detect_gae():
         try:
-            mem_usage = memory_usage()
-            return mem_usage.current
+            mem_usage = round(memory_usage().current)
         except Exception:  # Can produce google.appengine.runtime.apiproxy_errors.ApplicationError
             mem_usage = -1
-        return  mem_usage
-    else: return -1
-
-
+        return mem_usage
+    else:
+        return -1
 
 
 @contextmanager
@@ -231,11 +226,22 @@ def enable_cloudprofiler():
 
 
 def __isonow_for_filename():
-    return  datetime.now().isoformat()[:-7].replace(":",".")+'Z'
+    now = datetime.now(tz=ZoneInfo("UTC"))
+    s = now.strftime("%Y-%m-%dT%H.%M.%S.%f")
+    s = s[:-3] + "Z"
+    return s
 
 
+def memray_filename(sample_loc):
+    if detect_gae():
+        memuse = __current_mem_usage_gae()
+        mem = f"_{memuse}m"
+    else:
+        mem = ""
+    global global_counter
+    global_counter += 1
+    ret = f"{tmp_dir()}/{__inst_id}_{__isonow_for_filename()}.{global_counter}_{sample_loc}{mem}.bin"
+    return ret
 
-def memray_filename():
-  pth=flask.request.root_path.lstrip("/") or "index"
-  mem = f"{round(memory_usage())}m"
-  return f"{tmp_dir()}/{__isonow_for_filename()}_{pth}_{mem}.bin"
+
+print(__isonow_for_filename())

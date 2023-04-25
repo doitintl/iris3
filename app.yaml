@@ -8,6 +8,8 @@ inbound_services:
   - warmup
 env_variables:
   GAE_USE_SOCKETS_HTTPLIB: False
+  PYTHONMALLOC: malloc
 app_engine_apis: true
+
 
 

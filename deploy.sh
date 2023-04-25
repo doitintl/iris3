@@ -89,16 +89,9 @@ echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
 
 # Must have one of these config (meanwhile, config-dev.yaml is only for local use)
-if [[  -f "config-test.yaml" ]]; then
-  if [[  -f "config.yaml" ]]; then
-       echo >&2 "Cannot have config.yaml if config-test.yaml exists"
-       exit 1
-  fi
-else
-   if [[  ! -f "config.yaml" ]]; then
+if [[ ! -f "config-test.yaml" ]]  && [[ ! -f "config.yaml" ]]; then
        echo >&2 "config.yaml Must have either config.yaml (use config.yaml.original as an example) or config-test.yaml"
        exit 1
-  fi
 fi
 
 

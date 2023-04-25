@@ -8,6 +8,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import CalledProcessError
 from typing import Union, List
+from urllib.error import HTTPError
 
 from test_scripts.utils_for_tests import assert_root_path
 from util.config_utils import iris_prefix, iris_homepage_text
@@ -169,24 +170,37 @@ def wait_for_traffic_shift(deployment_project):
 
     url = f"https://iris3-dot-{deployment_project}.uc.r.appspot.com/"
     while time.time() - start_wait_for_trafficshift < 180:  # break after 180 sec
-        with urllib.request.urlopen(url) as response:
-            txt_b = response.read()
-            txt = str(txt_b, "UTF-8")
-            if iris_homepage_text() in txt:
-                print(
-                    "Wait for traffic shift took",
-                    int(1000 * (time.time() - start_wait_for_trafficshift)),
-                    "msec",
-                )
-                return  # Could alternatively check for the iris_prefix, which is meant to be here unique.
-            print(
-                'Site now has "',
-                txt[:100],
-                '"not including the expected ',
-                iris_prefix(),
-            )
+        try:
+            found_it = __check_for_new_v(start_wait_for_trafficshift, url)
+            if found_it:
+                return
+            else:
+                time.sleep(3)
+                continue
+        except HTTPError as e:
+            logging.error(e)  # Keep trying despite exception
 
     raise TimeoutError(time.time() - start_wait_for_trafficshift)
+
+
+def __check_for_new_v(start_wait_for_trafficshift, url) -> bool:
+    with urllib.request.urlopen(url) as response:
+        txt_b = response.read()
+        txt = str(txt_b, "UTF-8")
+        if iris_homepage_text() in txt:
+            print(
+                "Wait for traffic shift took",
+                int(1000 * (time.time() - start_wait_for_trafficshift)),
+                "msec",
+            )
+            return True
+        print(
+            'Site now has "',
+            txt[:100],
+            '"not including the expected ',
+            iris_prefix(),
+        )
+        return False
 
 
 def fill_in_config_template(
@@ -265,6 +279,7 @@ def get_run_id():
     else:
         # Random value to distinguish this test runs from others
         run_id = random_str(4)
+    print("run_id is", run_id, file=sys.stderr)
     return run_id
 
 
@@ -337,5 +352,5 @@ if __name__ == "__main__":
     assert_root_path()
 
     main()
-    print("Exiting with ", "failure" if exit_code else "success")
+    print("Exiting with", "failure" if exit_code else "success")
     sys.exit(exit_code)

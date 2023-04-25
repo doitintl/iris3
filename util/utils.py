@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import random
 import string
 import subprocess
@@ -50,7 +51,8 @@ def methods(o, pfx="") -> typing.List[typing.Callable]:
 
 
 def random_str(length: int = 4):
-    return __random_str(length, string.ascii_lowercase + string.digits * 2)
+    start = __random_str(1, string.ascii_lowercase)
+    return start + __random_str(length - 1, string.ascii_lowercase + string.digits * 2)
 
 
 def random_hex_str(length: int = 10):
@@ -60,10 +62,10 @@ def random_hex_str(length: int = 10):
     )
 
 
-def __random_str(length, s):
+def __random_str(length, choose_from):
     return "".join(
         random.choices(
-            s,  # more digits
+            choose_from,
             k=length,
         )
     )
@@ -250,5 +252,14 @@ def run_command(command_s):
     result = subprocess.run(command, stdout=subprocess.PIPE, check=True)
     output = result.stdout.decode("utf-8")
     return output.strip("\n")
-def tmp_dir()->str:
-    return "/tmp"
+
+
+def tmp_dir() -> str:
+    subdir = "memray"
+    ret = f"/tmp/{subdir}"
+    mkdirs(ret)
+    return ret
+
+
+def mkdirs(ret):
+    pathlib.Path(ret).mkdir(parents=True, exist_ok=True)
