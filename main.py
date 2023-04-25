@@ -20,7 +20,7 @@ if detect_gae():
 
     app.wsgi_app = google.appengine.api.wrap_wsgi_app(app.wsgi_app)
 
-from util.utils import init_logging, tmp_dir
+from util.utils import init_logging, memray_tempdir
 
 # Must init logging before any library code writes logs (which would then just override our config)
 init_logging()
@@ -54,6 +54,7 @@ from util.config_utils import (
     is_in_test_or_dev_project,
     is_test_or_dev_configuration,
     iris_homepage_text,
+    use_memray,
 )
 from util.utils import log_time, timing
 
@@ -70,9 +71,7 @@ gcp_utils.set_env()
 logging.info(
     "env GAE_USE_SOCKETS_HTTPLIB is %s", os.environ.get("GAE_USE_SOCKETS_HTTPLIB")
 )
-logging.info(
-    "env PYTHONMALLOC is %s", os.environ.get("PYTHONMALLOC")
-)
+logging.info("env PYTHONMALLOC is %s", os.environ.get("PYTHONMALLOC"))
 
 PluginHolder.init()
 
@@ -80,7 +79,7 @@ PluginHolder.init()
 @app.route("/list_memray")
 def list_memray():
     s = ""
-    for f in os.listdir(tmp_dir()):
+    for f in os.listdir(memray_tempdir()):
         s += f"<a href='/memrayfiles/{f}'>{f}</a><br>\n"
     if not s:
         s = "NONE FOUND"
@@ -90,7 +89,7 @@ def list_memray():
 @app.route("/memrayfiles/<filename>")
 def memrayfiles(filename):
 
-    with open(f"{tmp_dir()}/{filename}", "rb") as f:
+    with open(f"{memray_tempdir()}/{filename}", "rb") as f:
         content = f.read()
 
     return Response(content, mimetype="application/octet-stream", status=200)
@@ -98,7 +97,7 @@ def memrayfiles(filename):
 
 @app.route("/")
 def index():
-    with memray.Tracker(memray_filename("index")):
+    def __index():
         increment_invocation_count("index")
         with gae_memory_logging("index"):
             msg = iris_homepage_text()
@@ -110,15 +109,28 @@ def index():
             )
             return Response(msg, mimetype="text/plain", status=200)
 
+    if use_memray():
+        with memray.Tracker(memray_filename("index")):
+            return __index()
+    else:
+        return __index()
+
 
 @app.route("/_ah/warmup")
 def warmup():
-    with memray.Tracker(memray_filename("warmup")):
+    def __warmup():
+
         increment_invocation_count("warmup")
         with gae_memory_logging("warmup"):
             logging.info("warmup() called")
 
         return "", 200, {}
+
+    if use_memray():
+        with memray.Tracker(memray_filename("warmup")):
+            return __warmup()
+    else:
+        return __warmup()
 
 
 @app.route("/schedule", methods=["GET"])
@@ -127,7 +139,8 @@ def schedule():
     """
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
-    with memray.Tracker(memray_filename("schedule")):
+
+    def __schedule():
 
         increment_invocation_count("schedule")
         with gae_memory_logging("schedule"):
@@ -146,6 +159,12 @@ def schedule():
             except Exception:
                 logging.exception("In schedule()")
                 return "Error", 500
+
+    if use_memray():
+        with memray.Tracker(memray_filename("schedule")):
+            return __schedule()
+    else:
+        return __schedule()
 
 
 @lru_cache(maxsize=1)
@@ -218,7 +237,7 @@ def __send_pubsub_per_projectplugin(configured_projects):
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
-    with memray.Tracker(memray_filename("label_one")):
+    def __label_one():
 
         increment_invocation_count("label_one")
         with gae_memory_logging("label_one"):
@@ -275,6 +294,12 @@ def label_one():
                 logging.exception("Error on label_one %s %s", plugins_found, project_id)
                 return "Error", 500
 
+    if use_memray():
+        with memray.Tracker(memray_filename("label_one")):
+            return __label_one()
+    else:
+        return __label_one()
+
 
 def __label_one_0(data, plugin_cls: Type[Plugin]):
     plugin = PluginHolder.get_plugin_instance(plugin_cls)
@@ -330,7 +355,8 @@ def __extract_pubsub_content() -> Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
-    with memray.Tracker(memray_filename("do_label")):
+    def __do_label():
+
         increment_invocation_count("do_label")
         with gae_memory_logging("do_label"):
 
@@ -372,6 +398,12 @@ def do_label():
                     "Error on do_label %s %s", plugin_class_name, project_id
                 )
                 return "Error", 500
+
+    if use_memray():
+        with memray.Tracker(memray_filename("do_label")):
+            return __do_label()
+    else:
+        return __do_label()
 
 
 def __check_pubsub_verification_token():

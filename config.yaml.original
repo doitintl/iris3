@@ -66,3 +66,8 @@ test_or_dev_project_markers:
   - test
   - dev
   - qa
+
+# If True, the application will generate memray files downloadable with the memray_download tool.
+# Default false
+use_memray:
+    False

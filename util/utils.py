@@ -254,12 +254,11 @@ def run_command(command_s):
     return output.strip("\n")
 
 
-def tmp_dir() -> str:
-    subdir = "memray"
-    ret = f"/tmp/{subdir}"
+def memray_tempdir() -> str:
+    ret = f"/tmp/memray"
     mkdirs(ret)
     return ret
 
 
-def mkdirs(ret):
-    pathlib.Path(ret).mkdir(parents=True, exist_ok=True)
+def mkdirs(dir_):
+    pathlib.Path(dir_).mkdir(parents=True, exist_ok=True)

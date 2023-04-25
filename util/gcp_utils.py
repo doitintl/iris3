@@ -12,7 +12,7 @@ from google.appengine.api.runtime import memory_usage
 
 from util import localdev_config, utils
 from util.detect_gae import detect_gae
-from util.utils import timed_lru_cache, log_time, dict_to_camelcase, tmp_dir
+from util.utils import timed_lru_cache, log_time, dict_to_camelcase, memray_tempdir
 
 __invocation_count = Counter()
 
@@ -240,7 +240,7 @@ def memray_filename(sample_loc):
         mem = ""
     global global_counter
     global_counter += 1
-    ret = f"{tmp_dir()}/{__inst_id}_{__isonow_for_filename()}.{global_counter}_{sample_loc}{mem}.bin"
+    ret = f"{memray_tempdir()}/{__inst_id}_{__isonow_for_filename()}.{global_counter}_{sample_loc}{mem}.bin"
     return ret
 
 

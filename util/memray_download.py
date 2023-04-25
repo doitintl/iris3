@@ -13,7 +13,8 @@ from util.utils import mkdirs, run_command
 
 
 def download(base, path):
-    if base.endswith("/") and path.startswith("/"): path=path[1:]
+    if base.endswith("/") and path.startswith("/"):
+        path = path[1:]
     url = base + path
     try:
 
@@ -46,10 +47,10 @@ def download_list_and_bins(base):
     html = download_txt(base, "list_memray")
     parser = ExtractHrefs()
     parser.feed(html)
-    existing_bin=[Path(p).stem for p in Path(dir_with_bin()).iterdir()]
+    existing_bin = [Path(p).stem for p in Path(dir_with_bin()).iterdir()]
     for path in parser.paths:
         bin_pth = Path(path)
-        exist= bin_pth.stem in existing_bin
+        exist = bin_pth.stem in existing_bin
 
         if not exist:
             bin_content = download(base, path)
@@ -70,7 +71,9 @@ def generate_flamegraphs():
     mkdirs(dir_with_html_leaks())
     mkdirs(dir_with_html_basic())
 
-    binfiles = list(filter(lambda filename: filename.endswith(".bin"), os.listdir(dir_with_bin())))
+    binfiles = list(
+        filter(lambda filename: filename.endswith(".bin"), os.listdir(dir_with_bin()))
+    )
     print(len(binfiles), "bin files in", dir_with_bin())
 
     for f in binfiles:
@@ -79,7 +82,11 @@ def generate_flamegraphs():
             binfn = f"{dir_with_bin()}/{f}"
             sz = os.path.getsize(binfn)
             if sz > 1000:
-                convert_bin_to_one_html(binfn, stem_for_html, False, )
+                convert_bin_to_one_html(
+                    binfn,
+                    stem_for_html,
+                    False,
+                )
                 convert_bin_to_one_html(binfn, stem_for_html, True)
 
     count_html = sum(1 for _ in Path(dir_with_html_basic()).iterdir())
@@ -124,8 +131,7 @@ def main():
     base = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000"
     if not base.endswith("/"):
         base += "/"
-    MINUTES = 60
-    while time.time() - start < 10 * MINUTES:
+    while time.time() - start < 10 * 60:
         try:
             download_and_convert(base)
         except HTTPError as e:
