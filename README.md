@@ -107,18 +107,12 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
   * Copy `config.yaml.original` to `config.yaml`.
   * Optionally configure by editing the configuration files ([See more documentation below](#configuration).)
 * Run `./deploy.sh <PROJECT_ID> `.
-    * The above is the default. There are also command-line options, to be put  at the end of the command line after the project id.
-      * Org and project
-        * Use `-o -p`  to deploy org elements and also project elements. If you omit both, then the default behavior is to deploy both, as if  `-o -p`  were given.
-        * Use `-o`  to deploy only org elements like roles and log sinks. You might want to do this if you have different people controlling the org and the project. 
-        * Once org elements are set up, only `-p` is needed, to deploy the Iris app to App Engine 
-      * Cloud Scheduler
-        * To use *only* Cloud Scheduler cron (i.e., without labeling resources on-creation), also use  `-c`.
-        * To *not at all* use Cloud Scheduler, delete schedule in `cron.yaml`.
+    * The above is the default. There are also command-line options, to be put  at the end of the command line after the project id. Run `deploy.sh -h` for documentation.
 * When you redeploy different versions of Iris code on top of old ones:
     * If new plugins were added or some removed, the log sink *will* be updated to reflect this.
-    * If the parameters for subscriptions or topics were changed in a new version of the Iris code, the subscriptions or
-      topics will *not* be updated. You would have to delete them first.
+    * If the parameters for subscriptions or topics were changed in a new version of the Iris code, the subscriptions or  topics will *not* be updated. You would have to delete them first.
+* If you are changing to or from  Cloud-Scheduler-only with or without `-c`, be sure to run both org and project deployments.         
+*  See `deploy.sh` for configuring Iris to add labels only with  Cloud Scheduler and not on-creation, or without the Scheduler at all, or with both Scheduler and on-creation. The latter is the default.
 
 ### Configuration
 

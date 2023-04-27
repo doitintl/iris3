@@ -36,6 +36,7 @@ gcloud organizations add-iam-policy-binding "$ORGID" \
 
 if [[ "$CRON_ONLY" == "true" ]]; then
   echo >&2 "CRON_ONLY set to true."
+
   gcloud logging sinks delete -q  --organization="$ORGID" "$LOG_SINK" || true
 else
   # Create PubSub topic for receiving logs about new GCP objects

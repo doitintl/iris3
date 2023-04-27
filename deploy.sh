@@ -63,9 +63,12 @@ while getopts 'cpo' opt; do
                   The project to which Iris 3 will be deployed
           Options, to be given at end of line, after project ID.
             If neither -p nor -o is given, this is treated as the default, -p -o (i.e., do both):
-                  -c: Use only Cloud Scheduler cron to add labels; do not add labels on resource creation.
                   -p: Deploy Iris (to the project given by the arg)
                   -o: Set up org-level elements like Log Sink
+                  -c: Use only Cloud Scheduler cron to add labels; do not add labels on resource creation.
+                  If you are changing to be Cloud-Scheduler-only with -c or not Cloud_Scheduler-only
+                  without -c, be sure to run both org and project deployments.
+                  (To *not at all* use Cloud Scheduler, delete the schedule in `cron.yaml`.)
           Environment variable:
                   GAEVERSION (Optional) sets the Google App Engine Version.
 EOF
