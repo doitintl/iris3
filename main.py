@@ -2,7 +2,7 @@
 
 import sys
 
-import memray
+
 from flask import Response
 
 print("Initializing ", file=sys.stderr)
@@ -10,7 +10,6 @@ import flask
 from util.gcp_utils import (
     increment_invocation_count,
     count_invocations_by_path,
-    memray_filename,
 )
 from util.detect_gae import detect_gae
 
@@ -20,7 +19,7 @@ if detect_gae():
 
     app.wsgi_app = google.appengine.api.wrap_wsgi_app(app.wsgi_app)
 
-from util.utils import init_logging, memray_tempdir
+from util.utils import init_logging
 
 # Must init logging before any library code writes logs (which would then just override our config)
 init_logging()
@@ -54,7 +53,6 @@ from util.config_utils import (
     is_in_test_or_dev_project,
     is_test_or_dev_configuration,
     iris_homepage_text,
-    use_memray,
 )
 from util.utils import log_time, timing
 
@@ -76,61 +74,29 @@ logging.info("env PYTHONMALLOC is %s", os.environ.get("PYTHONMALLOC"))
 PluginHolder.init()
 
 
-@app.route("/list_memray")
-def list_memray():
-    s = ""
-    for f in os.listdir(memray_tempdir()):
-        s += f"<a href='/memrayfiles/{f}'>{f}</a><br>\n"
-    if not s:
-        s = "NONE FOUND"
-    return Response(s, mimetype="text/html", status=200)
-
-
-@app.route("/memrayfiles/<filename>")
-def memrayfiles(filename):
-
-    with open(f"{memray_tempdir()}/{filename}", "rb") as f:
-        content = f.read()
-
-    return Response(content, mimetype="application/octet-stream", status=200)
-
-
 @app.route("/")
 def index():
-    def __index():
-        increment_invocation_count("index")
-        with gae_memory_logging("index"):
-            msg = iris_homepage_text()
-            if config_utils.is_test_or_dev_configuration():
-                msg += "\nI'm running in test or dev mode."
 
-            logging.info(
-                "index(); invocations of GAE instance : %s", count_invocations_by_path()
-            )
-            return Response(msg, mimetype="text/plain", status=200)
+    increment_invocation_count("index")
+    with gae_memory_logging("index"):
+        msg = iris_homepage_text()
+        if config_utils.is_test_or_dev_configuration():
+            msg += "\nI'm running in test or dev mode."
 
-    if use_memray():
-        with memray.Tracker(memray_filename("index")):
-            return __index()
-    else:
-        return __index()
+        logging.info(
+            "index(); invocations of GAE instance : %s", count_invocations_by_path()
+        )
+        return Response(msg, mimetype="text/plain", status=200)
 
 
 @app.route("/_ah/warmup")
 def warmup():
-    def __warmup():
 
-        increment_invocation_count("warmup")
-        with gae_memory_logging("warmup"):
-            logging.info("warmup() called")
+    increment_invocation_count("warmup")
+    with gae_memory_logging("warmup"):
+        logging.info("warmup() called")
 
-        return "", 200, {}
-
-    if use_memray():
-        with memray.Tracker(memray_filename("warmup")):
-            return __warmup()
-    else:
-        return __warmup()
+    return "", 200, {}
 
 
 @app.route("/schedule", methods=["GET"])
@@ -140,31 +106,23 @@ def schedule():
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
 
-    def __schedule():
+    increment_invocation_count("schedule")
+    with gae_memory_logging("schedule"):
+        try:
+            logging.info("Schedule called")
 
-        increment_invocation_count("schedule")
-        with gae_memory_logging("schedule"):
-            try:
-                logging.info("Schedule called")
+            is_cron = flask.request.headers.get("X-Appengine-Cron")
+            if not is_cron:
+                return "Access Denied: No Cron header found", 403
 
-                is_cron = flask.request.headers.get("X-Appengine-Cron")
-                if not is_cron:
-                    return "Access Denied: No Cron header found", 403
-
-                enabled_projects = __get_enabled_projects()
-                __send_pubsub_per_projectplugin(enabled_projects)
-                # All errors are actually caught before this point,
-                # since most errors are unrecoverable.
-                return "OK", 200
-            except Exception:
-                logging.exception("In schedule()")
-                return "Error", 500
-
-    if use_memray():
-        with memray.Tracker(memray_filename("schedule")):
-            return __schedule()
-    else:
-        return __schedule()
+            enabled_projects = __get_enabled_projects()
+            __send_pubsub_per_projectplugin(enabled_projects)
+            # All errors are actually caught before this point,
+            # since most errors are unrecoverable.
+            return "OK", 200
+        except Exception:
+            logging.exception("In schedule()")
+            return "Error", 500
 
 
 @lru_cache(maxsize=1)
@@ -237,68 +195,59 @@ def __send_pubsub_per_projectplugin(configured_projects):
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
-    def __label_one():
 
-        increment_invocation_count("label_one")
-        with gae_memory_logging("label_one"):
+    increment_invocation_count("label_one")
+    with gae_memory_logging("label_one"):
 
-            plugins_found = []
-            data = {}
-            try:
-                """
-                PubSub push endpoint for messages from the Log Sink
-                """
-                # Performance question: There are multiple log lines for each object-creation, for example,
-                # one for request and one for response. So, we may be labeling each object multiple times,
-                # which is a waste of resources.
-                #
-                # Or maybe not. Maybe the first PubSub-triggered action fails, because the resource is not initialized, and
-                # then the second one succeeds; need to check that.
+        plugins_found = []
+        data = {}
+        try:
+            """
+            PubSub push endpoint for messages from the Log Sink
+            """
+            # Performance question: There are multiple log lines for each object-creation, for example,
+            # one for request and one for response. So, we may be labeling each object multiple times,
+            # which is a waste of resources.
+            #
+            # Or maybe not. Maybe the first PubSub-triggered action fails, because the resource is not initialized, and
+            # then the second one succeeds; need to check that.
 
-                data = __extract_pubsub_content()
+            data = __extract_pubsub_content()
 
-                method_from_log = data["protoPayload"]["methodName"]
+            method_from_log = data["protoPayload"]["methodName"]
 
-                for plugin_cls in PluginHolder.plugins.keys():
-                    method_names = plugin_cls.method_names()
+            for plugin_cls in PluginHolder.plugins.keys():
+                method_names = plugin_cls.method_names()
 
-                    for supported_method in method_names:
-                        if supported_method.lower() in method_from_log.lower():
-                            if plugin_cls.is_labeled_on_creation():
-                                __label_one_0(data, plugin_cls)
+                for supported_method in method_names:
+                    if supported_method.lower() in method_from_log.lower():
+                        if plugin_cls.is_labeled_on_creation():
+                            __label_one_0(data, plugin_cls)
 
-                            plugins_found.append(
-                                plugin_cls.__name__
-                            )  # Append it even if not used due to is_labeled_on_creation False
+                        plugins_found.append(
+                            plugin_cls.__name__
+                        )  # Append it even if not used due to is_labeled_on_creation False
 
-                if not plugins_found:
-                    logging.info(
-                        "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
-                        method_from_log,
-                        config_utils.enabled_plugins(),
-                    )
-
-                if len(plugins_found) > 1:
-                    raise Exception(
-                        "Error: Multiple plugins found %s for %s"
-                        % (plugins_found, method_from_log)
-                    )
-                logging.info("OK for label_one %s", method_from_log)
-                # All errors are actually caught before this point,
-                # since most errors are unrecoverable.
-                return "OK", 200
-            except Exception:
-                project_id = (
-                    data.get("resource", {}).get("labels", {}).get("project_id")
+            if not plugins_found:
+                logging.info(
+                    "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                    method_from_log,
+                    config_utils.enabled_plugins(),
                 )
-                logging.exception("Error on label_one %s %s", plugins_found, project_id)
-                return "Error", 500
 
-    if use_memray():
-        with memray.Tracker(memray_filename("label_one")):
-            return __label_one()
-    else:
-        return __label_one()
+            if len(plugins_found) > 1:
+                raise Exception(
+                    "Error: Multiple plugins found %s for %s"
+                    % (plugins_found, method_from_log)
+                )
+            logging.info("OK for label_one %s", method_from_log)
+            # All errors are actually caught before this point,
+            # since most errors are unrecoverable.
+            return "OK", 200
+        except Exception:
+            project_id = data.get("resource", {}).get("labels", {}).get("project_id")
+            logging.exception("Error on label_one %s %s", plugins_found, project_id)
+            return "Error", 500
 
 
 def __label_one_0(data, plugin_cls: Type[Plugin]):
@@ -355,55 +304,43 @@ def __extract_pubsub_content() -> Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
-    def __do_label():
+    increment_invocation_count("do_label")
+    with gae_memory_logging("do_label"):
 
-        increment_invocation_count("do_label")
-        with gae_memory_logging("do_label"):
+        """Receive a push message from PubSub, sent from schedule() above,
+        with instructions to label all objects of a given plugin and project_id.
+        """
+        project_id = ""  # set up variables to allow logging in Exception block at end
+        plugin_class_name = ""
+        try:
+            data = __extract_pubsub_content()
+            plugin_class_name = data["plugin"]
 
-            """Receive a push message from PubSub, sent from schedule() above,
-            with instructions to label all objects of a given plugin and project_id.
-            """
-            project_id = (
-                ""  # set up variables to allow logging in Exception block at end
-            )
-            plugin_class_name = ""
-            try:
-                data = __extract_pubsub_content()
-                plugin_class_name = data["plugin"]
-
-                plugin = PluginHolder.get_plugin_instance_by_name(plugin_class_name)
-                if not plugin:
-                    logging.info(
-                        "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
-                        plugin_class_name,
-                        config_utils.enabled_plugins(),
-                    )
-                else:
-                    project_id = data["project_id"]
-                    with timing(f"do_label {plugin_class_name} {project_id}"):
-                        logging.info(
-                            "do_label() for %s in %s",
-                            plugin.__class__.__name__,
-                            project_id,
-                        )
-                        plugin.label_all(project_id)
-                    logging.info("OK on do_label %s %s", plugin_class_name, project_id)
-                # All errors are actually caught before this point, since most errors are unrecoverable.
-                # However, Subscription gets "InternalServerError"" "InactiveRpcError" on occasion
-                #  so retry could be relevant. B
-
-                return "OK", 200
-            except Exception:
-                logging.exception(
-                    "Error on do_label %s %s", plugin_class_name, project_id
+            plugin = PluginHolder.get_plugin_instance_by_name(plugin_class_name)
+            if not plugin:
+                logging.info(
+                    "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                    plugin_class_name,
+                    config_utils.enabled_plugins(),
                 )
-                return "Error", 500
+            else:
+                project_id = data["project_id"]
+                with timing(f"do_label {plugin_class_name} {project_id}"):
+                    logging.info(
+                        "do_label() for %s in %s",
+                        plugin.__class__.__name__,
+                        project_id,
+                    )
+                    plugin.label_all(project_id)
+                logging.info("OK on do_label %s %s", plugin_class_name, project_id)
+            # All errors are actually caught before this point, since most errors are unrecoverable.
+            # However, Subscription gets "InternalServerError"" "InactiveRpcError" on occasion
+            #  so retry could be relevant. B
 
-    if use_memray():
-        with memray.Tracker(memray_filename("do_label")):
-            return __do_label()
-    else:
-        return __do_label()
+            return "OK", 200
+        except Exception:
+            logging.exception("Error on do_label %s %s", plugin_class_name, project_id)
+            return "Error", 500
 
 
 def __check_pubsub_verification_token():

@@ -108,10 +108,6 @@ def is_test_or_dev_configuration():
     return get_config()["config_file"] != "config.yaml"
 
 
-def use_memray():
-    return get_config().get("use_memray")
-
-
 def is_in_test_or_dev_project(project_id):
     markers = get_config().get("test_or_dev_project_markers", [])
     for marker in markers:

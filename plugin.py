@@ -152,9 +152,8 @@ class Plugin(metaclass=ABCMeta):
     @abstractmethod
     def label_resource(self, gcp_object: Dict, project_id: str):
         """Label a single new object based on its description that comes from alog-line.
-
-        Not clear why we cannot get the project_id out of the gcp_object. Maybe one type of resource
-        does not include project_id"""
+        Not clear why we cannot get the project_id out of the gcp_object since the PubSub/Logging
+        messages seem to have this. Maybe one type of resource does not include project_id"""
         pass
 
     def _build_labels(self, gcp_object, project_id):

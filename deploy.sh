@@ -322,7 +322,7 @@ else
 fi
 
 
-# GAEVERSION might be unbound, so disable this check.
+# GAEVERSION might be unbound, so disable this -u check.
 set +u
 
 # Deploy to App Engine
@@ -332,6 +332,7 @@ then
 else
     gcloud app deploy --project $PROJECT_ID -q app.yaml cron.yaml
 fi
+
 set -u
 
 FINISH=$(date "+%s")
