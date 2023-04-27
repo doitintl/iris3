@@ -14,7 +14,7 @@ the [post that presents Iris](https://blog.doit-intl.com/iris-3-automatic-labeli
 Iris automatically assigns labels to Google Cloud Platform resources for manageability and easier billing reporting.
 
 Each supported resource in the GCP Organization will get automatically-generated labels with keys like `iris_zone` (the
-prefix is configurable), and the copied value.  
+prefix is configurable), and the copied value. 
 For example, a Google Compute Engine instance would get labels like
 `[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`.
 
@@ -34,7 +34,7 @@ Iris adds labels:
     - You can disable this, see ["Deploy"](#deployment).
 * On schedule, using a Cloud Scheduler cron job that the deployer sets up for you.
     - By default, only some types of resources are labeled on Cloud Scheduler runs.
-    - This can be configured so that all resources are labeled. See  `label_all_on_cron` below.
+    - This can be configured so that all resources are labeled. See `label_all_on_cron` below.
 
 ## Labeling existing resources
 
@@ -47,7 +47,7 @@ Iris adds labels:
 Right now, there are plugins for the following types of resources.
 
 To learn from the code what resources and keys are added, search for `def _gcp_<LABEL_NAME>)`, i.e., functions whose
-names start `_gcp_`.  
+names start `_gcp_`.
 The part of the function name after `_gcp_` is used for the label key.
 
 * Compute Engine Instances (Labels name, zone, region, instance type)
@@ -56,14 +56,14 @@ The part of the function name after `_gcp_` is used for the label key.
 * Compute Engine Disks (Labels name, zone, region)
     * Disks created with an Instance are not labeled on-creation. They are labeled with the Cloud Scheduler cron job.
     * The label indicating whether a disk is attached will change, if the state changed, on the cron job, not on-event.
-* Compute Engine Snapshots  (Labels name, zone, region)
+* Compute Engine Snapshots (Labels name, zone, region)
 * BigQuery Datasets (Labels name, zone, region)
 * BigQuery Tables (Labels name, zone, region)
 * PubSub Subscriptions (Labels name)
 * PubSub Topics (Labels name, zone)
 * CloudSQL (Labels name, zone, region)
     * These receive a label only on the Cloud Scheduler cron job, not on creation.
-* Cloud Storage buckets  (Labels name, location)
+* Cloud Storage buckets (Labels name, location)
 * In addition to these, project labels may be copied into each resource, if you have configured that in the
   configuration file.
 
@@ -76,14 +76,14 @@ The part of the function name after `_gcp_` is used for the label key.
 * You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
   [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
 
-* To deploy, you will need to have these roles on the *organization* where Iris is deployed.
+* For the first deployment, to set up roles and log sink. You will need to have these roles on the *organization* where Iris is deployed. These are not needed for subsequent deployments. 
     * *Organization Role Administrator* to create a custom IAM role for Iris that allows to get and set labels on the
       services.
       (Note that this is different from *Organization Administrator* and from Organization *Owner*.)
     * *Security Admin* OR *Organization Administrator* to allow Iris app engine service account to use the above role
     * *Logs Configuration Writer* to create an organization log sink that sends logs to PubSub
 
-* On the project where Iris is deployed, you will need Owner or these roles:
+* To deploy Iris itself, you will need Owner on the project where Iris is deployed, or else these roles. (To deploy only Iris itself after the  org elements are already deployed, use `-p` as documented below.)
     * *Project IAM Admin* to set up the custom role as mentioned above.
     * *App Engine Admin* to deploy to App Engine.
     * *Pub/Sub Admin* to create topics and subscriptions.
@@ -103,13 +103,18 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
 * Have Python 3.9+ as your default `python3`.
 * Install tools `envsubst` and `jq`.
 * Install and initialize `gcloud` using an account with the [above-mentioned](#before-deploying) roles.
-* Copy `config.yaml.original` to `config.yaml`.
-* Optionally configure by editing the configuration files ([See more documentation below](#configuration).)
-* Run `./deploy.sh <PROJECT_ID>`.
-    * To use *only* Cloud Scheduler cron (i.e., without labeling resources on-creation), put `-c` at the end of the
-      command line.
-    * For the opposite, to label resources on-creation and *not* label with Cloud Scheduler, thus saving the costs of
-      iterating over all resources, see below re the `label_all_on_cron` setting in the configuration file.
+* Config
+  * Copy `config.yaml.original` to `config.yaml`.
+  * Optionally configure by editing the configuration files ([See more documentation below](#configuration).)
+* Run `./deploy.sh <PROJECT_ID> `.
+    * The above is the default. There are also command-line options, to be put  at the end of the command line after the project id.
+      * Org and project
+        * Use `-o -p`  to deploy org elements and also project elements. If you omit both, then the default behavior is to deploy both, as if  `-o -p`  were given.
+        * Use `-o`  to deploy only org elements like roles and log sinks. You might want to do this if you have different people controlling the org and the project. 
+        * Once org elements are set up, only `-p` is needed, to deploy the Iris app to App Engine 
+      * Cloud Scheduler
+        * To use *only* Cloud Scheduler cron (i.e., without labeling resources on-creation), also use  `-c`.
+        * To *not at all* use Cloud Scheduler, delete schedule in `cron.yaml`.
 * When you redeploy different versions of Iris code on top of old ones:
     * If new plugins were added or some removed, the log sink *will* be updated to reflect this.
     * If the parameters for subscriptions or topics were changed in a new version of the Iris code, the subscriptions or
@@ -125,7 +130,7 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
             * otherwise `config.yaml` is used.
         * Local vs App Engine
             * `config-dev.yaml` is not uploaded to App Engine and so is ignored there.
-            * `config-test.yaml` and  `config.yaml` are available for use in App Engine.
+            * `config-test.yaml` and `config.yaml` are available for use in App Engine.
         * Copy `config.yaml.original` to the desired file name
         * All values in the `config*.yaml` are optional.
 * `app.yaml` lets you configure App Engine, for example to set a maximum number of instances. See App Engine

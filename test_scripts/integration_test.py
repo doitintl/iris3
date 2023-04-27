@@ -68,27 +68,31 @@ def describe_resources(test_project, run_id, gce_zone):
         f"gcloud compute snapshots describe snapshot{run_id} {describe_flags}",
     ]
     with ThreadPoolExecutor(10) as executor:
-        zipped = list(
+        commands_and_executors = list(
             zip(commands, executor.map(run_command_or_commands_catch_exc, commands))
         )
-        failed = [cmd for cmd, result in zipped if isinstance(result, Exception)]
-        succeeded = {
-            cmd: result for cmd, result in zipped if not isinstance(result, Exception)
+        did_not_get_descrip = [cmd for cmd, result in commands_and_executors if isinstance(result, Exception)]
+        got_a_description = {
+            cmd: result for cmd, result in commands_and_executors if not isinstance(result, Exception)
         }
-    if failed:
-        print("Failed ", failed, "\nsucceeded", succeeded)
+    if did_not_get_descrip:
+        print("Failed to get any desc", did_not_get_descrip, "\nGot some desc", got_a_description)
         set_failing()
-
     else:
-        no_labels = []
-        for cmd, result in succeeded.items():
+        needed_label_not_found = []
+        found=[]
+        for cmd, result in got_a_description.items():
             j = json.loads(result)
             label = j["labels"]
             label_val = label.get(f"{run_id}_name")
-            if not label_val:
-                no_labels.append(cmd)
-        if no_labels:
-            print("no labels", no_labels)
+            if   label_val:
+                needed_label=found.append(cmd)
+            else:
+                needed_label_not_found.append(cmd)
+
+        if needed_label_not_found:
+            print("Needed label not found", needed_label_not_found,
+                  "\nNeeded label found",found)
             set_failing()
 
     gcs_cmd = f"gsutil label get gs://bucket{run_id}"
@@ -104,11 +108,10 @@ def describe_resources(test_project, run_id, gce_zone):
         # bucket labels start "gcs"
         label_val = j.get(f"gcs{run_id}_name")
         if not label_val:
-            print("GCS did not have the right label")
+            print("GCS did not have the needed label")
             set_failing()
-
-    print("Success: All labels found")
-    assert not exit_code, "Should not get here if already failed"
+    if not exit_code:
+      print("Success: All needed labels found")
 
 
 def main():
