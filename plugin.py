@@ -237,7 +237,7 @@ class PluginHolder:
                 ] = None  # Initialize with NO instance to avoid importing
                 loaded.append(plugin_class.__name__)
 
-        logging.info("Loaded  plugins: %s", loaded)
+
         assert cls.plugins, "No plugins defined"
 
     @classmethod

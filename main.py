@@ -19,7 +19,7 @@ if detect_gae():
 
     app.wsgi_app = google.appengine.api.wrap_wsgi_app(app.wsgi_app)
 
-from util.utils import init_logging
+from util.utils import init_logging, sort_dict
 
 # Must init logging before any library code writes logs (which would then just override our config)
 init_logging()
@@ -66,10 +66,7 @@ else:
 
 gcp_utils.set_env()
 
-logging.info(
-    "env GAE_USE_SOCKETS_HTTPLIB is %s", os.environ.get("GAE_USE_SOCKETS_HTTPLIB")
-)
-logging.info("env PYTHONMALLOC is %s", os.environ.get("PYTHONMALLOC"))
+logging.info("env  is %s", sort_dict( (os.environ.copy())))
 
 PluginHolder.init()
 
@@ -254,10 +251,10 @@ def __label_one_0(data, plugin_cls: Type[Plugin]):
     plugin = PluginHolder.get_plugin_instance(plugin_cls)
     gcp_object = plugin.get_gcp_object(data)
     if gcp_object is not None:
-        project_id = data["resource"]["labels"]["project_id"]
+        project_id = data["labels"]["project_id"]
         if is_project_enabled(project_id):
             logging.info(
-                "Will label_one() in %s, existing object %s...",
+                "Will label_one() in %s, existing object %s ",
                 project_id,
                 str(gcp_object)[:100],
             )

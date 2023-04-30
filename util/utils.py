@@ -256,3 +256,9 @@ def run_command(command_s):
 
 def mkdirs(dir_):
     pathlib.Path(dir_).mkdir(parents=True, exist_ok=True)
+
+
+def sort_dict(d):
+    keys = sorted(list(d.keys()))
+    sorted_dict = {i: d[i] for i in keys}
+    return sorted_dict

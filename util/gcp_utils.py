@@ -12,7 +12,7 @@ from google.appengine.api.runtime import memory_usage
 
 from util import localdev_config, utils
 from util.detect_gae import detect_gae
-from util.utils import timed_lru_cache, log_time, dict_to_camelcase
+from util.utils import timed_lru_cache, log_time, dict_to_camelcase, sort_dict
 
 __invocation_count = Counter()
 
@@ -26,9 +26,7 @@ def increment_invocation_count(path: str):
 
 def count_invocations_by_path():
     d = dict(__invocation_count)
-    keys = sorted(list(d.keys()))
-    sorted_dict = {i: d[i] for i in keys}
-    return sorted_dict
+    return sort_dict(d)
 
 
 def current_project_id():
