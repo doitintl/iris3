@@ -36,7 +36,7 @@ PUBSUB_VERIFICATION_TOKEN=$(python3 ./util/print_pubsub_token.py)
 LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
 DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
-declare -A enabled_services
+declare -a enabled_services
 while read -r svc _; do
   # We check that a key is in the associative array, treating it as a set.
   # The value (which is always "yes") does not matter, just that it exists as a key.
