@@ -1,0 +1,69 @@
+# Copy this to make your config.yaml;
+# You can also make  config-dev.yaml and config-test.yaml
+
+# Keys:
+
+# projects: Only resources in these projects will get labeled.
+# But if the value is empty, *all* projects in the organization are included.
+projects: []
+
+# plugins: Only these plugins are enabled.
+# For example, add some of these to the list:
+#     bigquery, buckets, disks,  cloudsql, instances, snapshots, subscriptions, topics
+# But if the value is empty, *all* plugins are enabled.
+plugins: []
+
+# iris_prefix plus underscore is prefixed to the key of each label that is added.
+#    If empty string is used (the default), then there is no prefix.
+iris_prefix: iris
+
+# specific_prefixes gives a prefix per resource type, overriding iris_prefix.
+# The default is that there is no override.
+# For an example, see the comment below.
+# Null (missing) value vs empty-string:
+#  - A null (missing) value, as in the Buckets example below,
+#   will not replace the general iris_prefix.
+#  -  Empty string as "", as in the Bigquery example below, overrides
+#   the iris_prefix, so that you get labels with no prefix.
+specific_prefixes: {}
+
+# Example:
+# specific_prefixes:
+#   Buckets:
+#   Bigquery: ""
+#   Cloudsql: sql
+#   Disks: gcedisk
+#   Instances: gce
+#   Snapshots:
+#   Subscriptions:
+#   Topics:
+
+# If from_project is True, then for each resource we are labeling, copy the labels from its project onto it.
+# The default is False.
+from_project: True
+
+# If label_all_on_cron is False (the default), then to save money,
+#  only resources of certain types get labeled on cron: those whose plugins either
+#    - return True on relabel_on_cron() (like Disks)
+#    - or return False in is_labeled_on_creation() (like Cloud SQL)
+# If it isTrue, then all resource types will be labeled on every Cloud Scheduler cycle.
+#   This is useful for labeling existing resources when you first launch Iris3.
+
+label_all_on_cron: False
+
+# Optionally change this token before first deployment for added security in
+# communication between PubSub and the Iris App on App Engine.
+# You could even re-generate a new token per deployment.
+# Note that this token-based approach is not very secure, though it  was once recommended by Google.
+# However, so long as the GCP project running the Iris3 AppEngine service is otherwise secure,
+# this token protects against unwanted invocations of labeling.
+pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
+
+# If running in a project with one of the strings in the name,
+# then scheduled labelings will fail if more than 3 projects are enabled.
+test_or_dev_project_markers:
+  - playground
+  - test
+  - dev
+  - qa
+
