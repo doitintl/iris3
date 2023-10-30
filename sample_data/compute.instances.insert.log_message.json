@@ -70,7 +70,7 @@
         }
       }
     ],
-    "resourceName": "projects/${project}/zones${zone}/instances/${name}",
+    "resourceName": "projects/${project}/zones/${zone}/instances/${name}",
     "request": {
       "deletionProtection": false,
       "description": "",

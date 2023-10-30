@@ -212,21 +212,17 @@ examples.
    override `relabel_on_cron()` and return `True`. This will allow Cloud Scheduler cron to relabel them. (We label
    on-event only for creation events, so Cloud Scheduler is the way to relabel mutated state.)
 
-   f. For resources where labeling must be skipped under certain conditions, override `block_labeling()` and
-   return `True` where needed.
+   f. For resources where labeling must be skipped under certain conditions, override `block_labeling()` and return `True` where needed.
 
-2. Add your API to the `required_svcs` in `deploy.sh`
+2. Add your API to the `required_svcs` in `deploy.sh`.
 
 3. Add your Google Cloud API "methods" to `log_filter` in `deploy.sh`.
     * `methodName` is part of the logs generated on creation.
     * See examples of such logs in `sample_data` directory.
-        * E.g., you can see a log sample for bucket creation, in
-          file `sample_data/storage.buckets.create.log_message.json`.
-          (Or create a bucket and look at the log.)
+        * E.g., you can see a log sample for bucket creation, in file `sample_data/storage.buckets.create.log_message.json`. (Or create a bucket and look at the log.)
         * In that file you see `"methodName": "storage.buckets.create"`.
 
-4. Add roles in `roles.yaml` allowing Iris, for each resource type, to list, get, and update (permission setLabels, for
-   resources where it is available, or update where it is not).
+4. Add roles in `roles.yaml` allowing Iris, for each resource type, to list, get, and update (permission setLabels, for resources where it is available, or update where it is not).
 
 ### Testing
 

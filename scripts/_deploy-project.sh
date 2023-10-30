@@ -6,7 +6,7 @@
 # - Optionally set environment variable GAEVERSION to set the Google App Engine Version.
 #
 
-set -x
+#set -x
 set -u
 set -e
 

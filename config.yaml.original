@@ -1,6 +1,8 @@
 # Copy this to make your config.yaml;
 # You can also make  config-dev.yaml and config-test.yaml
 
+# The default values as-is should work out-of-the-box.
+
 # Keys:
 
 # projects: Only resources in these projects will get labeled.
@@ -14,17 +16,17 @@ projects: []
 plugins: []
 
 # iris_prefix plus underscore is prefixed to the key of each label that is added.
-#    If empty string is used (the default), then there is no prefix.
+#    If empty string is used (the default), then no prefix and no underscore is addded.
 iris_prefix: iris
 
-# specific_prefixes gives a prefix per resource type, overriding iris_prefix.
+# specific_prefixes gives a prefix per resource type, instead of iris_prefix.
 # The default is that there is no override.
-# For an example, see the comment below.
-# Null (missing) value vs empty-string:
+# About the meaning of null (missing) values vs empty-string:
 #  - A null (missing) value, as in the Buckets example below,
 #   will not replace the general iris_prefix.
 #  -  Empty string as "", as in the Bigquery example below, overrides
 #   the iris_prefix, so that you get labels with no prefix.
+# For an example, see the comment below.
 specific_prefixes: {}
 
 # Example:

@@ -6,7 +6,7 @@
 # - Optionally set environment variable GAEVERSION to set the Google App Engine Version.
 #
 
-set -x
+#set -x
 set -u
 set -e
 
@@ -20,11 +20,23 @@ ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-toke
   https://cloudresourcemanager.googleapis.com/v1/projects/"${PROJECT_ID}":getAncestry | grep -A 1 organization |
   tail -n 1 | tr -d ' ' | cut -d'"' -f4)
 
+set +e
 # Create custom role to run iris
 if gcloud iam roles describe "$ROLEID" --organization "$ORGID"; then
   gcloud iam roles update -q "$ROLEID" --organization "$ORGID" --file roles.yaml
+  role_error=$?
 else
   gcloud iam roles create "$ROLEID" -q --organization "$ORGID" --file roles.yaml
+  role_error=$?
+fi
+
+set -e
+
+if [[ "$role_error"  ]]; then
+  echo "Error in accessing organization. Please either run ./deploy.sh -p to depoloy only project-level elements
+   (generally what you need for an incremental upgrade)
+   or run it with organization permissions to deploy organization-level elements like roles or Log Sink."
+  exit $role_error
 fi
 
 # Assign default iris app engine service account with role on organization level

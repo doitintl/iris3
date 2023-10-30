@@ -4,23 +4,18 @@
 #  See usage (deploy.sh -h)
 
 
-set -x
+#set -x
 set -u
 set -e
 
-  ./scripts/_deploy-org.sh
-
-
 SHELL_DETECTION=$(ps -p $$ -oargs= )
-echo 2
+
 if [[ ! "$SHELL_DETECTION" == *bash* ]]; then
   echo >&2 "Need Bash. Found \"$SHELL_DETECTION\""
   exit 1
 else
   echo ""
 fi
-
-echo 3
 
 if [[ "$BASH_VERSION" == 3. ]]; then
   echo >&2 "Need Bash version 4 and up. Now $BASH_VERSION"

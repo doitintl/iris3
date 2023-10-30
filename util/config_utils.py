@@ -97,7 +97,7 @@ def get_config() -> typing.Dict:
             config = yaml.full_load(config_file)
     except FileNotFoundError as fnfe:
         raise FileNotFoundError(
-            f"Could not find the config-*.yaml file, specifically {config_name}"
+            f"Could not find the config-*.yaml file, specifically {config_name}. You may want to create one, based perhaps on config.yaml.original"
         )
     config["config_file"] = config_name
 
