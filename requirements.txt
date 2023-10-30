@@ -1,5 +1,6 @@
 pyyaml==6.0
 Flask==2.2.3
+Werkzeug==2.2.2
 google-api-python-client==2.84.0
 google-cloud-pubsub==2.15.0
 
