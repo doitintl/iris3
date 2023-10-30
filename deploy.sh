@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 #
 # Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
-# Usage
-# - Pass the project as the first command line argument.
-# - Options -p -o -c as documented in usage (try -h)
-# - Optionally set environment variable GAEVERSION to set the Google App Engine Version.
-#
+#  See usage (deploy.sh -h)
+
 
 set -x
 set -u
 set -e
 
-SHELL_DETECTION=$(ps -p $$ -oargs= )
+  ./scripts/_deploy-org.sh
 
+
+SHELL_DETECTION=$(ps -p $$ -oargs= )
+echo 2
 if [[ ! "$SHELL_DETECTION" == *bash* ]]; then
   echo >&2 "Need Bash. Found \"$SHELL_DETECTION\""
   exit 1
 else
   echo ""
 fi
+
+echo 3
 
 if [[ "$BASH_VERSION" == 3. ]]; then
   echo >&2 "Need Bash version 4 and up. Now $BASH_VERSION"
@@ -60,15 +62,17 @@ while getopts 'cpo' opt; do
     cat <<EOF
       Usage deploy.sh PROJECT_ID [-c]
           Argument:
-                  The project to which Iris 3 will be deployed
+                  The project to which Iris will be deployed
           Options, to be given at end of line, after project ID.
-            If neither -p nor -o is given, this is treated as the default, -p -o (i.e., do both):
+            If neither -p nor -o is given, this is treated as "do both": equivalent to -p -o
+            Flags:
                   -p: Deploy Iris (to the project given by the arg)
                   -o: Set up org-level elements like Log Sink
-                  -c: Use only Cloud Scheduler cron to add labels; do not add labels on resource creation.
-                  If you are changing to be Cloud-Scheduler-only with -c or not Cloud_Scheduler-only
-                  without -c, be sure to run both org and project deployments.
-                  (To *not at all* use Cloud Scheduler, delete the schedule in `cron.yaml`.)
+                  -c: Use only Cloud Scheduler cron to add labels; i.e., do not add labels on resource creation.
+                  Without -c, labels are added on both cron and resource creation.
+                  If you are changing this value, in other words, rerunning with -c or without it to
+                  change the value, be sure to run both org and project deployments.
+                  (To *not* use Cloud Scheduler, delete the schedule in `cron.yaml`.)
           Environment variable:
                   GAEVERSION (Optional) sets the Google App Engine Version.
 EOF
@@ -91,6 +95,7 @@ gcloud projects describe "$PROJECT_ID" || {
 
 echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
+
 
 if [[ "$deploy_org" == "true" ]]; then
   ./scripts/_deploy-org.sh
