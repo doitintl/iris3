@@ -24,12 +24,12 @@ config_test_yaml = "config-test.yaml"
 
 GCE_ZONE = "europe-central2-b"
 
-exit_code = 0
+glb_exit_code = 0
 
 
 def set_failing():
-    global exit_code
-    exit_code = 1
+    global glb_exit_code
+    glb_exit_code = 1
 
 
 def run_command_or_commands_catch_exc(command_or_commands: Union[str, List[str]]):
@@ -71,47 +71,80 @@ def describe_resources(test_project, run_id, gce_zone):
         commands_and_executors = list(
             zip(commands, executor.map(run_command_or_commands_catch_exc, commands))
         )
-        did_not_get_descrip = [cmd for cmd, result in commands_and_executors if isinstance(result, Exception)]
+        did_not_get_descrip = [
+            cmd
+            for cmd, result in commands_and_executors
+            if isinstance(result, Exception)
+        ]
         got_a_description = {
-            cmd: result for cmd, result in commands_and_executors if not isinstance(result, Exception)
+            cmd: result
+            for cmd, result in commands_and_executors
+            if not isinstance(result, Exception)
         }
     if did_not_get_descrip:
-        print("Failed to get any desc", did_not_get_descrip, "\nGot some desc", got_a_description)
+        print(
+            "Failed to get any description",
+            did_not_get_descrip,
+            "\nGot some desc",
+            got_a_description,
+        )
         set_failing()
     else:
         needed_label_not_found = []
-        found=[]
+        found = []
         for cmd, result in got_a_description.items():
             j = json.loads(result)
-            label = j["labels"]
-            label_val = label.get(f"{run_id}_name")
-            if   label_val:
-                needed_label=found.append(cmd)
+            labels = j.get("labels", {})
+            label_val = labels.get(f"{run_id}_name")
+            if label_val:
+                found.append(cmd)
             else:
                 needed_label_not_found.append(cmd)
+        gcs_cmd, gcs_lbl_found=get_gcs_label(run_id)
+        if gcs_lbl_found:
+            found.append(gcs_cmd)
+        else:
+            needed_label_not_found.append(gcs_cmd)
 
-        if needed_label_not_found:
-            print("Needed label not found", needed_label_not_found,
-                  "\nNeeded label found",found)
+        if len(needed_label_not_found)>0:
+            print(
+                "Needed label not found",
+                needed_label_not_found,
+                "\nNeeded label found",
+                found,
+            )
             set_failing()
 
+    if not glb_exit_code:
+        print("Success: All needed labels found")
+
+
+def get_gcs_label(run_id):
     gcs_cmd = f"gsutil label get gs://bucket{run_id}"
-    out = run_command_or_commands_catch_exc(gcs_cmd)
-    if isinstance(out, Exception):
+    out_gcs = run_command_or_commands_catch_exc(gcs_cmd)
+    label_val=None
+    if isinstance(out_gcs, Exception):
         print("Failed to describe bucket:", gcs_cmd)
         set_failing()
     else:
-        assert isinstance(out, str), type(out)
-        j = json.loads(out)
-        # In GCS, no "labels" wrapper for the actual label
-        # Also, for a test of labels that are specific to a resource type,
-        # bucket labels start "gcs"
-        label_val = j.get(f"gcs{run_id}_name")
+        assert isinstance(out_gcs, str), type(out_gcs)
+        if out_gcs.strip() == "":
+            label_val = ""
+        else:
+            try:
+                j = json.loads(out_gcs)
+                # In GCS, no "labels" wrapper for the actual label
+                # Also, for a test of labels that are specific to a resource type,
+                # bucket labels start "gcs"
+                label_val = j.get(f"gcs{run_id}_name")
+            except json.decoder.JSONDecodeError as e:
+                print(e, "for output\"", out_gcs, '"')
+                label_val = None
+
         if not label_val:
-            print("GCS did not have the needed label")
+            print("GCS bucket did not have the needed label")
             set_failing()
-    if not exit_code:
-      print("Success: All needed labels found")
+    return gcs_cmd,label_val
 
 
 def main():
@@ -200,14 +233,14 @@ def __check_for_new_v(start_wait_for_trafficshift, url) -> bool:
         print(
             'Site now has "',
             txt[:100],
-            '"not including the expected ',
+            '...", not yet including the expected iris_prefix',
             iris_prefix(),
         )
         return False
 
 
 def fill_in_config_template(
-    run_id, deployment_project, test_project, pubsub_test_token
+        run_id, deployment_project, test_project, pubsub_test_token
 ):
     with open("config.yaml.test.template") as template_file:
         filled_template = template_file.read()
@@ -232,6 +265,11 @@ def remove_config_file():
 
 @log_time
 def clean_resources(deployment_project, test_project, run_id, gce_zone):
+    def pause_for_user_input():
+        print("Type ENTER to proceed to clean up resources ")
+        _ = sys.stdin.readline()
+    #pause_for_user_input()# Use this in debugging, to keep the test resources alive until you hit E
+
     remove_config_file()
     commands = [
         f"gcloud compute instances delete -q instance{run_id} --project {test_project} --zone {gce_zone}",
@@ -257,6 +295,8 @@ def clean_resources(deployment_project, test_project, run_id, gce_zone):
     if failed:
         print("Failed to delete", failed)
     # Do not set_failing. If we fail on cleanup,there is not much to do
+
+
 
 
 def count_command_line_params():
@@ -355,5 +395,5 @@ if __name__ == "__main__":
     assert_root_path()
 
     main()
-    print("Exiting with", "failure" if exit_code else "success")
-    sys.exit(exit_code)
+    print("Exiting with", "failure" if glb_exit_code else "success")
+    sys.exit(glb_exit_code)

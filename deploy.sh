@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-#
-# Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
-#  See usage (deploy.sh -h)
 
+# See usage (deploy.sh -h).
+# Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
 
 #set -x
 set -u
@@ -93,11 +92,11 @@ gcloud config set project "$PROJECT_ID"
 
 
 if [[ "$deploy_org" == "true" ]]; then
-  ./scripts/_deploy-org.sh
+  ./scripts/_deploy-org.sh || exit 1
 fi
 
 if [[ "$deploy_proj" == "true" ]]; then
-  ./scripts/_deploy-project.sh
+  ./scripts/_deploy-project.sh || exit 1
 fi
 
 FINISH=$(date "+%s")

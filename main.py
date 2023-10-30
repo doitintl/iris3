@@ -66,7 +66,7 @@ else:
 
 gcp_utils.set_env()
 
-logging.info("env  is %s", sort_dict( (os.environ.copy())))
+logging.info("env  is %s", sort_dict((os.environ.copy())))
 
 PluginHolder.init()
 
@@ -251,12 +251,12 @@ def __label_one_0(data, plugin_cls: Type[Plugin]):
     plugin = PluginHolder.get_plugin_instance(plugin_cls)
     gcp_object = plugin.get_gcp_object(data)
     if gcp_object is not None:
-        project_id = data["labels"]["project_id"]
+        project_id = data["resource"]["labels"]["project_id"]
+        name = data["protoPayload"]["resourceName"]
         if is_project_enabled(project_id):
             logging.info(
-                "Will label_one() in %s, existing object %s ",
-                project_id,
-                str(gcp_object)[:100],
+                "Will label_one(): %s ",
+                name,
             )
             plugin.label_resource(gcp_object, project_id)
             plugin.do_batch()

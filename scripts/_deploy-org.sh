@@ -32,10 +32,12 @@ fi
 
 set -e
 
-if [[ "$role_error"  ]]; then
-  echo "Error in accessing organization. Please either run ./deploy.sh -p to depoloy only project-level elements
+if [[ "$role_error" != "0" ]]; then
+  echo "Error in accessing organization.
+    Please either run ./deploy.sh -p to depoly only project-level elements
    (generally what you need for an incremental upgrade)
-   or run it with organization permissions to deploy organization-level elements like roles or Log Sink."
+   or run it this script using a role that has organization permissions to
+   deploy organization-level elements like roles or Log Sink."
   exit $role_error
 fi
 
