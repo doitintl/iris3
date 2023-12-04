@@ -88,7 +88,7 @@ The part of the function name after `_gcp_` is used for the label key.
     * *App Engine Admin* to deploy to App Engine.
     * *Pub/Sub Admin* to create topics and subscriptions.
 
-#### Default  ine service needed
+#### Default App Engine service needed
 
 App Engine requires a "default service" to exist (even though Iris runs as the `iris3` service).
 

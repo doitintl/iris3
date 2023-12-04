@@ -143,7 +143,7 @@ def __get_enabled_projects():
     if not enabled_projs:
         raise Exception("No projects enabled at all")
 
-    if (
+    if (# These are three indications that we are running in dev/test
         not detect_gae()
         or is_test_or_dev_configuration()
         or is_in_test_or_dev_project(current_project_id())

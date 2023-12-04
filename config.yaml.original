@@ -61,8 +61,12 @@ label_all_on_cron: False
 # this token protects against unwanted invocations of labeling.
 pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
 
-# If running in a project with one of the strings in the name,
-# then scheduled labelings will fail if more than 3 projects are enabled.
+# If running (i.e., in AppEngine) in a project with one of the strings in the name,
+# then *scheduled* labelings (those created by the Cloud Scheduler)
+# will fail if more than 3 projects are enabled.
+# This is intended to prevent a situation where you forget to limit the scope of
+# labeling in development (see "projects" key above)
+# and so accidentally labeling your entire org with test-labels.
 test_or_dev_project_markers:
   - playground
   - test
