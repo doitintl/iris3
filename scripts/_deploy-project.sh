@@ -187,9 +187,9 @@ set +u
 # Deploy to App Engine
 if [[ -n "$GAEVERSION" ]]
 then
-    gcloud app deploy --project $PROJECT_ID --location GAE_REGION --version $GAEVERSION -q app.yaml cron.yaml
+    gcloud app deploy --project $PROJECT_ID --location $GAE_REGION --version $GAEVERSION -q app.yaml cron.yaml
 else
-    gcloud app deploy --project $PROJECT_ID --location GAE_REGION -q app.yaml cron.yaml
+    gcloud app deploy --project $PROJECT_ID --location $GAE_REGION -q app.yaml cron.yaml
 fi
 
 set -u
