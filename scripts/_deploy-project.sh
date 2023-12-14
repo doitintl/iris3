@@ -9,7 +9,7 @@
 #set -x
 set -u
 set -e
-
+GAE_REGION=us-central1
 GAE_REGION_ABBREV=uc
 
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
@@ -187,9 +187,9 @@ set +u
 # Deploy to App Engine
 if [[ -n "$GAEVERSION" ]]
 then
-    gcloud app deploy --project $PROJECT_ID --version $GAEVERSION -q app.yaml cron.yaml
+    gcloud app deploy --project $PROJECT_ID --location GAE_REGION --version $GAEVERSION -q app.yaml cron.yaml
 else
-    gcloud app deploy --project $PROJECT_ID -q app.yaml cron.yaml
+    gcloud app deploy --project $PROJECT_ID --location GAE_REGION -q app.yaml cron.yaml
 fi
 
 set -u

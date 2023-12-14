@@ -203,7 +203,7 @@ def gce_region(gce_zone):
 
 def wait_for_traffic_shift(deployment_project):
     start_wait_for_trafficshift = time.time()
-
+    #This assumes that Iris3 is on uc (us-central1), the default.
     url = f"https://iris3-dot-{deployment_project}.uc.r.appspot.com/"
     while time.time() - start_wait_for_trafficshift < 180:  # break after 180 sec
         try:

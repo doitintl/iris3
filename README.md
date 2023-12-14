@@ -13,7 +13,7 @@ the [post that presents Iris](https://blog.doit-intl.com/iris-3-automatic-labeli
 
 Iris automatically assigns labels to Google Cloud Platform resources for manageability and easier billing reporting.
 
-Each supported resource in the GCP Organization will get automatically-generated labels with keys like `iris_zone` (the
+All supported resources in all projects the GCP organization will get automatically-generated labels with keys like `iris_zone` (the
 prefix is configurable), and the copied value. 
 For example, a Google Compute Engine instance would get labels like
 `[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`.
@@ -88,20 +88,28 @@ The part of the function name after `_gcp_` is used for the label key.
     * *App Engine Admin* to deploy to App Engine.
     * *Pub/Sub Admin* to create topics and subscriptions.
 
-#### Default App Engine service needed
-
+####  App Engine Defaults
+##### Default Service
 App Engine requires a "default service" to exist (even though Iris runs as the `iris3` service).
 
-If your project does not have one, just deploy some trivial hello-world app as the default service. (Having this service
-online costs nothing.) Try [this](https://github.com/doitintl/QuickQuickstarts/tree/main/appengine_standard )
+If your project does not have a defaulkt service, just deploy some trivial=Hello World app as the default service. (Having this service
+ costs nothing.) Try [this](https://github.com/doitintl/QuickQuickstarts/tree/main/appengine_standard )
 open-source that I wrote to do that as easily as possible; or else step
 through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3/building-app) from Google.
+
+##### Regions
+Iris works by default in the AppEngine default region `us-central1` (`uc`).  
+
+Alternatively, you can try to work with an App Engine that is configured for another region (for example `us-east`, `ue`). This setting has not been tested. Change `GAE_REGION=us-central1` and `GAE_REGION_ABBREV=uc` in file `_deploy-project.sh`.  
+
+Note also that AppEngine does not let you change a region once it has been set.
 
 ### Deployment
 
 * Get the code with `git clone https://github.com/doitintl/iris3.git`
 * Have Python 3.9+ as your default `python3`.
 * Install tools `envsubst` and `jq`.
+* Make sure the command-line `pip3` works.
 * Install and initialize `gcloud` using an account with the [above-mentioned](#before-deploying) roles.
 * Config
   * Copy `config.yaml.original` to `config.yaml`.
@@ -112,7 +120,7 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
     * If new plugins were added or some removed, the log sink *will* be updated to reflect this.
     * If the parameters for subscriptions or topics were changed in a new version of the Iris code, the subscriptions or  topics will *not* be updated. You would have to delete them first.
 * If you are changing to or from  Cloud-Scheduler-only with or without `-c`, be sure to run both org and project deployments.         
-*  See `deploy.sh` for configuring Iris to add labels only with  Cloud Scheduler and not on-creation, or without the Scheduler at all, or with both Scheduler and on-creation. The latter is the default.
+* See `deploy.sh` for configuring Iris to add labels only with  Cloud Scheduler and not on-creation, or without the Scheduler at all, or with both Scheduler and on-creation. The latter is the default.
 
 ### Configuration
 

@@ -106,7 +106,7 @@ def schedule():
     increment_invocation_count("schedule")
     with gae_memory_logging("schedule"):
         try:
-            logging.info("Schedule called")
+            logging.info("Start schedule() invocation")
 
             is_cron = flask.request.headers.get("X-Appengine-Cron")
             if not is_cron:
@@ -150,13 +150,14 @@ def __get_enabled_projects():
     ):
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
-            raise Exception(
-                f"In development or testing, we support no more than {len(enabled_projs)} projects"
-                + f"to avoid accidentally flooding the system."
-                + f"{max_proj_in_dev} projects are available, which exceeds that."
-                + f"To avoid this limit, use config.yaml rather than config-dev.yaml or config-test.yaml,"
-                f"edit test_or_dev_project_markers in the config file,"
-                f"and run in the cloud rather than locally."
+            raise Exception("""In development or testing, we support no more than {max_proj_in_dev} projects, \
+                to avoid accidentally flooding the system.
+                {len(enabled_projs)} projects are available, which exceeds that. 
+                This limit is not imposed when you are running in the cloud (AppEngine), so long as you \ 
+                use config.yaml rather than config-dev.yaml or config-test.yaml. 
+                Also, you should check test_or_dev_project_markers in the config file, and edit this as needed,
+                noting that a project with one of these markers only labels up to {max_proj_in_dev} projects.
+                """
             )
     return enabled_projs
 
