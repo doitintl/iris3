@@ -100,7 +100,7 @@ through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3
 ##### Regions
 Iris works by default in the AppEngine default region `us-central1` (`uc`).  
 
-Alternatively, you can try to work with an App Engine that is configured for another region (for example `us-east`, `ue`). This setting has not been tested. Change `GAE_REGION=us-central1` and `GAE_REGION_ABBREV=uc` in file `_deploy-project.sh`.  
+Iris has not been tested in other regions, but if you want to try it, edit `GAE_REGION_ABBREV` in `_deploy_project.sh` 
 
 Note also that AppEngine does not let you change a region once it has been set.
 
