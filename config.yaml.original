@@ -65,7 +65,7 @@ pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
 # then *scheduled* labelings (those created by the Cloud Scheduler)
 # will fail if more than 3 projects are enabled.
 # This is intended to prevent a situation where you forget to limit the scope of
-# labeling in development (see "projects" key above)
+# labeling in development (see "projects" key above),
 # and so accidentally labeling your entire org with test-labels.
 test_or_dev_project_markers:
   - playground

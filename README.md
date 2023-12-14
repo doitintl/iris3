@@ -114,6 +114,8 @@ Note also that AppEngine does not let you change a region once it has been set.
 * Config
   * Copy `config.yaml.original` to `config.yaml`.
   * Optionally configure by editing the configuration files ([See more documentation below](#configuration).)
+* If you choose a project with `dev`, `qa`, `playground`, or `test` in it, a circuit-breaker will kick in: Schedule-driven labeling will fail if more than 3 projects are to be labeled. This is to protect from accidentally flooding thousands of projects  with test-labels. To avoid this, edit `test_or_dev_project_markers` in the configuration file.  
+The same circuit breaker will apply to scheduled-labeling when you run Iris in your local machine (i.e., not in App Engine), or if you use `config-dev.yaml` or `config-test.yaml`. 
 * Run `./deploy.sh <PROJECT_ID> `.
     * The above is the default. There are also command-line options, to be put  at the end of the command line after the project id. Run `deploy.sh -h` for documentation.
 * When you redeploy different versions of Iris code on top of old ones:
@@ -230,7 +232,7 @@ examples.
         * E.g., you can see a log sample for bucket creation, in file `sample_data/storage.buckets.create.log_message.json`. (Or create a bucket and look at the log.)
         * In that file you see `"methodName": "storage.buckets.create"`.
 
-4. Add roles in `roles.yaml` allowing Iris, for each resource type, to list, get, and update (permission setLabels, for resources where it is available, or update where it is not).
+4. Add permissions in `permissions-for-iris-custom-role.yaml` to be granted to the Iris custom role, allowing Iris, for each resource type, to list, get, and update (permission setLabels, for resources where it is available, or update where it is not).
 
 ### Testing
 

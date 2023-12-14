@@ -1,7 +1,6 @@
 title: "Iris3"
-description: "Roles needed by the Iris App Engine app"
+description: "Permissions needed by the custom Iris App Engine app"
 #TODO Generate most values directly from the Python class to avoid duplication
-# Below, where `update` rather than `setLabels`  is used, it is because there is no `setLabels`.
 # Note: Not clear that `setTags` is really needed.
 stage: "GA"
 includedPermissions:

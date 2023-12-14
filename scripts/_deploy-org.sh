@@ -23,10 +23,10 @@ ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-toke
 set +e
 # Create custom role to run iris
 if gcloud iam roles describe "$ROLEID" --organization "$ORGID"; then
-  gcloud iam roles update -q "$ROLEID" --organization "$ORGID" --file roles.yaml
+  gcloud iam roles update -q "$ROLEID" --organization "$ORGID" --file permissions-for-iris-custom-role.yaml
   role_error=$?
 else
-  gcloud iam roles create "$ROLEID" -q --organization "$ORGID" --file roles.yaml
+  gcloud iam roles create "$ROLEID" -q --organization "$ORGID" --file permissions-for-iris-custom-role.yaml
   role_error=$?
 fi
 
