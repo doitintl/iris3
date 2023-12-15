@@ -60,10 +60,6 @@ for svc in "${required_svcs[@]}"; do
 done
 
 
-# Create App Engine app
-gcloud app describe >&/dev/null || gcloud app create --region=$REGION
-
-
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
 gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" ||
   gcloud pubsub topics create "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" --quiet >/dev/null
@@ -140,7 +136,7 @@ gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
 
 
 if [[ "$CRON_ONLY" == "true" ]]; then
-  echo >&2 "CRON_ONLY set to true."
+  echo >&2 "CRON_ONLY is true."
   gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" 2>/dev/null || true
   gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID" 2>/dev/null || true
 else
@@ -191,6 +187,3 @@ then
 else
     gcloud app deploy --project $PROJECT_ID -q app.yaml cron.yaml
 fi
-
-set -u
-

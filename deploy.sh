@@ -3,7 +3,7 @@
 # See usage (deploy.sh -h).
 # Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
 
-#set -x
+set -x
 set -u
 set -e
 
@@ -24,24 +24,17 @@ fi
 export PYTHONPATH="."
 python3 ./util/check_python_version.py
 
-pip3 install -r requirements.txt
-
 START=$(date "+%s")
 
 export LOGS_TOPIC=iris_logs_topic
 
-if [[ $# -eq 0 ]]; then
-  echo Missing project id argument. Run with --help switch for usage.
-  exit
-fi
 
-export PROJECT_ID=$1
-
-shift
 deploy_proj=
 deploy_org=
 export CRON_ONLY=
-while getopts 'cpo' opt; do
+
+
+while getopts 'cpoh' opt; do
   case $opt in
   c)
     export CRON_ONLY=true
@@ -54,7 +47,7 @@ while getopts 'cpo' opt; do
     ;;
   *)
     cat <<EOF
-      Usage deploy.sh PROJECT_ID [-c]
+      Usage deploy.sh PROJECT_ID
           Argument:
                   The project to which Iris will be deployed
           Options, to be given at end of line, after project ID.
@@ -63,10 +56,10 @@ while getopts 'cpo' opt; do
                   -p: Deploy Iris (to the project given by the arg)
                   -o: Set up org-level elements like Log Sink
                   -c: Use only Cloud Scheduler cron to add labels; i.e., do not add labels on resource creation.
-                  Without -c, labels are added on both cron and resource creation.
-                  If you are changing this value, in other words, rerunning with -c or without it to
-                  change the value, be sure to run both org and project deployments.
-                  (To *not* use Cloud Scheduler, delete the schedule in `cron.yaml`.)
+                  The default is without -c: Labels are added on both cron and resource creation.
+                  If you are changing the -c value, in other words, re-deploying either with -c or without it to
+                  change the value from an earlier deployment, be sure to run both org and project deployments.
+                  (If, on the other handm you want Iris to  *not* use Cloud Scheduler, delete the schedule in cron.yaml.)
           Environment variable:
                   GAEVERSION (Optional) sets the Google App Engine Version.
 EOF
@@ -74,6 +67,17 @@ EOF
     ;;
   esac
 done
+
+shift $(expr "$OPTIND" - 1 )
+
+if [ "$#" -eq 0 ]; then
+    echo Missing project id argument. Run with -h  switch for usage.
+    exit 1
+fi
+
+export PROJECT_ID=$1
+
+pip3 install -r requirements.txt
 
 if [[ "$deploy_org" != "true" ]] && [[ "$deploy_proj" != "true" ]]; then
   deploy_org=true

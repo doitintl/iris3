@@ -108,9 +108,9 @@ def describe_resources(test_project, run_id, gce_zone):
 
         if len(needed_label_not_found)>0:
             print(
-                "Needed label not found",
+                "Needed label not found:",
                 needed_label_not_found,
-                "\nNeeded label found",
+                "\nNeeded label found:",
                 found,
             )
             set_failing()
@@ -231,7 +231,7 @@ def __check_for_new_v(start_wait_for_trafficshift, url) -> bool:
             )
             return True
         print(
-            'Site now has "',
+            'Site now returns "',
             txt[:100],
             '...", not yet including the expected iris_prefix',
             iris_prefix(),
