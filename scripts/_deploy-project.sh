@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
+# Deploys Iris to Google App Engine, setting up   Sinks, Topics, and Subscriptions as needed.
 # Usage
 # - Pass the project as the first command line argument.
 # - Optionally set environment variable GAEVERSION to set the Google App Engine Version.

@@ -1,5 +1,10 @@
 # Improvements and fixes
 
+# Note: see also Github Issues
+
+ 
+* P2 Even an empty AppEngine app (not Iris, just a Hello World with 3 lines of code in total) crashes on out-of-memory for the smalled AppEngine instance. Google has confirmed this. See if there is a workaround. This will same money.
+
 * P2 PubSub push endpoint security:
   Note: The token by itself is not very secure, though  
   Google has at times recommended this approach.
@@ -44,12 +49,7 @@
 * P3 Rethink the need for title case in class names. This is clumsy for `Cloudsql`.
 
 * P3 Concurrent execution
-    * Since all activity is highly network-constrained, it would speed up significantly with concurrent execution using
-      Python's `async`. Possibly Google APIs don't support that, in which case threads or the eventlet library could be
-      used.
-        * Init of multiple plugins is among the biggest slowdowns. They could be initialized concurrently.
-        * `do_label` may loop across about 85 zones. This could be done concurrently.
-        * `do_label` lists resources and then calls `label_one`. The `label_one` calls could be done concurrently.
+    * Init of multiple plugins is among the biggest slowdowns. They could be initialized concurrently.
 
 * P4 Implement new labels, for example using ideas from
   the [GCP Auto Tag project](https://github.com/doitintl/gcp-auto-tag/)
