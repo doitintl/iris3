@@ -194,6 +194,10 @@ def setup_configuration():
 
 def create_and_describe_resources(test_project, run_id, gce_zone):
     create_resources(test_project, run_id, gce_zone)
+    # Next line necessary to let the labels be visible for PubSub topics and subscriptions.
+    # Could speed it up by repeatedly checking for the labels up to 5 times
+    # sleeping say 2 sec in between each check.
+    time.sleep(10)
     describe_resources(test_project, run_id, gce_zone)
 
 
@@ -233,7 +237,7 @@ def __check_for_new_v(start_wait_for_trafficshift, url) -> bool:
         print(
             'Site now returns "',
             txt[:100],
-            '...", not yet including the expected iris_prefix',
+            '...", which does not yet include the expected iris_prefix',
             iris_prefix(),
         )
         return False

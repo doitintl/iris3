@@ -10,7 +10,10 @@
 set -u
 set -e
 
-ROLEID=iris3
+IRIS_CUSTOM_ROLE=$(cat <iris-custom-role.yaml |
+       grep "#custom role name"|cut -d":" -f2 | awk '{$1=$1};1')
+
+echo "Iris custom role is \"$IRIS_CUSTOM_ROLE\""
 
 LOG_SINK=iris_log
 
@@ -22,11 +25,11 @@ ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-toke
 
 set +e
 # Create custom role to run iris
-if gcloud iam roles describe "$ROLEID" --organization "$ORGID"; then
-  gcloud iam roles update -q "$ROLEID" --organization "$ORGID" --file permissions-for-iris-custom-role.yaml
+if gcloud iam roles describe "$IRIS_CUSTOM_ROLE" --organization "$ORGID"  > /dev/null; then
+  gcloud iam roles update -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" --file iris-custom-role.yaml >/dev/null
   role_error=$?
 else
-  gcloud iam roles create "$ROLEID" -q --organization "$ORGID" --file permissions-for-iris-custom-role.yaml
+  gcloud iam roles create -q "$IRIS_CUSTOM_ROLE"  --organization "$ORGID" --file iris-custom-role.yaml  >/dev/null
   role_error=$?
 fi
 
@@ -44,14 +47,14 @@ fi
 # Assign default iris app engine service account with role on organization level
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECT_ID@appspot.gserviceaccount.com" \
-  --role "organizations/$ORGID/roles/$ROLEID" \
-  --condition=None
+  --role "organizations/$ORGID/roles/$IRIS_CUSTOM_ROLE" \
+  --condition=None >/dev/null
 
 
 if [[ "$CRON_ONLY" == "true" ]]; then
   echo >&2 "CRON_ONLY is true."
 
-  gcloud logging sinks delete -q  --organization="$ORGID" "$LOG_SINK" || true
+  gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" || true
 else
   # Create PubSub topic for receiving logs about new GCP objects
 
@@ -104,11 +107,11 @@ else
 
   # Extract service account from sink configuration.
   # This is the service account that publishes to PubSub.
-  svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |
+  svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK"  |
     grep writerIdentity | awk '{print $2}')
 
   # Assign a publisher role to the extracted service account.
   gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member="$svcaccount" --role=roles/pubsub.publisher --quiet
+    --member="$svcaccount" --role=roles/pubsub.publisher --quiet > /dev/null
 fi
 

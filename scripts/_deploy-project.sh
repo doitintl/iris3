@@ -61,19 +61,20 @@ done
 
 
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
-gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" ||
+gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" &> /dev/null ||
   gcloud pubsub topics create "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" --quiet >/dev/null
 
 # Create PubSub topic for receiving dead messages
-gcloud pubsub topics describe "$DEADLETTER_TOPIC" --project="$PROJECT_ID" ||
+gcloud pubsub topics describe "$DEADLETTER_TOPIC" --project="$PROJECT_ID" &> /dev/null  ||
   gcloud pubsub topics create "$DEADLETTER_TOPIC" --project="$PROJECT_ID" --quiet >/dev/null
 
 
 # Create or update PubSub subscription for receiving dead messages.
-# The messages will just accumulate until pulled, up to message-retention-duratiobn.
+# The messages will just accumulate until pulled, up to message-retention-duration.
 # Devops can just look at the stats, or pull messages as needed.
 set +e
-gcloud pubsub subscriptions describe "$DEADLETTER_SUB" --project="$PROJECT_ID"
+gcloud pubsub subscriptions describe "$DEADLETTER_SUB" --project="$PROJECT_ID" &> /dev/null
+
 if [[ $? -eq 0 ]]; then
    set -e
    echo >&2 "Updating $DEADLETTER_SUB"
@@ -89,19 +90,20 @@ else
    --message-retention-duration=2d \
    --quiet >/dev/null
 fi
+
 project_number=$(gcloud projects describe $PROJECT_ID --format json|jq -r '.projectNumber')
 PUBSUB_SERVICE_ACCOUNT="service-${project_number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 
 # Allow Pubsub to publish into the deadletter topic
 gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
         --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-         --role="roles/pubsub.publisher" --project $PROJECT_ID
+         --role="roles/pubsub.publisher" --project $PROJECT_ID >/dev/null
 
 # Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
 # If the subscription exists, it will not be changed.
 # So, if you want to change the PubSub token, you have to manually delete this subscription first.
 set +e
-gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECT_ID"
+gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
 if [[ $? -eq 0 ]]; then
   set -e
   echo >&2 "Updating $DO_LABEL_SUBSCRIPTION"
@@ -132,7 +134,7 @@ fi
 # Allow Pubsub to delete failed message from this sub
 gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-    --role="roles/pubsub.subscriber" --project $PROJECT_ID
+    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
 
 if [[ "$CRON_ONLY" == "true" ]]; then
@@ -141,12 +143,12 @@ if [[ "$CRON_ONLY" == "true" ]]; then
   gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID" 2>/dev/null || true
 else
   # Create PubSub topic for receiving logs about new GCP objects
-  gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECT_ID" ||
+  gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECT_ID" &>/dev/null ||
     gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECT_ID" --quiet >/dev/null
 
   # Create or update PubSub subscription for receiving log about new GCP objects
   set +e
-  gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID"
+  gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
   label_one_subsc_exists=$?
   set -e
   if [[ $label_one_subsc_exists -eq 0 ]]; then
@@ -173,17 +175,19 @@ else
   # Allow Pubsub to delete failed message from this sub
   gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
       --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-      --role="roles/pubsub.subscriber" --project $PROJECT_ID
+      --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 fi
 
 
-# GAEVERSION might be unbound, so disable this -u check.
+# GAEVERSION might be unbound, so disable the -u check.
 set +u
 
 # Deploy to App Engine
 if [[ -n "$GAEVERSION" ]]
 then
-    gcloud app deploy --project $PROJECT_ID --version $GAEVERSION -q app.yaml cron.yaml
+    echo deploycron1
+    gcloud app deploy --project $PROJECT_ID --version $GAEVERSION --quiet app.yaml cron.yaml
 else
-    gcloud app deploy --project $PROJECT_ID -q app.yaml cron.yaml
+  echo deploycron2
+    gcloud app deploy --project $PROJECT_ID --quiet app.yaml cron.yaml
 fi

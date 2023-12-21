@@ -1,8 +1,9 @@
 # Improvements and fixes
+## Note: see also Github Issues
 
-# Note: see also Github Issues
+* Instead of just the -c switch on install.sh, create consistency by adding an -e (for "event-driven") switch to mean "event-driven labeling". Running install.sh with neither -c or -e means the equivalent of having both -c -e.
+ In doing this, validate that any installation with only -c or only -e is NOT -p (project-only) or -o (org-only) and fail if so. (i.e., proceed with installation only if neither or both switches are used.)
 
- 
 * P2 Even an empty AppEngine app (not Iris, just a Hello World with 3 lines of code in total) crashes on out-of-memory for the smalled AppEngine instance. Google has confirmed this. See if there is a workaround. This will same money.
 
 * P2 PubSub push endpoint security:

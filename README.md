@@ -72,7 +72,7 @@ The part of the function name after `_gcp_` is used for the label key.
 * In addition to these, project labels may be copied into each resource, if you have configured that in the
   configuration file.
 
-# Installation
+# Installation/Deployment
 
 ## Before deploying
 
@@ -81,15 +81,15 @@ The part of the function name after `_gcp_` is used for the label key.
 * You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
   [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
 
-* You need to have certain permissions to run the deployment script to deploy Iris on the org level--the deploy script sets up  roles and log sink. You will need to have these roles on the *organization* where Iris is deployed. You do not need to have these roles if you are doing further re-deployments of new versions of Iris on the project level. 
+* You need to have certain permissions to run the deployment script to deploy Iris on the org level--the deploy script sets up  roles and log sink. You will need to have these roles on the *organization* where Iris is deployed. You do not need to have these roles if you are doing further re-deployments of new versions of Iris on the project level (where you use the `-p` switch on `deploy.sh`. 
     * *Organization Role Administrator*  so the deployment script can create a custom IAM role for Iris that allows to get and set labels.
     * (Note that *Organization Owner* is not enough).
     * *Security Admin* **or** *Organization Administrator* so the deployment script can allow the Iris app engine service account to have the needed permissions.
     * *Logs Configuration Writer* so the deployment script can  create an organization log sink that sends logs to PubSub.
 
-* You need to have certain permissions to run the deployment script to deploy Iris on the project level.  (To deploy only on the project level, not the org level (assuming the org level was previously deployed, use `-p` as documented below).
-  * One option: You can have *Project Owner* on the project where Iris is deployed, 
-  * One option: You can have   these roles.
+* You need to have certain permissions to run the deployment script to deploy Iris on the project level.
+  * One option: You can have *Project Owner* on the project where Iris is deployed 
+  * Another option: You can have these roles.
       * *Project IAM Admin* to let the deployment script set up the bindings.
       * *App Engine Admin* to let the deployment script deploy to App Engine.
       * *Pub/Sub Admin* to let the deployment script create topics and subscriptions.
@@ -105,7 +105,7 @@ Iris works  in the AppEngine default region `us-central1` (`uc`) which is the de
 
 Note also that AppEngine does not let you change a region once it has been set to a non-default.
 
-Iris has not been tested in other regions, but if you want to try it, edit `GAE_REGION_ABBREV` in `_deploy_project.sh`  and let me know how it goes.
+Iris has not been tested in other regions, but if you want to try it, edit `GAE_REGION_ABBREV` in `_deploy_project.sh` and let me know how it goes.
 
 
 ## Deployment
@@ -157,6 +157,10 @@ Iris has not been tested in other regions, but if you want to try it, edit `GAE_
 * `cron.yaml` lets you optionally change the timing for the Cloud Scheduler scheduled labelings. See App Engine
   documentation.
 
+# Uninstalling
+* See script `uninstall.sh`
+* Run `uninstall.sh -h` for help.
+* A full uninstall will also delete the custom role.  You will then not be able to re-deploy unless you first either undelete the custom role or else give a new custom-role name at the top of `custom-iris-role.yaml`.,
 # Architecture
 
 * Iris runs in Google App Engine Standard Environment (Python 3).
@@ -241,7 +245,7 @@ examples.
         * E.g., you can see a log sample for bucket creation, in file `sample_data/storage.buckets.create.log_message.json`. (Or create a bucket and look at the log.)
         * In that file you see `"methodName": "storage.buckets.create"`.
 
-4. Add permissions in `permissions-for-iris-custom-role.yaml` to be granted to the Iris custom role. This role allows  Iris, for each resource type, to list, get, and update. (Updating means permission `setLabels` where available  or permission `update`  otherwise.)
+4. Add permissions in `iris-custom-role.yaml` to be granted to the Iris custom role. This role allows  Iris, for each resource type, to list, get, and update. (Updating means permission `setLabels` where available  or permission `update`  otherwise.)
 
 # Testing
 

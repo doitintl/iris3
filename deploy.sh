@@ -3,7 +3,7 @@
 # See usage (deploy.sh -h).
 # Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
 
-set -x
+#set -x
 set -u
 set -e
 
@@ -50,16 +50,18 @@ while getopts 'cpoh' opt; do
       Usage deploy.sh PROJECT_ID
           Argument:
                   The project to which Iris will be deployed
-          Options, to be given at end of line, after project ID.
-            If neither -p nor -o is given, this is treated as "do both": equivalent to -p -o
+          Options, to be given before project ID.
+            If neither -p nor -o is given, the default behavior is used:
+            to do both; this is equivalent to -p -o
             Flags:
-                  -p: Deploy Iris (to the project given by the arg)
-                  -o: Set up org-level elements like Log Sink
-                  -c: Use only Cloud Scheduler cron to add labels; i.e., do not add labels on resource creation.
+                  -o: Deploy org-level elements like Log Sink
+                  -p: Deploy project-level elements. This only works alone
+                  without -o if  org-level elements were already deployed.
+                  -c: Use only Cloud Scheduler cron to add labels;
+                  If this is enabled, labels are not added on resource creation.
                   The default is without -c: Labels are added on both cron and resource creation.
-                  If you are changing the -c value, in other words, re-deploying either with -c or without it to
-                  change the value from an earlier deployment, be sure to run both org and project deployments.
-                  (If, on the other handm you want Iris to  *not* use Cloud Scheduler, delete the schedule in cron.yaml.)
+                  (If, on the other hand, you want Iris to  *not* use Cloud Scheduler,
+                  but only labeling on-creation, delete the schedule in cron.yaml.)
           Environment variable:
                   GAEVERSION (Optional) sets the Google App Engine Version.
 EOF
@@ -71,13 +73,13 @@ done
 shift $(expr "$OPTIND" - 1 )
 
 if [ "$#" -eq 0 ]; then
-    echo Missing project id argument. Run with -h  switch for usage.
+    echo Missing project id argument. Run with -h for usage.
     exit 1
 fi
 
 export PROJECT_ID=$1
 
-pip3 install -r requirements.txt
+pip3 install -r requirements.txt >/dev/null
 
 if [[ "$deploy_org" != "true" ]] && [[ "$deploy_proj" != "true" ]]; then
   deploy_org=true
@@ -86,7 +88,7 @@ if [[ "$deploy_org" != "true" ]] && [[ "$deploy_proj" != "true" ]]; then
 fi
 
 
-gcloud projects describe "$PROJECT_ID" || {
+gcloud projects describe "$PROJECT_ID" >/dev/null|| {
   echo "Project $PROJECT_ID not found"
   exit 1
 }
