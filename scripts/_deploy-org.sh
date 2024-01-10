@@ -44,7 +44,7 @@ if [[ "$role_error" != "0" ]]; then
   exit $role_error
 fi
 
-# Assign default iris app engine service account with role on organization level
+# Assign the new custom org-level role to the default App Engine service account for the deployment project
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECT_ID@appspot.gserviceaccount.com" \
   --role "organizations/$ORGID/roles/$IRIS_CUSTOM_ROLE" \

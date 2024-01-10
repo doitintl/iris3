@@ -1,8 +1,8 @@
 #custom role name (read by _deploy-org.sh and _uninstall-for-org.sh): iris3
 title: "Iris3 Custom Role"
-description: "Permissions needed by the custom Iris App Engine app"
-#TODO Generate most values directly from the Python class to avoid duplication
-# Note: Not clear that `setTags` is really needed.
+description: "Permissions needed by the custom role used by the Iris App Engine app"
+# TODO Generate the following values directly from the Python class for DRY.
+# TODO: Not clear that `setTags` is really needed.
 stage: "GA"
 includedPermissions:
   - bigquery.datasets.get

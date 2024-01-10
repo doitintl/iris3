@@ -302,12 +302,13 @@ def __extract_pubsub_content() -> Dict:
 
 @app.route("/do_label", methods=["POST"])
 def do_label():
+    """Receives a push message from PubSub, sent from schedule() above,
+    and labels all objects of a given plugin and project_id.
+    """
     increment_invocation_count("do_label")
     with gae_memory_logging("do_label"):
 
-        """Receive a push message from PubSub, sent from schedule() above,
-        with instructions to label all objects of a given plugin and project_id.
-        """
+
         project_id = ""  # set up variables to allow logging in Exception block at end
         plugin_class_name = ""
         try:

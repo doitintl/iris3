@@ -42,4 +42,4 @@ def publish(msg: str, topic_id: str):
     future = __get_publisher().publish(topic_path, msg.encode("utf-8"))
     future.add_done_callback(on_publish)
 
-    logging.info("Finished publisha attempt   %s: %s", topic_id, utils.shorten(msg, 200))
+    logging.info("Finished publish attempt %s: %s", topic_id, utils.shorten(msg, 200))

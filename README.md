@@ -12,19 +12,23 @@ the [post that presents Iris](https://blog.doit-intl.com/iris-3-automatic-labeli
 
 Iris automatically assigns labels to Google Cloud Platform resources for manageability and easier billing reporting.
 
-All supported resources in all projects in the GCP organization will get automatically-generated labels. 
+All supported resources in all projects in the GCP organization will get automatically-generated labels.
 
 with keys like `iris_zone` (the
-prefix is configurable), and a value copied from the resouce. 
+prefix is configurable), and a value copied from the resouce.
 For example, a Google Compute Engine instance would get labels like
 `[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`. This behavior can be configured in various ways; see below.
 
 ## Note: Organization focus
-Note that Iris is designed to serve the org. It is not designed to serve a single project, though you can configure that.
+Note that Iris is designed to serve the org. It is not designed around serving a single project, but you can do that by configuring the project-filter to only label one project.
 
 ## Iris doesn't add information
 Iris does not *add* information, only *copy* values that already exist. For example, it can label a VM instance with its zone, since this information is known; but it cannot add a "business unit" label because it does not know what business
 unit a resource should be attributed to. For that, you should label all resources when creating them, e.g., in your Terraform scripts.
+
+## Iris doesn't by default label all existing resources.
+
+To do it, see section [Labeling existing resources](#Labeling existing resources) below.
 
 # Open source
 Iris is open-source: Feel free to add functionality and add new types of labels. See the `TODO.md` file and Github issues for features and fixes you might do.
@@ -32,17 +36,17 @@ Iris is open-source: Feel free to add functionality and add new types of labels.
 # When Iris adds labels
 
 Iris adds labels:
-## On resource creation 
-.... by listening to Google Cloud Operations (Stackdriver) Logs. You can disable this, see ["Deploy"](#deployment).
+## On resource creation
+It knows about new resources to label by listening to Google Cloud Operations (Stackdriver) Logs. You can disable this, see ["Deploy"](#deployment).
 ## On schedule
-... using a Cloud Scheduler cron job that the deployer sets up for you. By default, only some types of resources are labeled on Cloud Scheduler runs. Most do not receive labels on Scheduler, to save the costs of relabeling with the same label every day. 
+It can run on a Cloud Scheduler cron job that the deployer sets up for you. By default, only some types of resources are labeled on Cloud Scheduler runs. Most do not receive labels on Scheduler, to save the costs of relabeling with the same label every day.
 
-However,  this can be configured so that all resources are labeled. See `label_all_on_cron` below. 
+However,  this can be configured so that all resources are labeled. See `label_all_on_cron` below.
 
 Or you can disable the schedule labeling.
 
 ## Labeling existing resources
- 
+
 * When you first use Iris, you may want to label all existing resources. This is not Iris' preferred flow for adding labels, but you can do it.
 * To do this, deploy it with `label_all_on_cron: True` and wait for the next scheduled run, or manually trigger a run.
 * Thenּ, you may want to then redeploy Iris with `label_all_on_cron: False` to avoid the  resource consumption of relabeling all resources with the same label every day forever.
@@ -81,14 +85,14 @@ The part of the function name after `_gcp_` is used for the label key.
 * You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
   [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
 
-* You need to have certain permissions to run the deployment script to deploy Iris on the org level--the deploy script sets up  roles and log sink. You will need to have these roles on the *organization* where Iris is deployed. You do not need to have these roles if you are doing further re-deployments of new versions of Iris on the project level (where you use the `-p` switch on `deploy.sh`. 
+* You need to have certain permissions to run the deployment script to deploy Iris on the org level--the deploy script sets up  roles and log sink. You will need to have these roles on the *organization* where Iris is deployed. You do not need to have these roles if you are doing further re-deployments of new versions of Iris on the project level (where you use the `-p` switch on `deploy.sh`.
     * *Organization Role Administrator*  so the deployment script can create a custom IAM role for Iris that allows to get and set labels.
     * (Note that *Organization Owner* is not enough).
     * *Security Admin* **or** *Organization Administrator* so the deployment script can allow the Iris app engine service account to have the needed permissions.
     * *Logs Configuration Writer* so the deployment script can  create an organization log sink that sends logs to PubSub.
 
 * You need to have certain permissions to run the deployment script to deploy Iris on the project level.
-  * One option: You can have *Project Owner* on the project where Iris is deployed 
+  * One option: You can have *Project Owner* on the project where Iris is deployed
   * Another option: You can have these roles.
       * *Project IAM Admin* to let the deployment script set up the bindings.
       * *App Engine Admin* to let the deployment script deploy to App Engine.
@@ -112,29 +116,29 @@ Iris has not been tested in other regions, but if you want to try it, edit `GAE_
 
 * Get the code with `git clone https://github.com/doitintl/iris3.git`
 * Have Python 3.9+ as your default `python3`.
-* Makes sure you have these tools 
+* Makes sure you have these tools
   * `envsubst`
   * `jq`
-  * The command-line `pip3` 
+  * The command-line `pip3`
   *  `gcloud`. Make sure it is logged-in  using an account with the [above-mentioned](#before-deploying) roles.
 * Set up the configuration
   * Copy `config.yaml.original` to `config.yaml`.
   * Optionally configure by editing the configuration files ([See more documentation below](#configuration).)
 * If you choose a project with `dev`, `qa`, `playground`, or `test` in its ID, note that there is a circuit-breaker will block scheduled labeling under these conditions. This is meant to protect from accidentally flooding thousands of projects  with test-labels.
   * The conditions:
-    * More than 3 projects are to be labeled. 
-    * Iris is running in the cloud in App Engine (rather than in your dev machine) 
-    * if you use `config-dev.yaml` or `config-test.yaml` 
+    * More than 3 projects are to be labeled.
+    * Iris is running in the cloud in App Engine (rather than in your dev machine)
+    * if you use `config-dev.yaml` or `config-test.yaml`
   * To disable the circuit-breaking, edit `test_or_dev_project_markers` in the configuration file.  
 * Now, run `./deploy.sh <PROJECT_ID> `.
-   * The above is the default. 
-   * There are also command-line options. 
+   * The above is the default.
+   * There are also command-line options.
    * Run `deploy.sh -h` for documentation.
 * When you redeploy different versions of Iris code on top of old ones:
     * If new plugins were added or some removed, the log sink *will* be updated to reflect this.
     * If the parameters for subscriptions or topics were changed in a new version of the Iris code, the subscriptions or  topics will *not* be updated. You would have to delete them first.
 * If you are changing the value of "Cloud-Scheduler-only" with `-c` (or the opposite, without `-c`) on a previous deployment), be sure to run both org and project deployments, not just project deployment, since this involves the org-level sink.         
-* Run  `deploy.sh -h` for configuring Iris 
+* Run  `deploy.sh -h` for configuring Iris
   * to add labels only with  Cloud Scheduler (and not on-creation
   * or without the Scheduler at all
   * or with both Scheduler and on-creation. (This is the default.)
@@ -150,8 +154,8 @@ Iris has not been tested in other regions, but if you want to try it, edit `GAE_
       * Local vs App Engine
         * `config-dev.yaml` is not uploaded to App Engine and so is ignored there.
         * `config-test.yaml` and `config.yaml` are available for use in App Engine.
-      
-      
+
+
 * `app.yaml` lets you configure App Engine, for example to set a maximum number of instances. See App Engine
   documentation.
 * `cron.yaml` lets you optionally change the timing for the Cloud Scheduler scheduled labelings. See App Engine
@@ -170,7 +174,7 @@ Iris has not been tested in other regions, but if you want to try it, edit `GAE_
     * The Log Sink is filtered to include only supported resource types
     * If you edit the configuration file to support only specific projects, the Log Sink only captures these.
 * PubSub topics:
-    * One topic receives the resource-creation logs from the Log Sink 
+    * One topic receives the resource-creation logs from the Log Sink
     * Another topic receives messages sent by the `/schedule` Cloud Scheduler handler in `main.py`. (The `/schedule` path is triggered by  the Cloud Scheduler.
         * Such messages are an instruction to call `do_label` for each combination of (project, resource-type).
     * Another topic is a dead-letter topic
