@@ -58,7 +58,9 @@ label_all_on_cron: False
 # You could even re-generate a new token per deployment.
 # Note that this token-based approach is not very secure, though it  was once recommended by Google.
 # However, so long as the GCP project running the Iris3 AppEngine service is otherwise secure,
-# this token protects against unwanted invocations of labeling.
+# setting this token protects against unwanted invocations of labeling.
+# If you then redeploy, don't change the token, as it is used for
+# communication between different parts of the system.
 pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
 
 # If running (i.e., in AppEngine) in a project with one of the strings in the name,
