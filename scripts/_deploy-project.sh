@@ -10,7 +10,7 @@
 set -u
 set -e
 
-GAE_REGION_ABBREV=uc
+
 
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
 DEADLETTER_TOPIC=iris_deadletter_topic
@@ -29,6 +29,8 @@ if [[ ! -f "config-test.yaml" ]]  && [[ ! -f "config.yaml" ]]; then
        exit 1
 fi
 
+ABBREV__=$(gcloud app describe --project $PROJECT_ID | grep defaultHostname |egrep -o "\.[a-z][a-z]\.")
+GAE_REGION_ABBREV=${ABBREV__:1:2}
 
 GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
 # The following line depends on the  the export PYTHON_PATH="." above.

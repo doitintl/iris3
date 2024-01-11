@@ -106,11 +106,8 @@ If your project does not have a default service, just deploy some trivial=Hello 
 
 #### Regions
 Iris works  in the AppEngine default region `us-central1` (`uc`) which is the default for AppEngine
-
-Note also that AppEngine does not let you change a region once it has been set to a non-default.
-
-Iris has not been tested in other regions, but if you want to try it, edit `GAE_REGION_ABBREV` in `_deploy_project.sh` and let me know how it goes.
-
+ 
+Iris has not been tested in other regions, but let me know if it works.
 
 ## Deployment
 
@@ -124,12 +121,12 @@ Iris has not been tested in other regions, but if you want to try it, edit `GAE_
 * Set up the configuration
   * Copy `config.yaml.original` to `config.yaml`.
   * Optionally configure by editing the configuration files ([See more documentation below](#configuration).)
-* If you choose a project with `dev`, `qa`, `playground`, or `test` in its ID, note that there is a circuit-breaker will block scheduled labeling under these conditions. This is meant to protect from accidentally flooding thousands of projects  with test-labels.
-  * The conditions:
-    * More than 3 projects are to be labeled.
-    * Iris is running in the cloud in App Engine (rather than in your dev machine)
-    * if you use `config-dev.yaml` or `config-test.yaml`
-  * To disable the circuit-breaking, edit `test_or_dev_project_markers` in the configuration file.  
+* If you are running in "test mode", and scheduled-labeling finds more than 3 projects to label, then  a circuit-breaker will block scheduled labeling, in order to protect from accidentally flooding thousands of projects  with test-labels.
+  * "Test mode" means that at least one of these is true:
+    * The project ID has in it `dev`, `qa`, `playground`, or `test` (or whatever is configured under `test_or_dev_project_markers`)
+    * or Iris is using `config-dev.yaml` or `config-test.yaml`
+    * or Iris is running in your local machine (not App Engine)
+  * If you want to disable the circuit-breaking which is happening because your project has one of those strings, edit `test_or_dev_project_markers` in the configuration file.  
 * Now, run `./deploy.sh <PROJECT_ID> `.
    * The above is the default.
    * There are also command-line options.
@@ -164,6 +161,7 @@ Iris has not been tested in other regions, but if you want to try it, edit `GAE_
 # Uninstalling
 * See script `uninstall.sh`
 * Run `uninstall.sh -h` for help.
+* See a comment in `uninstall.sh` that describes what is uninstalled.
 * A full uninstall will also delete the custom role.  You will then not be able to re-deploy unless you first either undelete the custom role or else give a new custom-role name at the top of `custom-iris-role.yaml`.,
 # Architecture
 
