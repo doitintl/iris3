@@ -197,7 +197,7 @@ def create_and_describe_resources(test_project, run_id, gce_zone):
     # Next line necessary to let the labels be visible for PubSub topics and subscriptions.
     # Could speed it up by repeatedly checking for the labels up to 5 times
     # sleeping say 2 sec in between each check.
-    time.sleep(10)
+    time.sleep(15)
     describe_resources(test_project, run_id, gce_zone)
 
 
