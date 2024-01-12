@@ -5,8 +5,8 @@
 
 # Keys:
 
-# projects: Only resources in these projects will get labeled.
-# But if the value is empty, *all* projects in the organization are included.
+# projects: A list of project IDs. Only resources in these projects will get labeled.
+# But if the value is empty, *all* projects in the organization will get labeled.
 projects: []
 
 # plugins: Only these plugins are enabled.

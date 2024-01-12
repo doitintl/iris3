@@ -7,7 +7,7 @@ was the handmaiden to Hera.
 
 See
 the [post that presents Iris](https://blog.doit-intl.com/iris-3-automatic-labeling-for-cost-control-7451b480ee13?source=friends_link&sk=b934039e5dc35c9d5e377b6a15fb6381).
-
+E
 # What Iris does for you
 
 Iris automatically assigns labels to Google Cloud Platform resources for manageability and easier billing reporting.
@@ -20,7 +20,7 @@ For example, a Google Compute Engine instance would get labels like
 `[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`. This behavior can be configured in various ways; see below.
 
 ## Note: Organization focus
-Note that Iris is designed to serve the org. It is not designed around serving a single project, but you can do that by configuring the project-filter to only label one project.
+Note that Iris is designed to serve the org. It is not designed around serving a single project, but you can do that by configuring the project-filter to only label one project. See `config.yaml.orig` for documentation.
 
 ## Iris doesn't add information
 Iris does not *add* information, only *copy* values that already exist. For example, it can label a VM instance with its zone, since this information is known; but it cannot add a "business unit" label because it does not know what business
@@ -104,11 +104,6 @@ App Engine requires a "default service" to exist (even though Iris runs as the `
 
 If your project does not have a default service, just deploy some trivial=Hello World app as the default service. (Having this service  costs nothing.) Try [this](https://github.com/doitintl/QuickQuickstarts/tree/main/appengine_standard ) open-source that I wrote to do that as easily as possible; or else step through [this tutorial](https://cloud.google.com/appengine/docs/standard/python3/building-app) from Google.
 
-#### Regions
-Iris works  in the AppEngine default region `us-central1` (`uc`) which is the default for AppEngine
- 
-Iris has not been tested in other regions, but let me know if it works.
-
 ## Deployment
 
 * Get the code with `git clone https://github.com/doitintl/iris3.git`
@@ -142,16 +137,18 @@ Iris has not been tested in other regions, but let me know if it works.
 
 # Configuration
 
-* Iris'  config file is `config*.yaml`.  All values are optional.
-* You can also have  `config-test.yaml`, or `config-dev.yaml`
-      * They take priority in this order:
-        * If `config-dev.yaml` is present, that is used;
-        * if not, and `config-test.yaml` is present, that is used;
-         * otherwise `config.yaml` is used.
-      * Local vs App Engine
-        * `config-dev.yaml` is not uploaded to App Engine and so is ignored there.
-        * `config-test.yaml` and `config.yaml` are available for use in App Engine.
-
+* Iris'  config file is `config*.yaml`. 
+  * All values are optional. 
+  * `config.yaml.orig` has detailed documentation of the fields.
+* `config.yaml` is read as the production configuration file 
+  * You can also have  `config-test.yaml`, or `config-dev.yaml`
+    * They take priority in this order:
+      * If `config-dev.yaml` is present, that is used;
+      * if not, and `config-test.yaml` is present, that is used;
+       * otherwise `config.yaml` is used.
+    * Local vs App Engine
+      * `config-dev.yaml` is not uploaded to App Engine and so is ignored there.
+      * `config-test.yaml` and `config.yaml` are available for use in App Engine according to the precedence stated above.
 
 * `app.yaml` lets you configure App Engine, for example to set a maximum number of instances. See App Engine
   documentation.
