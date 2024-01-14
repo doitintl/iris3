@@ -10,8 +10,6 @@
 set -u
 set -e
 
-
-
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
 DEADLETTER_TOPIC=iris_deadletter_topic
 DEADLETTER_SUB=iris_deadletter
@@ -102,6 +100,10 @@ BINDING_ERR_OUTPUT=$(gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOP
         --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
          --role="roles/pubsub.publisher" --project $PROJECT_ID 2>&1 )
 if [[ $? -ne 0  && $BINDING_ERR_OUTPUT == *"gcp-sa-pubsub.iam.gserviceaccount.com does not exist."* ]]; then
+  # Sometimes the PubSub svc account (service-99999999999@gcp-sa-pubsub.iam.gserviceaccount.com)
+  # does not exist on new projects. I don't know why.
+  # Note that this svc account is NOT in the user project;
+  # it can be thought of as existing in a hidden Google-controlled project.
   gcloud beta  services identity create --project $PROJECT_ID --service pubsub
 
   set -e
