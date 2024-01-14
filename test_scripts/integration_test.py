@@ -2,6 +2,7 @@ import atexit
 import json
 import logging
 import os
+import re
 import sys
 import time
 import urllib.request
@@ -24,22 +25,23 @@ config_test_yaml = "config-test.yaml"
 
 GCE_ZONE = "europe-central2-b"
 
-glb_exit_code = 0
+global_exit_code = 0
 
 
 def set_failing():
-    global glb_exit_code
-    glb_exit_code = 1
+    global global_exit_code
+    global_exit_code = 1
+
+
+def run_cmd_catch_exc(cmd):
+    try:
+        return run_command(cmd)
+    except CalledProcessError as e:
+        logging.exception(f"Calling {cmd}")
+        return e
 
 
 def run_command_or_commands_catch_exc(command_or_commands: Union[str, List[str]]):
-    def run_cmd_catch_exc(cmd):
-        try:
-            return run_command(cmd)
-        except CalledProcessError as e:
-            logging.exception(f"Calling {cmd}")
-            return e
-
     if isinstance(command_or_commands, str):
         command = command_or_commands
         return run_cmd_catch_exc(command)
@@ -100,13 +102,13 @@ def describe_resources(test_project, run_id, gce_zone):
                 found.append(cmd)
             else:
                 needed_label_not_found.append(cmd)
-        gcs_cmd, gcs_lbl_found=get_gcs_label(run_id)
+        gcs_cmd, gcs_lbl_found = get_gcs_label(run_id)
         if gcs_lbl_found:
             found.append(gcs_cmd)
         else:
             needed_label_not_found.append(gcs_cmd)
 
-        if len(needed_label_not_found)>0:
+        if len(needed_label_not_found) > 0:
             print(
                 "Needed label not found:",
                 needed_label_not_found,
@@ -115,14 +117,14 @@ def describe_resources(test_project, run_id, gce_zone):
             )
             set_failing()
 
-    if not glb_exit_code:
+    if not global_exit_code:
         print("Success: All needed labels found")
 
 
 def get_gcs_label(run_id):
     gcs_cmd = f"gsutil label get gs://bucket{run_id}"
     out_gcs = run_command_or_commands_catch_exc(gcs_cmd)
-    label_val=None
+    label_val = None
     if isinstance(out_gcs, Exception):
         print("Failed to describe bucket:", gcs_cmd)
         set_failing()
@@ -138,13 +140,13 @@ def get_gcs_label(run_id):
                 # bucket labels start "gcs"
                 label_val = j.get(f"gcs{run_id}_name")
             except json.decoder.JSONDecodeError as e:
-                print(e, "for output\"", out_gcs, '"')
+                print(e, 'for output"', out_gcs, '"')
                 label_val = None
 
         if not label_val:
             print("GCS bucket did not have the needed label")
             set_failing()
-    return gcs_cmd,label_val
+    return gcs_cmd, label_val
 
 
 def main():
@@ -178,7 +180,7 @@ def setup_configuration():
 
     # pubsub_test_token is used for envsubst into config.yaml.test.template
     pubsub_test_token = random_hex_str(20)
-    gce_zone = GCE_ZONE
+
     check_projects_exist(deployment_project, test_project)
     _ = run_command(f"gcloud config set project {test_project}")
     remove_config_file()
@@ -188,16 +190,16 @@ def setup_configuration():
         deployment_project,
         test_project,
         run_id,
-        gce_zone,
+        GCE_ZONE,
     )
 
 
 def create_and_describe_resources(test_project, run_id, gce_zone):
     create_resources(test_project, run_id, gce_zone)
     # Next line necessary to let the labels be visible for PubSub topics and subscriptions.
-    # Could speed it up by repeatedly checking for the labels up to 5 times
-    # sleeping say 2 sec in between each check.
-    time.sleep(15)
+    # Could speed it up by repeatedly checking for the labels
+    # up to 5 times, sleeping  2 sec in between each check.
+    time.sleep(20)
     describe_resources(test_project, run_id, gce_zone)
 
 
@@ -207,8 +209,7 @@ def gce_region(gce_zone):
 
 def wait_for_traffic_shift(deployment_project):
     start_wait_for_trafficshift = time.time()
-    #This assumes that Iris3 is on uc (us-central1), the default.
-    url = f"https://iris3-dot-{deployment_project}.uc.r.appspot.com/"
+    url = gae_url_with_region_abbrev(deployment_project)
     while time.time() - start_wait_for_trafficshift < 180:  # break after 180 sec
         try:
             found_it = __check_for_new_v(start_wait_for_trafficshift, url)
@@ -223,7 +224,19 @@ def wait_for_traffic_shift(deployment_project):
     raise TimeoutError(time.time() - start_wait_for_trafficshift)
 
 
+def gae_url_with_region_abbrev(proj):
+    """return: value like myproject.uc.r.appspot.com"""
+    app_describe = run_cmd_catch_exc(f"gcloud app describe --project {proj}")
+    search = re.search(r"defaultHostname: (.*)$", app_describe, re.MULTILINE)
+    url_base = search.group(1)
+    assert "https://" not in url_base and "iris3-dot-" not in url_base, url_base
+    #Format: https://iris3-dot-<PROJECTID>.<REGION_ABBREV>.r.appspot.com/
+
+    return "https://" + "iris3-dot-" + url_base
+
+
 def __check_for_new_v(start_wait_for_trafficshift, url) -> bool:
+
     with urllib.request.urlopen(url) as response:
         txt_b = response.read()
         txt = str(txt_b, "UTF-8")
@@ -272,7 +285,8 @@ def clean_resources(deployment_project, test_project, run_id, gce_zone):
     def pause_for_user_input():
         print("Type ENTER to proceed to clean up resources ")
         _ = sys.stdin.readline()
-    #pause_for_user_input()# Use this in debugging, to keep the test resources alive until you hit E
+
+    # pause_for_user_input()# Use this in debugging, to keep the test resources alive until you hit E
 
     remove_config_file()
     commands = [
@@ -299,8 +313,6 @@ def clean_resources(deployment_project, test_project, run_id, gce_zone):
     if failed:
         print("Failed to delete", failed)
     # Do not set_failing. If we fail on cleanup,there is not much to do
-
-
 
 
 def count_command_line_params():
@@ -399,5 +411,5 @@ if __name__ == "__main__":
     assert_root_path()
 
     main()
-    print("Exiting with", "failure" if glb_exit_code else "success")
-    sys.exit(glb_exit_code)
+    print("Exiting with", "failure" if global_exit_code else "success")
+    sys.exit(global_exit_code)

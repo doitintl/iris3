@@ -143,20 +143,18 @@ def __get_enabled_projects():
     if not enabled_projs:
         raise Exception("No projects enabled at all")
 
-    if (# These are three indications that we are running in dev/test
+    if (  # These are three indications that we are running in dev/test
         not detect_gae()
         or is_test_or_dev_configuration()
         or is_in_test_or_dev_project(current_project_id())
     ):
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
-            raise Exception("""In development or testing, we support no more than {max_proj_in_dev} projects, \
+            raise Exception(
+                """In development or testing, we support no more than {max_proj_in_dev} projects, \
                 to avoid accidentally flooding the system.
                 {len(enabled_projs)} projects are available, which exceeds that. 
-                This limit is not imposed when you are running in the cloud (AppEngine), so long as you \ 
-                use config.yaml rather than config-dev.yaml or config-test.yaml. 
-                Also, you should check test_or_dev_project_markers in the config file, and edit this as needed,
-                noting that a project with one of these markers only labels up to {max_proj_in_dev} projects.
+                See README.md for explanation.
                 """
             )
     return enabled_projs
@@ -307,7 +305,6 @@ def do_label():
     """
     increment_invocation_count("do_label")
     with gae_memory_logging("do_label"):
-
 
         project_id = ""  # set up variables to allow logging in Exception block at end
         plugin_class_name = ""

@@ -119,7 +119,7 @@ If your project does not have a default service, just deploy some trivial=Hello 
 * If you are running in "test mode", and scheduled-labeling finds more than 3 projects to label, then  a circuit-breaker will block scheduled labeling, in order to protect from accidentally flooding thousands of projects  with test-labels.
   * "Test mode" means that at least one of these is true:
     * The project ID has in it `dev`, `qa`, `playground`, or `test` (or whatever is configured under `test_or_dev_project_markers`)
-    * or Iris is using `config-dev.yaml` or `config-test.yaml`
+    * or Iris is using `config-test.yaml`
     * or Iris is running in your local machine (not App Engine)
   * If you want to disable the circuit-breaking which is happening because your project has one of those strings, edit `test_or_dev_project_markers` in the configuration file.  
 * Now, run `./deploy.sh <PROJECT_ID> `.
@@ -141,14 +141,10 @@ If your project does not have a default service, just deploy some trivial=Hello 
   * All values are optional. 
   * `config.yaml.orig` has detailed documentation of the fields.
 * `config.yaml` is read as the production configuration file 
-  * You can also have  `config-test.yaml`, or `config-dev.yaml`
+  * You can also have  `config-test.yaml` 
     * They take priority in this order:
-      * If `config-dev.yaml` is present, that is used;
-      * if not, and `config-test.yaml` is present, that is used;
-       * otherwise `config.yaml` is used.
-    * Local vs App Engine
-      * `config-dev.yaml` is not uploaded to App Engine and so is ignored there.
-      * `config-test.yaml` and `config.yaml` are available for use in App Engine according to the precedence stated above.
+      * If `config-test.yaml` is present, that is used;
+      * otherwise `config.yaml` is used.
 
 * `app.yaml` lets you configure App Engine, for example to set a maximum number of instances. See App Engine
   documentation.
@@ -191,7 +187,6 @@ If your project does not have a default service, just deploy some trivial=Hello 
           use `export FLASK_ENV=development;export FLASK_RUN_PORT=8000;export FLASK_DEBUG=1;FLASK_APP=main.py python -m flask run`
         * In an interactive development environment, run `main.py`, first setting these environment variables.
 * For hands-on debugging
-    * Set the projects you want to use in  `config-dev.yaml`
     * Use `test_do_label` and `test_label_one` and `test_schedule` to trigger against your localhost dev-server, to
       label actual Cloud resources that you pre-deploy.
         * See the `test_...` files for instructions.

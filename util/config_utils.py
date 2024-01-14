@@ -77,14 +77,9 @@ def get_config_redact_token():
 
 @functools.lru_cache
 def get_config() -> typing.Dict:
-    dev_config = "config-dev.yaml"
     test_config = "config-test.yaml"
     prod_config = "config.yaml"
-
-    if os.path.isfile(dev_config):
-        config_name = dev_config
-
-    elif os.path.isfile(test_config):
+    if os.path.isfile(test_config):
         config_name = test_config
 
     else:

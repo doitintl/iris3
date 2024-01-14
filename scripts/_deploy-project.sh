@@ -23,7 +23,7 @@ MAX_DELIVERY_ATTEMPTS=10
 MIN_RETRY=30s
 MAX_RETRY=600s
 
-# Must have one of these config (meanwhile, config-dev.yaml is only for local use)
+# Must have one of these config
 if [[ ! -f "config-test.yaml" ]]  && [[ ! -f "config.yaml" ]]; then
        echo >&2 "config.yaml Must have either config.yaml (use config.yaml.original as an example) or config-test.yaml"
        exit 1
@@ -96,10 +96,23 @@ fi
 project_number=$(gcloud projects describe $PROJECT_ID --format json|jq -r '.projectNumber')
 PUBSUB_SERVICE_ACCOUNT="service-${project_number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 
+set +e
 # Allow Pubsub to publish into the deadletter topic
-gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
+BINDING_ERR_OUTPUT=$(gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
         --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-         --role="roles/pubsub.publisher" --project $PROJECT_ID >/dev/null
+         --role="roles/pubsub.publisher" --project $PROJECT_ID 2>&1 )
+if [[ $? -ne 0  && $BINDING_ERR_OUTPUT == *"gcp-sa-pubsub.iam.gserviceaccount.com does not exist."* ]]; then
+  gcloud beta  services identity create --project $PROJECT_ID --service pubsub
+
+  set -e
+  #Redo the above binding command
+  gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
+          --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
+           --role="roles/pubsub.publisher" --project $PROJECT_ID >/dev/null
+
+fi
+
+set -e
 
 # Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
 # If the subscription exists, it will not be changed.

@@ -1,7 +1,5 @@
-# Copy this to make your config.yaml;
-# You can also make  config-dev.yaml and config-test.yaml
-
-# The default values as-is should work out-of-the-box.
+# Copy this to make your config.yaml. The default values as-is should work out-of-the-box.
+# (You can also make config-test.yaml; See README.md for details.)
 
 # Keys:
 
