@@ -38,7 +38,7 @@ def do_local_http(
         headers = headers or {}
         data_bytes = __datastruct_for_pubsub_message(contents) if contents else None
 
-        logging.info(f"Will call  with %s", contents)
+        logging.info(f"Will call local HTTP with request-contents %s", contents)
         host_and_port = f"localhost:{LOCAL_PORT}"
         args_s = ""
         if extra_args:

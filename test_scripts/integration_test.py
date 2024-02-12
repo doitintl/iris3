@@ -167,7 +167,7 @@ def main():
         logging.exception("")
 
     clean_resources(deployment_project, test_project, run_id, gce_zone)
-    uninstall()
+    uninstall(deployment_project)
     end = time.time()
     print("Time for integration test", int(end - start_test), "s")
 
@@ -243,7 +243,6 @@ def gae_url_with_multiregion_abbrev(proj):
 
 
 def __check_for_new_v(start_wait_for_trafficshift, url) -> bool:
-
     with urllib.request.urlopen(url) as response:
         txt_b = response.read()
         txt = str(txt_b, "UTF-8")

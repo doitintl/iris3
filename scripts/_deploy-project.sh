@@ -155,8 +155,8 @@ gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
     --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
 
-if [[ "$CRON_ONLY" == "true" ]]; then
-  echo >&2 "CRON_ONLY is true."
+if [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
+  echo >&2 "Will not label on creation event."
   gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" 2>/dev/null || true
   gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID" 2>/dev/null || true
 else
@@ -196,16 +196,21 @@ else
       --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 fi
 
-
+if [[ "$LABEL_ON_CRON" == "true" ]]; then
+    cp cron_full.yaml cron.yaml
+else
+   echo >&2 "Will not have a Cloud Scheduler schedule"
+   cp cron_empty.yaml cron.yaml
+fi
 # GAEVERSION might be unbound, so disable the -u check.
 set +u
 
 # Deploy to App Engine
 if [[ -n "$GAEVERSION" ]]
 then
-    echo deploycron1
     gcloud app deploy --project $PROJECT_ID --version $GAEVERSION --quiet app.yaml cron.yaml
 else
-  echo deploycron2
     gcloud app deploy --project $PROJECT_ID --quiet app.yaml cron.yaml
 fi
+
+rm cron.yaml # For us, cron.yaml is a temp file, replaced by cron_full.yaml or cron_empty.yaml

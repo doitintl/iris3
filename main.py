@@ -131,38 +131,49 @@ def __get_enabled_projects():
         # In some cases, lots of appscript projects would appear.
         # so here we filter them out. However, In my testing, we do NOT get appscript projects in the list.
         nonappscript_projects = (p for p in all_proj if not is_appscript_project(p))
-        # The following filtering is probably useless since the else-clause that
+        # The following filtering probably does nothing since the else-clause that
         # that we are in is reached only if there are no explicitly enabled projects.
-        enabled_only = (p for p in nonappscript_projects if config_utils.is_project_enabled(p))
+        enabled_only = (
+            p for p in nonappscript_projects if config_utils.is_project_enabled(p)
+        )
         enabled_projs = list(enabled_only)
+
     enabled_projs.sort()
     if not enabled_projs:
         raise Exception("No projects enabled at all")
     explain = []
     if (  # These are three indications that we are running in dev/test
-            not detect_gae()
-            or is_test_configuration()
-            or is_in_test_or_dev_project(current_project_id())
+        not detect_gae()
+        or is_test_configuration()
+        or is_in_test_or_dev_project(current_project_id())
     ):
         if not detect_gae():
             explain.append("Not running in App Engine")
         if is_test_configuration():
-            explain.append("Using a test configuration file " + config_utils.config_test_file())
+            explain.append(
+                "Using a test configuration file " + config_utils.config_test_file()
+            )
         if is_in_test_or_dev_project(current_project_id()):
-            explain.append("Running a project " + current_project_id() +
-                           " which has one of the markers of a test project" +
-                           " configured under key test_or_dev_project_markers")
+            explain.append(
+                "Running a project "
+                + current_project_id()
+                + " which has one of the markers of a test project"
+                + " configured under key test_or_dev_project_markers"
+            )
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
-            assert explain, "If we got here, one of the conditioned should have been true"
+            assert (
+                explain
+            ), "If we got here, at least one of the conditions should have been true"
             raise Exception(
-                f"""When running Iris in development/testing mode, \
-                we support no more than {max_proj_in_dev} projects, \
-                to avoid accidentally flooding the system.
-                {len(enabled_projs)} projects are available, which exceeds that. 
-                We are in development/testing mode because:
-                {"; ".join(explain)}
-                """
+                "When running Iris in development/testing mode, "
+                + f"we support no more than "
+                + str(max_proj_in_dev)
+                + " projects, to avoid accidentally flooding the system. "
+                + str(len(enabled_projs))
+                + " projects are available, which exceeds that. "
+                + "This server is in development/testing mode because: "
+                + "; ".join(explain)
             )
     return enabled_projs
 
@@ -172,9 +183,9 @@ def __send_pubsub_per_projectplugin(configured_projects):
     for project_id in configured_projects:
         for plugin_cls in PluginHolder.plugins:
             if (
-                    not plugin_cls.is_labeled_on_creation()
-                    or plugin_cls.relabel_on_cron()
-                    or config_utils.label_all_on_cron()
+                not plugin_cls.is_labeled_on_creation()
+                or plugin_cls.relabel_on_cron()
+                or config_utils.label_all_on_cron()
             ):
                 pubsub_utils.publish(
                     msg=json.dumps(

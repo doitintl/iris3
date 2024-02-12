@@ -10,12 +10,12 @@ from googleapiclient import discovery
 from googleapiclient import errors
 
 from util import config_utils
-from util.gcp import gcp_utils
 from util.config_utils import (
     is_copying_labels_from_project,
     iris_prefix,
     specific_prefix,
 )
+from util.gcp import gcp_utils
 from util.utils import (
     methods,
     cls_by_name,
@@ -235,7 +235,6 @@ class PluginHolder:
         loaded = []
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
             if config_utils.is_plugin_enabled(module):
-
                 plugin_class = load_plugin_class(module)
                 cls.plugins[
                     plugin_class

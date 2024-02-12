@@ -12,7 +12,7 @@ from google.appengine.api.runtime import memory_usage
 
 from util import localdev_config, utils
 from util.gcp.detect_gae import detect_gae
-from util.gcp.iterate_projects import list_descendant_projects
+from util.gcp.walk_project_tree import list_descendant_projects
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase, sort_dict
 
 __invocation_count = Counter()
@@ -63,9 +63,11 @@ def is_appscript_project(p) -> bool:
 
 
 # Not cached.
-def all_projects() -> Generator[str ]:
-    """All projects to which the current user has access"""
-    # Local import to avoid burdening AppEngine memory.
+@log_time
+def all_projects():  #
+    """All projects to which the current user has access
+    Returns a generator."""
+    # We do local import to avoid burdening AppEngine memory.
     # Loading all Cloud Client libraries would be 100MB  means that
     # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.
     from google.cloud import resourcemanager_v3
@@ -80,10 +82,8 @@ def all_projects() -> Generator[str ]:
     parent_name = current_project.name
     org_name = get_org(parent_name)
 
-    projects = list(list_descendant_projects(org_name))
-    print(projects)#TODO remove 'list' above
+    projects = list_descendant_projects(org_name)
     return projects
-
 
 
 def method_name(projects):

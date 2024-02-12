@@ -3,7 +3,7 @@
 # See usage (deploy.sh -h).
 # Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
 
-set -x
+#set -x
 set -u
 set -e
 
@@ -31,13 +31,17 @@ export LOGS_TOPIC=iris_logs_topic
 
 deploy_proj=
 deploy_org=
-export CRON_ONLY=
+export LABEL_ON_CRON=
+export LABEL_ON_CREATION_EVENT=
 
 
-while getopts 'cpoh' opt; do
+while getopts 'cepoh' opt; do
   case $opt in
   c)
-    export CRON_ONLY=true
+    export LABEL_ON_CRON=true
+    ;;
+  e)
+    export LABEL_ON_CREATION_EVENT=true
     ;;
   p)
     deploy_proj=true
@@ -55,13 +59,12 @@ while getopts 'cpoh' opt; do
             to do both; this is equivalent to -p -o
             Flags:
                   -o: Deploy org-level elements like Log Sink
-                  -p: Deploy project-level elements. This only works alone
-                  without -o if  org-level elements were already deployed.
-                  -c: Use only Cloud Scheduler cron to add labels;
-                  If this is enabled, labels are not added on resource creation.
-                  The default is without -c: Labels are added on both cron and resource creation.
-                  (If, on the other hand, you want Iris to  *not* use Cloud Scheduler,
-                  but only labeling on-creation, delete the schedule in cron.yaml.)
+                  -p: Deploy project-level elements. Org-level elements are still required.
+                  The default if neither -o or -p are given is to enable both.
+                  -c: Label on Cloud Scheduler cron to add labels
+                  -e: Label on-creation-event.
+                  The default if neither -c or -e are given is to enable both.
+
           Environment variable:
                   GAEVERSION (Optional) sets the Google App Engine Version.
 EOF
@@ -80,6 +83,13 @@ fi
 export PROJECT_ID=$1
 
 pip3 install -r requirements.txt >/dev/null
+if [[ "$LABEL_ON_CRON" != "true" ]] && [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
+  export LABEL_ON_CRON=true
+  export LABEL_ON_CREATION_EVENT=true
+  echo >&2 "Default option: both cron-driven and on-creation-event driven labeling"
+fi
+
+
 
 if [[ "$deploy_org" != "true" ]] && [[ "$deploy_proj" != "true" ]]; then
   deploy_org=true

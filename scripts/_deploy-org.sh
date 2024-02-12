@@ -51,9 +51,8 @@ gcloud organizations add-iam-policy-binding "$ORGID" \
   --condition=None >/dev/null
 
 
-if [[ "$CRON_ONLY" == "true" ]]; then
-  echo >&2 "CRON_ONLY is true."
-
+if [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
+  echo >&2 "Will not label on creation event."
   gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" || true
 else
   # Create PubSub topic for receiving logs about new GCP objects

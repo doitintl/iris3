@@ -3,7 +3,7 @@
 config-test.yaml
 config-dev.yaml
 config.yaml
-
+cron.yaml
 #
 __pycache__/
 *.bak

@@ -134,9 +134,7 @@ def init_logging():
     )
 
     set_log_levels()
-    # # logging.info(
-    # #     "Initialized logger; config is  %s", get_config_redact_token()
-    # )
+#    logging.info("Initialized logger ")
 
 
 def set_log_levels():

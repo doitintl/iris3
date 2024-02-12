@@ -1,0 +1,6 @@
+# Documented in Google App Engine https://cloud.google.com/appengine/docs/standard/python3/scheduling-jobs-with-cron-yaml
+cron:
+  - description: "Invoke /schedule which sends out messages triggering do_label per project/plugin."
+    url: /schedule
+    schedule: every day 10:00
+    target: iris3
