@@ -3,7 +3,7 @@
 # See usage (deploy.sh -h).
 # Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
 
-#set -x
+set -x
 set -u
 set -e
 

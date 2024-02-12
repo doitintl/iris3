@@ -1,10 +1,12 @@
 # Improvements and fixes
 ## Note: see also Github Issues
 
-* Instead of just the -c switch on install.sh, create consistency by adding an -e (for "event-driven") switch to mean "event-driven labeling". Running install.sh with neither -c or -e means the equivalent of having both -c -e.
- In doing this, validate that any installation with only -c or only -e is NOT -p (project-only) or -o (org-only) and fail if so. (i.e., proceed with installation only if neither or both switches are used.)
+* P2 Redo the whole thing with Cloud Asset Inventory including feeds.
+ Cloud Asset Inventory only recognizes assets for listing with a delay; and it is not clear whether the feeds are "real-time" or have a delay.
+* P2 Instead of just the -c switch on install.sh, create consistency by adding an -e (for "event-driven") switch to mean "event-driven labeling". Running install.sh with neither -c or -e should mean the same as having both -c -e.
+ In doing this, validate that any installation with only -c or only -e is NOT -p (project-only) or -o (org-only) and fail if so. (i.e., proceed with installation if and only if neither or both switches are used.)
 
-* P2 Even an empty AppEngine app (not Iris, just a Hello World with 3 lines of code in total) crashes on out-of-memory for the smalled AppEngine instance. Google has confirmed this. See if there is a workaround. This will same money.
+* P2 Memory consumption: Even an empty AppEngine app (not Iris, just a Hello World with 3 lines of code in total) crashes on out-of-memory for the smalled AppEngine instance. Google has confirmed this. See if there is a workaround. This will same money.
 
 * P2 PubSub push endpoint security:
   Note: The token by itself is not very secure, though  
@@ -49,8 +51,6 @@
 
 * P3 Rethink the need for title case in class names. This is clumsy for `Cloudsql`.
 
-* P3 Concurrent execution
-    * Init of multiple plugins is among the biggest slowdowns. They could be initialized concurrently.
 
 * P4 Implement new labels, for example using ideas from
   the [GCP Auto Tag project](https://github.com/doitintl/gcp-auto-tag/)

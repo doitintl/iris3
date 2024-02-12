@@ -11,7 +11,8 @@ from zoneinfo import ZoneInfo
 from google.appengine.api.runtime import memory_usage
 
 from util import localdev_config, utils
-from util.detect_gae import detect_gae
+from util.gcp.detect_gae import detect_gae
+from util.gcp.iterate_projects import list_descendant_projects
 from util.utils import timed_lru_cache, log_time, dict_to_camelcase, sort_dict
 
 __invocation_count = Counter()
@@ -56,14 +57,13 @@ def generate_uuid() -> str:
 
 
 def is_appscript_project(p) -> bool:
-    """With the Google Cloud Libraries, we don't get these
-    appscript sys- project, as we do with the Google API Client Libraries,
-    but the filtering won't hurt."""
+    """When using the Google Cloud Libraries, rather than  the Google API Client Libraries,
+    we don't get these  appscript sys- project, but the filtering won't hurt."""
     return bool(re.match(r"sys-\d{26}", p))
 
 
-# Not cached. Returns a generator, and so not reusable
-def all_projects() -> Generator[str, Any, None]:
+# Not cached.
+def all_projects() -> Generator[str ]:
     """All projects to which the current user has access"""
     # Local import to avoid burdening AppEngine memory.
     # Loading all Cloud Client libraries would be 100MB  means that
@@ -80,9 +80,10 @@ def all_projects() -> Generator[str, Any, None]:
     parent_name = current_project.name
     org_name = get_org(parent_name)
 
-    project_objects = projects_client.list_projects(parent=org_name)
-    projects = (p.project_id for p in project_objects)
+    projects = list(list_descendant_projects(org_name))
+    print(projects)#TODO remove 'list' above
     return projects
+
 
 
 def method_name(projects):

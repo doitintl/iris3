@@ -149,6 +149,12 @@ def get_gcs_label(run_id):
     return gcs_cmd, label_val
 
 
+@log_time
+def uninstall(deployment_project):
+    # Just uninstall the proj-level elements because uninstalling the org leaves us with a "soft-deleted" role
+    _ = run_command(f"./uninstall.sh -p {deployment_project}")
+
+
 def main():
     start_test = time.time()
     set_log_levels()
@@ -161,6 +167,7 @@ def main():
         logging.exception("")
 
     clean_resources(deployment_project, test_project, run_id, gce_zone)
+    uninstall()
     end = time.time()
     print("Time for integration test", int(end - start_test), "s")
 
@@ -209,7 +216,7 @@ def gce_region(gce_zone):
 
 def wait_for_traffic_shift(deployment_project):
     start_wait_for_trafficshift = time.time()
-    url = gae_url_with_region_abbrev(deployment_project)
+    url = gae_url_with_multiregion_abbrev(deployment_project)
     while time.time() - start_wait_for_trafficshift < 180:  # break after 180 sec
         try:
             found_it = __check_for_new_v(start_wait_for_trafficshift, url)
@@ -224,14 +231,14 @@ def wait_for_traffic_shift(deployment_project):
     raise TimeoutError(time.time() - start_wait_for_trafficshift)
 
 
-def gae_url_with_region_abbrev(proj):
-    """return: value like myproject.uc.r.appspot.com"""
+def gae_url_with_multiregion_abbrev(proj):
+    """return: Something like
+    https://iris3-dot-<PROJECTID>.<MULTIREGION_ABBREV>.r.appspot.com/
+    Where MULTIREGION_ABBREV may be uc (us-central), sa (southeast-asia)m or others."""
     app_describe = run_cmd_catch_exc(f"gcloud app describe --project {proj}")
     search = re.search(r"defaultHostname: (.*)$", app_describe, re.MULTILINE)
     url_base = search.group(1)
     assert "https://" not in url_base and "iris3-dot-" not in url_base, url_base
-    #Format: https://iris3-dot-<PROJECTID>.<REGION_ABBREV>.r.appspot.com/
-
     return "https://" + "iris3-dot-" + url_base
 
 
@@ -257,7 +264,7 @@ def __check_for_new_v(start_wait_for_trafficshift, url) -> bool:
 
 
 def fill_in_config_template(
-        run_id, deployment_project, test_project, pubsub_test_token
+    run_id, deployment_project, test_project, pubsub_test_token
 ):
     with open("config.yaml.test.template") as template_file:
         filled_template = template_file.read()
@@ -300,7 +307,6 @@ def clean_resources(deployment_project, test_project, run_id, gce_zone):
             f"bq rm -f --dataset {test_project}:dataset{run_id}",
         ],
         f"gsutil rm -r gs://bucket{run_id}",
-        f"gcloud app services delete -q iris3 --project {deployment_project}",
     ]
     with ThreadPoolExecutor() as executor:
         failed = [

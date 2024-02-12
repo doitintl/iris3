@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from googleapiclient import errors
 
 from plugin import Plugin
-from util.gcp_utils import (
+from util.gcp.gcp_utils import (
     cloudclient_pb_obj_to_dict,
     cloudclient_pb_objects_to_list_of_dicts,
     add_loaded_lib,

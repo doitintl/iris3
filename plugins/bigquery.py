@@ -9,8 +9,8 @@ from googleapiclient import errors
 from ratelimit import limits, sleep_and_retry
 
 from plugin import Plugin
-from util import gcp_utils
-from util.gcp_utils import add_loaded_lib
+from util.gcp import gcp_utils
+from util.gcp.gcp_utils import add_loaded_lib
 from util.utils import log_time, timing, dict_to_camelcase
 
 

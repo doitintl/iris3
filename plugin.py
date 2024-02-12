@@ -9,7 +9,8 @@ from typing import Dict, Tuple, Type, Optional
 from googleapiclient import discovery
 from googleapiclient import errors
 
-from util import gcp_utils, config_utils
+from util import config_utils
+from util.gcp import gcp_utils
 from util.config_utils import (
     is_copying_labels_from_project,
     iris_prefix,
@@ -222,6 +223,9 @@ class PluginHolder:
     @classmethod
     @log_time
     def init(cls):
+        """Loads the classes, but does not create instances, which happens
+        in get_plugin_instance"""
+
         def load_plugin_class(name) -> Type:
             module_name = PLUGINS_MODULE + "." + name
             __import__(module_name)
@@ -231,6 +235,7 @@ class PluginHolder:
         loaded = []
         for _, module, _ in pkgutil.iter_modules([PLUGINS_MODULE]):
             if config_utils.is_plugin_enabled(module):
+
                 plugin_class = load_plugin_class(module)
                 cls.plugins[
                     plugin_class
@@ -241,6 +246,7 @@ class PluginHolder:
 
     @classmethod
     def get_plugin_instance(cls, plugin_cls):
+        """Lazy-initialize  the instance. The classes are loaded in init()"""
         with cls.__lock:
             assert plugin_cls in cls.plugins, plugin_cls + " " + cls.plugins
             plugin_instance = cls.plugins[plugin_cls]

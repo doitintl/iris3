@@ -6,8 +6,8 @@ from typing import Dict, Optional, List
 from googleapiclient import errors
 
 from gce_base.gce_zonal_base import GceZonalBase
-from util import gcp_utils
-from util.gcp_utils import add_loaded_lib
+from util.gcp import gcp_utils
+from util.gcp.gcp_utils import add_loaded_lib
 from util.utils import log_time
 
 

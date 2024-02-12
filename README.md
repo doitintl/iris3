@@ -1,7 +1,7 @@
+
 # Iris
 
-In Greek mythology, Iris (/ˈaɪrɪs/; Greek: Ἶρις) is the personification of the rainbow and messenger of the gods. She
-was the handmaiden to Hera.
+In Greek mythology, Iris(Ἶρις) is the personification of the rainbow and messenger of the gods. She was the handmaiden to Hera.
 
 # Blog post
 
@@ -26,9 +26,9 @@ Note that Iris is designed to serve the org. It is not designed around serving a
 Iris does not *add* information, only *copy* values that already exist. For example, it can label a VM instance with its zone, since this information is known; but it cannot add a "business unit" label because it does not know what business
 unit a resource should be attributed to. For that, you should label all resources when creating them, e.g., in your Terraform scripts.
 
-## Iris doesn't by default label all existing resources.
+## Iris **doesn't** label all existing resources in the default setup.
 
-To do it, see section [Labeling existing resources](#Labeling existing resources) below.
+To do this, see section "[Labeling existing resources](#labeling-existing-resources)" below.
 
 # Open source
 Iris is open-source: Feel free to add functionality and add new types of labels. See the `TODO.md` file and Github issues for features and fixes you might do.
@@ -47,8 +47,8 @@ Or you can disable the schedule labeling.
 
 ## Labeling existing resources
 
-* When you first use Iris, you may want to label all existing resources. This is not Iris' preferred flow for adding labels, but you can do it.
-* To do this, deploy it with `label_all_on_cron: True` and wait for the next scheduled run, or manually trigger a run.
+* When you first use Iris, you may want to label all existing resources. This is not Iris' default flow for adding labels, but you can do it.
+* To do this, deploy it with `label_all_on_cron: True` and wait for the next scheduled run, or manually trigger a run through  Cloud Scheduler.
 * Thenּ, you may want to then redeploy Iris with `label_all_on_cron: False` to avoid the  resource consumption of relabeling all resources with the same label every day forever.
 
 # Supported Google Cloud resources
@@ -85,13 +85,13 @@ The part of the function name after `_gcp_` is used for the label key.
 * You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
   [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
 
-* You need to have certain permissions to run the deployment script to deploy Iris on the org level--the deploy script sets up  roles and log sink. You will need to have these roles on the *organization* where Iris is deployed. You do not need to have these roles if you are doing further re-deployments of new versions of Iris on the project level (where you use the `-p` switch on `deploy.sh`.
+* Here are the required organization-level roles for you, the deployer, to allow the  deploy script to set up  roles and log sink.  You do not need to have these roles if you are doing further re-deployments of new versions of Iris on the project level (where you use the `-p` switch on `deploy.sh`.
     * *Organization Role Administrator*  so the deployment script can create a custom IAM role for Iris that allows to get and set labels.
     * (Note that *Organization Owner* is not enough).
     * *Security Admin* **or** *Organization Administrator* so the deployment script can allow the Iris app engine service account to have the needed permissions.
     * *Logs Configuration Writer* so the deployment script can  create an organization log sink that sends logs to PubSub.
 
-* You need to have certain permissions to run the deployment script to deploy Iris on the project level.
+* Here are the required  project-level roles that you need on the Iris deployment project.
   * One option: You can have *Project Owner* on the project where Iris is deployed
   * Another option: You can have these roles.
       * *Project IAM Admin* to let the deployment script set up the bindings.

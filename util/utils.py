@@ -14,7 +14,7 @@ from functools import lru_cache, wraps
 import flask
 
 from util.config_utils import iris_prefix
-from util.detect_gae import detect_gae
+from util.gcp.detect_gae import detect_gae
 
 
 def cls_by_name(fully_qualified_classname):

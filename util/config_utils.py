@@ -3,7 +3,6 @@ import os
 import re
 import sys
 import typing
-from collections import defaultdict
 
 import yaml
 
@@ -99,8 +98,12 @@ def get_config() -> typing.Dict:
     return config
 
 
-def is_test_or_dev_configuration():
-    return get_config()["config_file"] != "config.yaml"
+def is_test_configuration():
+    return config_test_file() != "config.yaml"
+
+
+def config_test_file():
+    return get_config()["config_file"]
 
 
 def is_in_test_or_dev_project(project_id):

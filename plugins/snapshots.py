@@ -4,8 +4,8 @@ from functools import lru_cache
 from googleapiclient import errors
 
 from gce_base.gce_base import GceBase
-from util import gcp_utils
-from util.gcp_utils import add_loaded_lib
+from util.gcp import gcp_utils
+from util.gcp.gcp_utils import add_loaded_lib
 from util.utils import log_time, timing
 
 

@@ -2,16 +2,15 @@
 
 import sys
 
-
 from flask import Response
 
 print("Initializing ", file=sys.stderr)
 import flask
-from util.gcp_utils import (
+from util.gcp.gcp_utils import (
     increment_invocation_count,
     count_invocations_by_path,
 )
-from util.detect_gae import detect_gae
+from util.gcp.detect_gae import detect_gae
 
 app = flask.Flask(__name__)
 if detect_gae():
@@ -37,8 +36,9 @@ import logging
 import os
 
 from plugin import Plugin, PluginHolder
-from util import pubsub_utils, gcp_utils, utils, config_utils
-from util.gcp_utils import (
+from util import pubsub_utils, utils, config_utils
+from util.gcp import gcp_utils
+from util.gcp.gcp_utils import (
     detect_gae,
     is_appscript_project,
     all_projects,
@@ -51,7 +51,7 @@ from util.config_utils import (
     is_project_enabled,
     pubsub_token,
     is_in_test_or_dev_project,
-    is_test_or_dev_configuration,
+    is_test_configuration,
     iris_homepage_text,
 )
 from util.utils import log_time, timing
@@ -73,11 +73,10 @@ PluginHolder.init()
 
 @app.route("/")
 def index():
-
     increment_invocation_count("index")
     with gae_memory_logging("index"):
         msg = iris_homepage_text()
-        if config_utils.is_test_or_dev_configuration():
+        if config_utils.is_test_configuration():
             msg += "\nI'm running in test or dev mode."
 
         logging.info(
@@ -88,7 +87,6 @@ def index():
 
 @app.route("/_ah/warmup")
 def warmup():
-
     increment_invocation_count("warmup")
     with gae_memory_logging("warmup"):
         logging.info("warmup() called")
@@ -129,32 +127,41 @@ def __get_enabled_projects():
         enabled_projs = configured_as_enabled
     else:
         all_proj = all_projects()
-        # In my testing, we do NOT get appscript projects in the list.
-        # There is a small chance that with other permissions, these appscript projects would appear.
-        # so here we filter them out.
 
+        # In some cases, lots of appscript projects would appear.
+        # so here we filter them out. However, In my testing, we do NOT get appscript projects in the list.
         nonappscript_projects = (p for p in all_proj if not is_appscript_project(p))
-
-        enabled_only = (
-            p for p in nonappscript_projects if config_utils.is_project_enabled(p)
-        )
+        # The following filtering is probably useless since the else-clause that
+        # that we are in is reached only if there are no explicitly enabled projects.
+        enabled_only = (p for p in nonappscript_projects if config_utils.is_project_enabled(p))
         enabled_projs = list(enabled_only)
     enabled_projs.sort()
     if not enabled_projs:
         raise Exception("No projects enabled at all")
-
+    explain = []
     if (  # These are three indications that we are running in dev/test
-        not detect_gae()
-        or is_test_or_dev_configuration()
-        or is_in_test_or_dev_project(current_project_id())
+            not detect_gae()
+            or is_test_configuration()
+            or is_in_test_or_dev_project(current_project_id())
     ):
+        if not detect_gae():
+            explain.append("Not running in App Engine")
+        if is_test_configuration():
+            explain.append("Using a test configuration file " + config_utils.config_test_file())
+        if is_in_test_or_dev_project(current_project_id()):
+            explain.append("Running a project " + current_project_id() +
+                           " which has one of the markers of a test project" +
+                           " configured under key test_or_dev_project_markers")
         max_proj_in_dev = 3
         if len(enabled_projs) > max_proj_in_dev:
+            assert explain, "If we got here, one of the conditioned should have been true"
             raise Exception(
-                """In development or testing, we support no more than {max_proj_in_dev} projects, \
+                f"""When running Iris in development/testing mode, \
+                we support no more than {max_proj_in_dev} projects, \
                 to avoid accidentally flooding the system.
                 {len(enabled_projs)} projects are available, which exceeds that. 
-                See README.md for explanation.
+                We are in development/testing mode because:
+                {"; ".join(explain)}
                 """
             )
     return enabled_projs
@@ -165,9 +172,9 @@ def __send_pubsub_per_projectplugin(configured_projects):
     for project_id in configured_projects:
         for plugin_cls in PluginHolder.plugins:
             if (
-                not plugin_cls.is_labeled_on_creation()
-                or plugin_cls.relabel_on_cron()
-                or config_utils.label_all_on_cron()
+                    not plugin_cls.is_labeled_on_creation()
+                    or plugin_cls.relabel_on_cron()
+                    or config_utils.label_all_on_cron()
             ):
                 pubsub_utils.publish(
                     msg=json.dumps(
@@ -191,7 +198,6 @@ def __send_pubsub_per_projectplugin(configured_projects):
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
-
     increment_invocation_count("label_one")
     with gae_memory_logging("label_one"):
 

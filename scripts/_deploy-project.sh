@@ -28,13 +28,14 @@ if [[ ! -f "config-test.yaml" ]]  && [[ ! -f "config.yaml" ]]; then
 fi
 
 ABBREV__=$(gcloud app describe --project $PROJECT_ID | grep defaultHostname |egrep -o "\.[a-z][a-z]\.")
-GAE_REGION_ABBREV=${ABBREV__:1:2}
+GAE_MULTIREGION_ABBREV=${ABBREV__:1:2} #  Something like uc (us-central) or sa (southeast-asia)
 
 GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
+
 # The following line depends on the  the export PYTHON_PATH="." above.
 PUBSUB_VERIFICATION_TOKEN=$(python3 ./util/print_pubsub_token.py)
-LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
-DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_REGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
+LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_MULTIREGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
+DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_MULTIREGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
 declare -A enabled_services
 while read -r svc _; do
