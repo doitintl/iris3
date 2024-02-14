@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-
+# This script deletes, on the project level (see `_deploy-project.sh`):
+#  * Policy bindings for the topics and subscriptions
+#  * Topics and subscriptions
+#  * The App Engine service
+#  * The Cloud Scheduler cron definition
 #set -x
 set -u
 set -e
@@ -35,10 +39,9 @@ gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID" 2>/dev/null ||
 
 gcloud app services delete --project $PROJECT_ID -q iris3  ||true
 
-pushd ./uninstall_scripts
-  # Need to have a blank-config file with the name cron.yaml, so need to cd to this dir
-  gcloud app deploy -q cron.yaml -q --project $PROJECT_ID  || true
-popd
+cp cron_empty.yaml cron.yaml
+gcloud app deploy -q cron.yaml -q --project $PROJECT_ID  || true
+rm cron.yaml
 
 
 

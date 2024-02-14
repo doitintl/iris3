@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-#To uninstall Iris, delete
-# * On the org level (see `_deploy-org.sh`), delete
-#  * Custom role `iris3`  along with the   policy binding  granting this role to the  built-in App Engine service account `$PROJECT_ID@appspot.gserviceaccount.com`
+# This script deletes, on the org level (see `_deploy-org.sh`):
+#  * Custom role `iris3`  along with the policy binding  granting this role to the  built-in App Engine service account `$PROJECT_ID@appspot.gserviceaccount.com`
 #  * Log sinks `iris_sink`
-#set -x
+set -x
 set -u
 set -e
 
