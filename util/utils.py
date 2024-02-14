@@ -134,6 +134,8 @@ def init_logging():
     )
 
     set_log_levels()
+
+
 #    logging.info("Initialized logger ")
 
 

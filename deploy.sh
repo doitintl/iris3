@@ -3,7 +3,7 @@
 # See usage (deploy.sh -h).
 # Deploys Iris to Google App Engine, setting up Roles, Sinks, Topics, and Subscriptions as needed.
 
-#set -x
+set -x
 set -u
 set -e
 
@@ -83,18 +83,18 @@ fi
 export PROJECT_ID=$1
 
 pip3 install -r requirements.txt >/dev/null
+
+# If both -c and -e are not given, then actually act as if both are there.
 if [[ "$LABEL_ON_CRON" != "true" ]] && [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
   export LABEL_ON_CRON=true
   export LABEL_ON_CREATION_EVENT=true
-  echo >&2 "Default option: both cron-driven and on-creation-event driven labeling"
 fi
 
 
-
+# If both -p and -o are not given, then actually act as if both are there.
 if [[ "$deploy_org" != "true" ]] && [[ "$deploy_proj" != "true" ]]; then
   deploy_org=true
   deploy_proj=true
-  echo >&2 "Default option: Deploy project and also org"
 fi
 
 

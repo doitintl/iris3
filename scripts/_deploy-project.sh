@@ -2,11 +2,12 @@
 #
 # Deploys Iris to Google App Engine, setting up   Sinks, Topics, and Subscriptions as needed.
 # Usage
+# - Called from deploy.sh
 # - Pass the project as the first command line argument.
 # - Optionally set environment variable GAEVERSION to set the Google App Engine Version.
 #
 
-#set -x
+set -x
 set -u
 set -e
 
@@ -27,15 +28,22 @@ if [[ ! -f "config-test.yaml" ]]  && [[ ! -f "config.yaml" ]]; then
        exit 1
 fi
 
-ABBREV__=$(gcloud app describe --project $PROJECT_ID | grep defaultHostname |egrep -o "\.[a-z][a-z]\.")
-GAE_MULTIREGION_ABBREV=${ABBREV__:1:2} #  Something like uc (us-central) or sa (southeast-asia)
+appengineHostname=$(gcloud app describe --project $PROJECT_ID | grep defaultHostname |cut -d":" -f2 | awk '{$1=$1};1' )
+if [[ -z "$appengineHostname" ]]; then
+   echo >&2 "App Engine is not enabled in $PROJECT_ID.
+   To do this, please deploy a simple \"Hello World\" default service to enable App Engine.
+   In doing so, select the App Engine region that you prefer. It is immutable."
 
-GAE_SVC=$(grep "service:" app.yaml | awk '{print $2}')
+   exit 1
+fi
+
+gae_svc=$(grep "service:" app.yaml | awk '{print $2}')
 
 # The following line depends on the  the export PYTHON_PATH="." above.
 PUBSUB_VERIFICATION_TOKEN=$(python3 ./util/print_pubsub_token.py)
-LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_MULTIREGION_ABBREV}.r.appspot.com/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
-DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${GAE_SVC}-dot-${PROJECT_ID}.${GAE_MULTIREGION_ABBREV}.r.appspot.com/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
+
+LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
+DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
 
 declare -A enabled_services
 while read -r svc _; do
@@ -147,7 +155,6 @@ else
     --max-retry-delay=$MAX_RETRY \
     --quiet >/dev/null
 fi
-
 
 # Allow Pubsub to delete failed message from this sub
 gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \

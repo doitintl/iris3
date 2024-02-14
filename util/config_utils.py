@@ -84,7 +84,7 @@ def get_config() -> typing.Dict:
     else:
         config_name = prod_config
 
-    print("Using", config_name, file=sys.stderr)  # logging not yet enabled
+    print("Using config file:", config_name, file=sys.stderr)  # logging not yet enabled
 
     try:
         with open(config_name) as config_file:
