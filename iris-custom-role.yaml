@@ -1,4 +1,4 @@
-#custom role name (read from this line by _deploy-org.sh and _uninstall-for-org.sh): iris3
+#custom role name (read from this line by _deploy-org.sh and _uninstall-for-org.sh): role_iris_custom
 title: "Iris3 Custom Role"
 description: "Permissions needed by the custom role used by the Iris App Engine app"
 # TODO Generate the following values directly from the Python class for DRY.
