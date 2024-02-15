@@ -6,7 +6,7 @@
 
 #set -x
 
-#before set -u
+# The following line must come before set -u
 if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
 
 set -u
