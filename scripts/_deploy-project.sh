@@ -4,7 +4,6 @@
 # Usage
 # - Called from deploy.sh
 # - Pass the project as the first command line argument.
-# - Optionally set environment variable GAEVERSION to set the Google App Engine Version.
 #
 
 #set -x
@@ -209,15 +208,7 @@ else
    echo >&2 "Will not have a Cloud Scheduler schedule"
    cp cron_empty.yaml cron.yaml
 fi
-# GAEVERSION might be unbound, so disable the -u check.
-set +u
 
-# Deploy to App Engine
-if [[ -n "$GAEVERSION" ]]
-then
-    gcloud app deploy --project $PROJECT_ID --version $GAEVERSION --quiet app.yaml cron.yaml
-else
-    gcloud app deploy --project $PROJECT_ID --quiet app.yaml cron.yaml
-fi
+gcloud app deploy --project $PROJECT_ID --quiet app.yaml cron.yaml
 
-rm cron.yaml # For us, cron.yaml is a temp file, replaced by cron_full.yaml or cron_empty.yaml
+rm cron.yaml # In this script, cron.yaml is a temp file, a copy of  cron_full.yaml or cron_empty.yaml

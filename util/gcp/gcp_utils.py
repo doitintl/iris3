@@ -5,7 +5,7 @@ import uuid
 from collections import Counter
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Dict, Any, Generator
+from typing import Dict, Any
 from zoneinfo import ZoneInfo
 
 from google.appengine.api.runtime import memory_usage

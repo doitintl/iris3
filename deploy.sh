@@ -66,7 +66,8 @@ while getopts 'cepoh' opt; do
                   The default if neither -c or -e are given is to enable both.
 
           Environment variable:
-                  GAEVERSION (Optional) sets the Google App Engine Version.
+                  IRIS_CUSTOM_ROLE (Optional, default is iris3) An identifier for the Iris custom role,
+                  which will be created as needed.
 EOF
     exit 1
     ;;

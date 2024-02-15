@@ -219,7 +219,10 @@ examples.
           file `sample_data/storage.buckets.create.log_message.json`. (Or create a bucket and look at the log.)
         * In that file you see `"methodName": "storage.buckets.create"`.
 
-4. Add permissions in `iris-custom-role.yaml` to be granted to the Iris custom role. This role allows Iris, for each resource type, to list, get, and update. (Updating means permission `setLabels` where available or permission `update`  otherwise.)
+4. Add permissions in `iris-custom-role.yaml` to be granted to the Iris custom role. 
+   * This role allows Iris, for each resource type, to list, get, and update. 
+     * ("Update" requires permission `setLabels` where available or permission `update`  otherwise.) 
+     * The name of this role is `iris3`by default, but may be set by passing env variable `IRIS_CUSTOM_ROLE` in calling `deploy.sh` or `uninstall.sh`
 
 # Testing
 ## Circuit-breaker

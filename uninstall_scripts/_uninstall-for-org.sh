@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # This script deletes, on the org level (see `_deploy-org.sh`):
-#  * Custom role `iris3`  along with the policy binding  granting this role to the  built-in App Engine service account `$PROJECT_ID@appspot.gserviceaccount.com`
+#  * Iris Custom role   along with the policy binding  granting this role to the  built-in App Engine service account `$PROJECT_ID@appspot.gserviceaccount.com`
 #  * Log sinks `iris_sink`
 
 
