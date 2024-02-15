@@ -2,15 +2,17 @@
 # This script deletes, on the org level (see `_deploy-org.sh`):
 #  * Custom role `iris3`  along with the policy binding  granting this role to the  built-in App Engine service account `$PROJECT_ID@appspot.gserviceaccount.com`
 #  * Log sinks `iris_sink`
+
+
 set -x
+
+#before set -u
+if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
+
 set -u
 set -e
 
 
-IRIS_CUSTOM_ROLE=$(cat <iris-custom-role.yaml |
-       grep "#custom role name"|cut -d":" -f2 | awk '{$1=$1};1')
-
-echo "Iris custom role is \"$IRIS_CUSTOM_ROLE\""
 
 LOG_SINK=iris_log
 
@@ -21,7 +23,6 @@ gcloud organizations remove-iam-policy-binding "$ORGID" --all \
   --role "organizations/$ORGID/roles/$IRIS_CUSTOM_ROLE" >/dev/null|| true
 
 gcloud iam roles delete -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" >/dev/null || true
-
 
 if  gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
     svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |

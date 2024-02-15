@@ -5,13 +5,15 @@
 # - Called from deploy.sh
 
 #set -x
+
+#before set -u
+if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
+
 set -u
 set -e
 
-IRIS_CUSTOM_ROLE=$(cat <iris-custom-role.yaml |
-       grep "#custom role name"|cut -d":" -f2 | awk '{$1=$1};1')
 
-echo "Iris custom role is \"$IRIS_CUSTOM_ROLE\""
+if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
 
 LOG_SINK=iris_log
 

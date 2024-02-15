@@ -1,4 +1,5 @@
 import logging
+import os
 import pathlib
 import random
 import string
@@ -246,10 +247,13 @@ def curr_func() -> str:
     return sys._getframe(1).f_code.co_name
 
 
-def run_command(command_s):
+def run_command(command_s, extra_env: typing.Dict[str, str] = None):
     assert "  " not in command_s  # double-space diesrupts the split
     command = command_s.split(" ")
-    result = subprocess.run(command, stdout=subprocess.PIPE, check=True)
+    env = os.environ
+    if extra_env is not None:
+        env = env | extra_env
+    result = subprocess.run(command, stdout=subprocess.PIPE, check=True, env=env)
     output = result.stdout.decode("utf-8")
     return output.strip("\n")
 

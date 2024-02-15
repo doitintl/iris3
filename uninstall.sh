@@ -16,7 +16,7 @@
 #    - `iris_deadletter`
 #    - `do_label`
 
-#set -x
+set -x
 set -u
 set -e
 

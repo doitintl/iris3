@@ -1,7 +1,10 @@
-#custom role name (read from this line by _deploy-org.sh and _uninstall-for-org.sh): iris3
 title: "Iris3 Custom Role"
-description: "Permissions needed by the custom role used by the Iris App Engine app"
-# TODO Generate the following values directly from the Python class for DRY.
+description: >
+  Permissions needed by the custom role used by the Iris App Engine app's service account.
+  A nondefault name for this role can be passed as env variable IRIS_CUSTOM_ROLE 
+  into the deployment and uninstall scripts.
+# TODO For DRY, embed the following values in the Python class, then call these classes to construct this.
+#
 # TODO: Not clear that `setTags` is really needed.
 stage: "GA"
 includedPermissions:

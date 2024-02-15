@@ -2,10 +2,7 @@
 
 ## Note: see also Github Issues
 
-
-* P2 Memory consumption: Even an empty AppEngine app (not Iris, just a Hello World with 3 lines of code in total)
-  crashes on out-of-memory for the smalled AppEngine instance. Google has confirmed this. See if there is a workaround.
-  This will same money.
+* P2 Memory consumption: Even an empty AppEngine app (not Iris, just a Hello World with 3 lines of code in total) crashes on out-of-memory for the smalled AppEngine instance. Google has confirmed this. See if there is a workaround.  This will save money.
 
 * P2 PubSub push endpoint security:
   Note: The token by itself is not very secure, though  
@@ -14,13 +11,7 @@
   Alternatives:
     - Replace the `PUBSUB_VERIFICATION_TOKEN` with random value in `deploy.sh`
     - Or better: [Use JWT](https://cloud.google.com/pubsub/docs/push)
-
-* P3 Use Cloud Tasks instead of PubSub
-    * to trigger `label_one`. This will allow a delay of 10 minutes for Cloud SQL, so allowing the labeling for Cloud
-      SQL to happen on creation (rather than just on cron).
-    * to trigger `do_label` from `schedule()`, with a random delay, so minimizing the number of App Engine instances
-      that are created.
-
+ 
 * P3 In `integration_test.sh`
     - Test more labels (in addition to `iris3_name` which is now tested)
     - Test the copying of labels from the project.

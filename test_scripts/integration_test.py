@@ -116,7 +116,7 @@ def describe_resources(test_project, run_id, gce_zone):
                 found,
             )
             set_failing()
-
+        else: print("Test succeeded, all needed labels found")
     if not global_exit_code:
         print("Success: All needed labels found")
 
@@ -152,7 +152,7 @@ def get_gcs_label(run_id):
 @log_time
 def uninstall(deployment_project):
     # Just uninstall the proj-level elements because uninstalling the org leaves us with a "soft-deleted" role
-    _ = run_command(f"./uninstall.sh -p {deployment_project}")
+    _ = run_command(f"./uninstall.sh -p {deployment_project}", )
 
 
 def main():
