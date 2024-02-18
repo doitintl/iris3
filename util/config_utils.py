@@ -61,19 +61,6 @@ def label_all_on_cron() -> bool:
     return ret
 
 
-def pubsub_token() -> str:
-    config = get_config()
-    ret = config.get("pubsub_verification_token")
-
-    return ret
-
-
-def get_config_redact_token():
-    c = get_config().copy()
-    c["pubsub_verification_token"] = "[REDACTED]"
-    return c
-
-
 @functools.lru_cache
 def get_config() -> typing.Dict:
     test_config = "config-test.yaml"

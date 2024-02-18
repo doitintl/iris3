@@ -16,6 +16,8 @@ LABEL_ONE_SUBSCRIPTION=label_one
 
 project_number=$(gcloud projects describe $PROJECT_ID --format json|jq -r '.projectNumber')
 PUBSUB_SERVICE_ACCOUNT="service-${project_number}@gcp-sa-pubsub.iam.gserviceaccount.com"
+msg_sender_sa_name=iris-msg-sender
+MSGSENDER_SERVICE_ACCOUNT=${msg_sender_sa_name}@${PROJECT_ID}.iam.gserviceaccount.com
 
 gcloud pubsub topics remove-iam-policy-binding $DEADLETTER_TOPIC \
         --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
@@ -28,6 +30,11 @@ gcloud pubsub subscriptions remove-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
 gcloud pubsub subscriptions remove-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
       --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
       --role="roles/pubsub.subscriber" --project $PROJECT_ID ||true
+
+gcloud projects remove-iam-policy-binding --project ${PROJECT_ID} \
+ --member="serviceAccount:${MSGSENDER_SERVICE_ACCOUNT}"\
+ --role='roles/iam.serviceAccountTokenCreator'
+
 
 gcloud pubsub subscriptions delete $DEADLETTER_SUB --project="$PROJECT_ID" -q || true
 gcloud pubsub subscriptions delete "$DO_LABEL_SUBSCRIPTION" -q --project="$PROJECT_ID" ||true

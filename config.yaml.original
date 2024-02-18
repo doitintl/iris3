@@ -51,15 +51,3 @@ from_project: True
 
 label_all_on_cron: False
 
-# Optionally change this token before first deployment for added security in
-# communication between PubSub and the Iris App on App Engine.
-# You could even re-generate a new token per deployment.
-# Note that this token-based approach is not very secure, though it  was once recommended by Google.
-# However, so long as the GCP project running the Iris3 AppEngine service is otherwise secure,
-# setting this token protects against unwanted invocations of labeling.
-# If you then redeploy, don't change the token, as it is used for
-# communication between different parts of the system.
-pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
-
-
-

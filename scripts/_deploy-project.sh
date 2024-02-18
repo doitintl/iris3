@@ -38,11 +38,9 @@ fi
 
 gae_svc=$(grep "service:" app.yaml | awk '{print $2}')
 
-# The following line depends on the  the export PYTHON_PATH="." above.
-PUBSUB_VERIFICATION_TOKEN=$(python3 ./util/print_pubsub_token.py)
 
-LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/label_one?token=${PUBSUB_VERIFICATION_TOKEN}"
-DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/do_label?token=${PUBSUB_VERIFICATION_TOKEN}"
+LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/label_one"
+DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/do_label?token"
 
 declare -A enabled_services
 while read -r svc _; do
@@ -102,6 +100,16 @@ fi
 project_number=$(gcloud projects describe $PROJECT_ID --format json|jq -r '.projectNumber')
 PUBSUB_SERVICE_ACCOUNT="service-${project_number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 
+msg_sender_sa_name=iris-msg-sender
+
+gcloud iam service-accounts create --project $PROJECT_ID $msg_sender_sa_name ||true
+
+MSGSENDER_SERVICE_ACCOUNT=${msg_sender_sa_name}@${PROJECT_ID}.iam.gserviceaccount.com
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+ --member="serviceAccount:${MSGSENDER_SERVICE_ACCOUNT}"\
+ --role='roles/iam.serviceAccountTokenCreator'
+
 set +e
 # Allow Pubsub to publish into the deadletter topic
 BINDING_ERR_OUTPUT=$(gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
@@ -136,6 +144,7 @@ if [[ $? -eq 0 ]]; then
   gcloud pubsub subscriptions update "$DO_LABEL_SUBSCRIPTION" \
     --project="$PROJECT_ID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
+    --push-auth-service-account $MSGSENDER_SERVICE_ACCOUNT  \
     --ack-deadline=$ACK_DEADLINE \
     --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
     --dead-letter-topic=$DEADLETTER_TOPIC \
@@ -147,6 +156,7 @@ else
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" \
     --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" \
     --push-endpoint "$DO_LABEL_SUBSCRIPTION_ENDPOINT" \
+    --push-auth-service-account $MSGSENDER_SERVICE_ACCOUNT  \
     --ack-deadline=$ACK_DEADLINE \
     --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
     --dead-letter-topic=$DEADLETTER_TOPIC \
@@ -179,6 +189,7 @@ else
       echo >&2 "Updating $LABEL_ONE_SUBSCRIPTION"
       gcloud pubsub subscriptions update "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" \
         --push-endpoint="$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
+        --push-auth-service-account $MSGSENDER_SERVICE_ACCOUNT  \
         --ack-deadline=$ACK_DEADLINE \
         --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
         --dead-letter-topic=$DEADLETTER_TOPIC \
@@ -188,6 +199,7 @@ else
   else
       gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECT_ID" \
         --push-endpoint="$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
+        --push-auth-service-account $MSGSENDER_SERVICE_ACCOUNT  \
         --ack-deadline=$ACK_DEADLINE \
         --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
         --dead-letter-topic=$DEADLETTER_TOPIC \

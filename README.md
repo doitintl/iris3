@@ -83,10 +83,13 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 
 ## Before deploying
 
-### Org and IAM
+### In which Project 
 
 * You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
   [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
+
+### Needed roles for deployment
+#### Organization-leve roles
 
 * Here are the required organization-level roles for you, the deployer, to allow the deploy script to set up roles and  log sink. (Note that *Organization Owner* is not enough).
     * *Organization Role Administrator*  so the deployment script can create a custom IAM role for Iris that allows it to  get and set labels.
@@ -94,10 +97,15 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
     * *Logs Configuration Writer* so the deployment script can create an organization log sink that sends logs to
       PubSub.
 
-* The required project-level roles: *Project Owner* or *Project Editor* on the project where Iris is deployed, so that the deployment script can create role bindings, topics and subscriptions, and deploy App Engine. Fine-granted "predefined roles" are not possible because deploying Cloud Scheduler cron requires at least Editor or Owner, per GCP docs.
+#### Project-level roles
+* The required project-level roles: *Project Owner* or *Project Editor* on the project where Iris is deployed, so that the deployment script can 
+  * create role bindings, topics and subscriptions
+  * deploy App Engine. 
+  * `actAs` the serivice account `iris-msg-sender` for deploying it to allow JWT auth.
+
+* Fine-granted "predefined roles" are not possible because deploying Cloud Scheduler cron requires at least Editor or Owner, per GCP docs.
 
 ### App Engine Defaults
-
 
 ## Deployment
 
@@ -159,6 +167,7 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
     * Another topic is a dead-letter topic.
 * PubSub subscriptions
     * There is one for each topic: These direct the messages to `/label_one` and `/do_label` in `main.py`, respectively.
+    * For security, these two PubSub subscriptions [use JWT auth](These https://cloud.google.com/pubsub/docs/authenticate-push-subscriptions). The deployment script sets this up for you.
     * A dead-letter subscription. This is a pull subscription. By default, it just accumulates the messages. You can use      it to see statistics, or you can pull messages from it.
 
 # Local Development

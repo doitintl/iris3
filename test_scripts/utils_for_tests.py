@@ -10,8 +10,6 @@ from urllib import request
 from urllib.error import URLError
 from urllib.parse import urlencode
 
-from util.config_utils import pubsub_token
-
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
@@ -42,9 +40,8 @@ def do_local_http(
         host_and_port = f"localhost:{LOCAL_PORT}"
         args_s = ""
         if extra_args:
-            args_s = "&"
             args_s += urlencode(extra_args)
-        url_ = f"http://{host_and_port}/{path}?token={pubsub_token()}{args_s}"
+        url_ = f"http://{host_and_port}/{path}?{args_s}"
         req = request.Request(
             url_,
             data=data_bytes,

@@ -2,14 +2,21 @@
 
 import sys
 
-from flask import Response
-
-
 print("Initializing ", file=sys.stderr)
+from util.utils import init_logging, sort_dict
+
+# Must init logging before any library code writes logs (which would then just override our config)
+init_logging()
+
 import flask
+from flask import Response
+from google.auth.transport import requests
+from google.oauth2 import id_token
 from util.gcp.gcp_utils import (
     increment_invocation_count,
     count_invocations_by_path,
+    get_project,
+    current_project_id,
 )
 from util.gcp.detect_gae import detect_gae
 
@@ -18,11 +25,6 @@ if detect_gae():
     import google.appengine.api
 
     app.wsgi_app = google.appengine.api.wrap_wsgi_app(app.wsgi_app)
-
-from util.utils import init_logging, sort_dict
-
-# Must init logging before any library code writes logs (which would then just override our config)
-init_logging()
 
 from functools import lru_cache
 
@@ -49,7 +51,6 @@ from util.gcp.gcp_utils import (
 
 from util.config_utils import (
     is_project_enabled,
-    pubsub_token,
     iris_homepage_text,
 )
 from util.utils import log_time, timing
@@ -96,7 +97,7 @@ def schedule():
     """
     Send out a message per-plugin per-project to label all objects of that type and project.
     """
-
+    # Not validated with JWT because validated with cron header (see below)
     increment_invocation_count("schedule")
     with gae_memory_logging("schedule"):
         try:
@@ -172,6 +173,11 @@ def __send_pubsub_per_projectplugin(configured_projects):
 
 @app.route("/label_one", methods=["POST"])
 def label_one():
+    """Message received from PubSub when the log sink detects a new resource"""
+    ok = __check_pubsub_jwt()
+    if not ok:
+        return "JWT Failed", 400
+
     increment_invocation_count("label_one")
     with gae_memory_logging("label_one"):
 
@@ -226,6 +232,37 @@ def label_one():
             return "Error", 500
 
 
+def __check_pubsub_jwt():
+    try:
+        bearer_token = flask.request.headers.get("Authorization")
+        token = bearer_token.split(" ")[1]
+
+        claim = id_token.verify_oauth2_token(token, requests.Request())
+
+        # example claim:  { "aud": "https://iris3-dot-myproj.appspot.com/label_one?token=xxxxxxxxx",
+        #     "azp": "1125239305332910191520",
+        #     "email": "iris-msg-sender@myproj.iam.gserviceaccount.com",
+        #     "email_verified": True, "exp": 1708281691, "iat": 1708278091,
+        #     "iss": "https://accounts.google.com", "sub": "1125239305332910191520"}
+
+        if not (is_email_verif := claim.get("email_verified")):
+            logging.error(f"Email verified was {is_email_verif}")
+            return False
+
+        logging.info("Claims: " + str(claim))
+        if (
+            email := claim.get("email")
+        ) != f"iris-msg-sender@{current_project_id()}.iam.gserviceaccount.com":
+            logging.error("incorrect email in JWT " + email)
+            return False
+    except Exception as e:
+        logging.exception(f"Invalid JWT token: {e}")
+        return False
+    logging.info("JWT Passed")
+
+    return True
+
+
 def __label_one_0(data, plugin_cls: Type[Plugin]):
     plugin = PluginHolder.get_plugin_instance(plugin_cls)
     gcp_object = plugin.get_gcp_object(data)
@@ -259,7 +296,6 @@ def __label_one_0(data, plugin_cls: Type[Plugin]):
 def __extract_pubsub_content() -> Dict:
     """Take the value at the relevant key in the logging message from PubSub,
     Base64-decode, convert to Python object."""
-    __check_pubsub_verification_token()
 
     envelope = flask.request.get_json()
     msg = envelope.get("message", {})
@@ -283,6 +319,10 @@ def do_label():
     """Receives a push message from PubSub, sent from schedule() above,
     and labels all objects of a given plugin and project_id.
     """
+
+    ok = __check_pubsub_jwt()
+    if not ok:
+        return "JWT Failed", 400
     increment_invocation_count("do_label")
     with gae_memory_logging("do_label"):
 
@@ -317,21 +357,6 @@ def do_label():
         except Exception:
             logging.exception("Error on do_label %s %s", plugin_class_name, project_id)
             return "Error", 500
-
-
-def __check_pubsub_verification_token():
-    """Token verifying that only PubSub accesses PubSub push endpoints"""
-    expected_token = pubsub_token()
-    if not expected_token:
-        raise FlaskException(
-            "Should define expected token in configuration.",
-            400,
-        )
-
-    token_from_args = flask.request.args.get("token", "")
-    if expected_token != token_from_args:
-        logging.info("Token was %s but expected %s", token_from_args, expected_token)
-        raise FlaskException(f'Access denied: Invalid token "{expected_token}"', 403)
 
 
 class FlaskException(Exception):

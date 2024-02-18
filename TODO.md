@@ -5,21 +5,10 @@
 * P2 Memory consumption: Even an empty AppEngine app (not Iris, just a Hello World with 3 lines of code in total) crashes on out-of-memory for the smalled AppEngine instance. Google has confirmed this. See if there is a workaround.  This will save money.
 
 * P2 PubSub push endpoint security:
-  Note: The token by itself is not very secure, though  
-  Google has at times recommended this approach.
-
-  Alternatives:
-    - Replace the `PUBSUB_VERIFICATION_TOKEN` with random value in `deploy.sh`
-    - Or better: [Use JWT](https://cloud.google.com/pubsub/docs/push)
+  Note: The token by itself is not very secure, though   Google has at times recommended this approach.
  
-* P3 In `integration_test.sh`
-    - Test more labels (in addition to `iris3_name` which is now tested)
-    - Test the copying of labels from the project.
-    - Support testing of the cron-based labeling, which would also allow testing of Cloud SQL and of attachment of
-      Disks. In this test:
-        1. Modify cron to run 1 minute after the deployment is launched (and restore it at the end of the test.)
-        1. Call `deploy.sh` using with the `-c` switch to disable event-based labeling 1. Wait 1.5 minutes after deploy
-           before checking that the labels are there
+  [Use JWT](https://cloud.google.com/pubsub/docs/push)
+
 
 * P3 Label immediately after an event in certain cases, as opposed to using a daily cron as is now done.
     * Cloud SQL Instances
@@ -40,7 +29,6 @@
     - Implement Cloud Task with a delay. (Not clear if that will help.)
 
 * P3 Rethink the need for title case in class names. This is clumsy for `Cloudsql`.
-
 
 * P4 Implement new labels, for example using ideas from
   the [GCP Auto Tag project](https://github.com/doitintl/gcp-auto-tag/)
