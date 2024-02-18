@@ -49,7 +49,7 @@ from_project: True
 # If label_all_on_cron is True, then all resource types will be labeled on every Cloud Scheduler cycle.
 #   This is useful when you first launch Iris3 for labeling existing resources.
 
-label_all_on_cron: True
+label_all_on_cron: False
 
 # Optionally change this token before first deployment for added security in
 # communication between PubSub and the Iris App on App Engine.
