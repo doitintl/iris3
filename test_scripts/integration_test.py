@@ -419,5 +419,5 @@ if __name__ == "__main__":
     assert_root_path()
 
     main()
-    print("Status", "failure" if global_exit_code else "success")
+    print("Exit Status:", "failure" if global_exit_code else "success")
     sys.exit(global_exit_code)

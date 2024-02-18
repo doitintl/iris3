@@ -65,6 +65,9 @@ while getopts 'poh' opt; do
                   This is useful if you deployed Iris to two projects
                   in an org and want to delete it on one of those.
                   -o: Uninstall org-level elements like Log Sink
+            Environment variable:
+                  IRIS_CUSTOM_ROLE (Optional, default is iris3) An identifier for
+                  the Iris custom role that you want to delete.
 EOF
     exit 1
     ;;

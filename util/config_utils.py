@@ -104,11 +104,3 @@ def is_test_configuration():
 
 def config_test_file():
     return get_config()["config_file"]
-
-
-def is_in_test_or_dev_project(project_id):
-    markers = get_config().get("test_or_dev_project_markers", [])
-    for marker in markers:
-        if marker and marker in project_id:
-            return True
-    return False
