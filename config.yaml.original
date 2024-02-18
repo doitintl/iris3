@@ -46,10 +46,10 @@ from_project: True
 #  only resources of certain types get labeled on cron: those whose plugins either
 #    - return True on relabel_on_cron() (like Disks)
 #    - or return False in is_labeled_on_creation() (like Cloud SQL)
-# If it isTrue, then all resource types will be labeled on every Cloud Scheduler cycle.
-#   This is useful for labeling existing resources when you first launch Iris3.
+# If label_all_on_cron is True, then all resource types will be labeled on every Cloud Scheduler cycle.
+#   This is useful when you first launch Iris3 for labeling existing resources.
 
-label_all_on_cron: False
+label_all_on_cron: True
 
 # Optionally change this token before first deployment for added security in
 # communication between PubSub and the Iris App on App Engine.
@@ -61,15 +61,5 @@ label_all_on_cron: False
 # communication between different parts of the system.
 pubsub_verification_token: 0b0a30cde7e3489f0a9cd74bb51c514d
 
-# If running (i.e., in AppEngine) in a project with one of the strings in the name,
-# then *scheduled* labelings (those created by the Cloud Scheduler)
-# will fail if more than 3 projects are enabled.
-# This is intended to prevent a situation where you forget to limit the scope of
-# labeling in development (see "projects" key above),
-# and so accidentally labeling your entire org with test-labels.
-test_or_dev_project_markers:
-  - playground
-  - test
-  - dev
-  - qa
+
 
