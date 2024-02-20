@@ -56,18 +56,22 @@ while getopts 'poh' opt; do
     cat <<EOF
       Usage uninstall.sh PROJECT_ID 
           Argument:
-                  The project to which Iris was  deployed
+            The project to which Iris was  deployed
           Options, to be given before project ID.
             If neither -p nor -o is given, the default behavior is used:
-            Both are uninstalled;  equivalent to -p -o
+            both are uninstalled; this is equivalent to  giving both -p -o
             Flags:
                   -p: Uninstall project-level elements of Iris.
                   This is useful if you deployed Iris to two projects
                   in an org and want to delete it on one of those.
+                  Warning: If you delete the project-level elements,
+                  and the log sink still exists in the org, you will get
+                  error-message emails from Google (since the log sink
+                  no longer has a topic to send to)
                   -o: Uninstall org-level elements like Log Sink
             Environment variable:
                   IRIS_CUSTOM_ROLE (Optional, default is iris3) An identifier for
-                  the Iris custom role that you want to delete.
+                  the Iris custom role that was used, if non-default.
 EOF
     exit 1
     ;;
@@ -95,7 +99,7 @@ gcloud projects describe "$PROJECT_ID" >/dev/null`` || {
   exit 1
 }
 
-echo "Project ID $PROJECT_ID"
+#echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
 
 

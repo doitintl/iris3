@@ -37,10 +37,11 @@ set -e
 
 if [[ "$role_error" != "0" ]]; then
   echo "Error in accessing organization.
-    Please either run ./deploy.sh -p to depoly only project-level elements
-   (generally what you need for an incremental upgrade)
-   or run it this script using a role that has organization permissions to
-   deploy organization-level elements like roles or Log Sink."
+   If you just want to redeploy to the same project,
+   e.g., to upgrade the config, and you have the necessary
+   project role but not the necessary org role,
+   please run ./deploy.sh -p .
+   Or get yourself the org-level role as documented in README."
   exit $role_error
 fi
 

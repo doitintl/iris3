@@ -22,7 +22,8 @@ gcloud organizations remove-iam-policy-binding "$ORGID" --all \
   --member "serviceAccount:$PROJECT_ID@appspot.gserviceaccount.com" \
   --role "organizations/$ORGID/roles/$IRIS_CUSTOM_ROLE" >/dev/null|| true
 
-gcloud iam roles delete -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" >/dev/null || true
+# Just leave the role; it causes too much trouble in its "soft delete" state
+#gcloud iam roles delete -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" >/dev/null || true
 
 if  gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
     svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |

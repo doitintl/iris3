@@ -59,8 +59,12 @@ while getopts 'cepoh' opt; do
             to do both; this is equivalent to -p -o
             Flags:
                   -o: Deploy org-level elements like Log Sink
-                  -p: Deploy project-level elements. Org-level elements are still required.
-                  The default if neither -o or -p are given is to enable both.
+                  -p: Deploy project-level elements.
+                  Org-level elements are a pre-requisite.
+                  This is useful for redeploying to the same project, e.g., to change config.
+                  If you want to deploy to a *different* project,
+                  then you have to deploy the org-level elements.
+                  The default, if neither -o or -p are given, is to enable both.
                   -c: Label on Cloud Scheduler cron to add labels
                   -e: Label on-creation-event.
                   The default if neither -c or -e are given is to enable both.
@@ -104,7 +108,7 @@ gcloud projects describe "$PROJECT_ID" >/dev/null|| {
   exit 1
 }
 
-echo "Project ID $PROJECT_ID"
+#echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
 
 

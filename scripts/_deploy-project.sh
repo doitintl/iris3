@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Deploys Iris to Google App Engine, setting up   Sinks, Topics, and Subscriptions as needed.
+# Deploys Iris to Google App Engine,
+# first setting up Sinks, Topics, Subscriptions, and Role Bindings as needed.
 # Usage
 # - Called from deploy.sh
 # - Pass the project as the first command line argument.
@@ -102,7 +103,13 @@ PUBSUB_SERVICE_ACCOUNT="service-${project_number}@gcp-sa-pubsub.iam.gserviceacco
 
 msg_sender_sa_name=iris-msg-sender
 
-gcloud iam service-accounts create --project $PROJECT_ID $msg_sender_sa_name ||true
+set +e
+gcloud iam service-accounts describe  ${msg_sender_sa_name}@${PROJECT_ID}.iam.gserviceaccount.com --project $PROJECT_ID
+if [[ $? -ne 0 ]]; then
+  set -e
+  gcloud iam service-accounts create --project $PROJECT_ID $msg_sender_sa_name
+fi
+set -e
 
 MSGSENDER_SERVICE_ACCOUNT=${msg_sender_sa_name}@${PROJECT_ID}.iam.gserviceaccount.com
 
@@ -129,7 +136,6 @@ if [[ $? -ne 0  && $BINDING_ERR_OUTPUT == *"gcp-sa-pubsub.iam.gserviceaccount.co
            --role="roles/pubsub.publisher" --project $PROJECT_ID >/dev/null
 
 fi
-
 set -e
 
 # Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
@@ -197,7 +203,8 @@ else
         --max-retry-delay=$MAX_RETRY \
         --quiet >/dev/null
   else
-      gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" --topic "$LOGS_TOPIC" --project="$PROJECT_ID" \
+      gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" \
+         --topic "$LOGS_TOPIC" --project="$PROJECT_ID" \
         --push-endpoint="$LABEL_ONE_SUBSCRIPTION_ENDPOINT" \
         --push-auth-service-account $MSGSENDER_SERVICE_ACCOUNT  \
         --ack-deadline=$ACK_DEADLINE \
@@ -213,6 +220,8 @@ else
       --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
       --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 fi
+
+
 
 if [[ "$LABEL_ON_CRON" == "true" ]]; then
     cp cron_full.yaml cron.yaml

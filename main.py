@@ -174,11 +174,12 @@ def __send_pubsub_per_projectplugin(configured_projects):
 @app.route("/label_one", methods=["POST"])
 def label_one():
     """Message received from PubSub when the log sink detects a new resource"""
+    logging.info("label_one called")
+    increment_invocation_count("label_one")
     ok = __check_pubsub_jwt()
     if not ok:
         return "JWT Failed", 400
 
-    increment_invocation_count("label_one")
     with gae_memory_logging("label_one"):
 
         plugins_found = []
@@ -234,6 +235,10 @@ def label_one():
 
 def __check_pubsub_jwt():
     try:
+        #TODO the sample https://github.com/GoogleCloudPlatform/python-docs-samples/blob/ff4c1d55bb5b6995c63383469535604002dc9ba2/appengine/standard_python3/pubsub/main.py#L69
+        # has this. I am not sure why or how the token arg gets there.
+        # if request.args.get("token", "") != current_app.config["PUBSUB_VERIFICATION_TOKEN"]:
+        #     return "Invalid request", 400
         bearer_token = flask.request.headers.get("Authorization")
         token = bearer_token.split(" ")[1]
 
@@ -319,11 +324,12 @@ def do_label():
     """Receives a push message from PubSub, sent from schedule() above,
     and labels all objects of a given plugin and project_id.
     """
-
+    increment_invocation_count("do_label")
+    logging.info("do_label called")
     ok = __check_pubsub_jwt()
     if not ok:
         return "JWT Failed", 400
-    increment_invocation_count("do_label")
+
     with gae_memory_logging("do_label"):
 
         project_id = ""  # set up variables to allow logging in Exception block at end
