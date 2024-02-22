@@ -167,8 +167,8 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
     * Another topic is a dead-letter topic.
 * PubSub subscriptions
     * There is one for each topic: These direct the messages to `/label_one` and `/do_label` in `main.py`, respectively.
-    * For security, these two PubSub subscriptions [use JWT auth](These https://cloud.google.com/pubsub/docs/authenticate-push-subscriptions). The deployment script sets this up for you.
-    * A dead-letter subscription. This is a pull subscription. By default, it just accumulates the messages. You can use      it to see statistics, or you can pull messages from it.
+    * For security, these two PubSub subscriptions [use JWT auth](https://cloud.google.com/pubsub/docs/authenticate-push-subscriptions), where the JWT token is verified in the Iris webapp.
+    * A dead-letter subscription. This is a pull subscription. By default, it just accumulates the messages. You can use it to see statistics, or you can pull messages from it.
 
 # Local Development
 
