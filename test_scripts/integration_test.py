@@ -294,7 +294,7 @@ def clean_resources(deployment_project, test_project, run_id, gce_zone):
         print("Type ENTER to proceed to clean up resources ")
         _ = sys.stdin.readline()
 
-    #pause_for_user_input()# Use this in debugging, to keep the test resources alive until you hit E
+    # pause_for_user_input()# Use this in debugging, to keep the test resources alive until you hit E
 
     remove_config_file()
     commands = [

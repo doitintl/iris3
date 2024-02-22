@@ -18,7 +18,6 @@ class Cloudsql(Plugin):
 
     @classmethod
     def _cloudclient(cls, _=None):
-        logging.info("_cloudclient for %s", cls.__name__)
         raise NotImplementedError(
             "There is no Cloud Client library for " + cls.__name__
         )

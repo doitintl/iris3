@@ -235,7 +235,7 @@ def label_one():
 
 def __check_pubsub_jwt():
     try:
-        #TODO the sample https://github.com/GoogleCloudPlatform/python-docs-samples/blob/ff4c1d55bb5b6995c63383469535604002dc9ba2/appengine/standard_python3/pubsub/main.py#L69
+        # TODO the sample https://github.com/GoogleCloudPlatform/python-docs-samples/blob/ff4c1d55bb5b6995c63383469535604002dc9ba2/appengine/standard_python3/pubsub/main.py#L69
         # has this. I am not sure why or how the token arg gets there.
         # if request.args.get("token", "") != current_app.config["PUBSUB_VERIFICATION_TOKEN"]:
         #     return "Invalid request", 400

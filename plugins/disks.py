@@ -22,7 +22,6 @@ class Disks(GceZonalBase):
     @staticmethod
     @lru_cache(maxsize=1)
     def _create_cloudclient():
-        logging.info("_cloudclient for %s", "Disks")
         # Local import to avoid burdening AppEngine memory.
         # Loading all Cloud Client libraries would be 100MB  means that
         # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.

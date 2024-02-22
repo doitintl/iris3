@@ -79,7 +79,7 @@ else
   fi
 
   # Add methodName filter to the log sink
-  #TODO get this directly from the Python class to avoid duplication
+  #TODO Each Python plugin class should expose these and we should pull it from there,to have the info in one place.
   log_filter+=('protoPayload.methodName:(')
   log_filter+=('"storage.buckets.create"')
   log_filter+=('OR "compute.instances.insert" OR "compute.instances.start" OR "datasetservice.insert"')

@@ -1,13 +1,18 @@
 
-# See config.yaml.original in git; the others are dynamic and so not put in git.
+# See config.yaml.original and cron_.*.yaml in git;
+# the below are dynamic and so not put in git.
 config-test.yaml
 config-dev.yaml
 config.yaml
 cron.yaml
 #
+
+#
 __pycache__/
 *.bak
 .DS_Store
+*.swp
+
 TEMP*
 .idea/
 

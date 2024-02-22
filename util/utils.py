@@ -252,7 +252,7 @@ def run_command(command_s, extra_env: typing.Dict[str, str] = None):
     command = command_s.split(" ")
     env = os.environ
     if extra_env is not None:
-        env = env | extra_env
+        env |= extra_env
     result = subprocess.run(command, stdout=subprocess.PIPE, check=True, env=env)
     output = result.stdout.decode("utf-8")
     return output.strip("\n")

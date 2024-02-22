@@ -3,7 +3,7 @@ description: >
   Permissions needed by the custom role used by the Iris App Engine app's service account.
   A nondefault name for this role can be passed as env variable IRIS_CUSTOM_ROLE 
   into the deployment and uninstall scripts.
-# TODO For DRY, embed the following values in the Python class, then call these classes to construct this.
+# TODO Each Python plugin class should expose these and we should pull it from there,to have the info in one place.
 #
 # TODO: Not clear that `setTags` is really needed.
 stage: "GA"

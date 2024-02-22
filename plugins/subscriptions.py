@@ -17,7 +17,6 @@ class Subscriptions(Plugin):
     @classmethod
     @lru_cache(maxsize=1)
     def _cloudclient(cls, _=None):
-        logging.info("_cloudclient for %s", cls.__name__)
         # Local import to avoid burdening AppEngine memory.
         # Loading all Cloud Client libraries would be 100MB  means that
         # the default AppEngine Instance crashes on out-of-memory even before actually serving a request.

@@ -114,7 +114,7 @@ set -e
 MSGSENDER_SERVICE_ACCOUNT=${msg_sender_sa_name}@${PROJECT_ID}.iam.gserviceaccount.com
 
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
- --member="serviceAccount:${MSGSENDER_SERVICE_ACCOUNT}"\
+ --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}"\
  --role='roles/iam.serviceAccountTokenCreator'
 
 set +e
@@ -173,9 +173,8 @@ fi
 
 # Allow Pubsub to delete failed message from this sub
 gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
-    --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
+    --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
     --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
-
 
 if [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
   echo >&2 "Will not label on creation event."

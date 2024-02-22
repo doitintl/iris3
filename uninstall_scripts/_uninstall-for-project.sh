@@ -31,9 +31,12 @@ gcloud pubsub subscriptions remove-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
     --role="roles/pubsub.subscriber" --project $PROJECT_ID ||true
 
-gcloud projects remove-iam-policy-binding ${PROJECT_ID}  \
-    --member="serviceAccount:${MSGSENDER_SERVICE_ACCOUNT}"\
-    --role='roles/iam.serviceAccountTokenCreator' ||true
+# We don't do the following to avoid disrupting PubSub more generally in the proect.
+#gcloud projects remove-iam-policy-binding ${PROJECT_ID}  \
+#    --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}"\
+#    --role='roles/iam.serviceAccountTokenCreator' ||true
+
+
 
 gcloud pubsub subscriptions delete $DEADLETTER_SUB --project="$PROJECT_ID" -q || true
 gcloud pubsub subscriptions delete "$DO_LABEL_SUBSCRIPTION" -q --project="$PROJECT_ID" ||true
