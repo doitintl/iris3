@@ -26,9 +26,9 @@ from util.utils import (
 PLUGINS_MODULE = "plugins"
 
 
-# TODO Since subclasses are already singletons, and we are already using
-# a lot of classmethods and staticmethods, , could convert this to
-# never use instance methods
+# Since subclasses are already singletons, and we are already using
+# a lot of classmethods and staticmethods, could convert this code to
+# never use instance methods, maybe  only staticmethods
 class Plugin(metaclass=ABCMeta):
     # Underlying API  max is 1000; avoid off-by-one errors
     # We send a batch when _BATCH_SIZE or more tasks are in it, or at the end of a label_all
@@ -244,12 +244,12 @@ class PluginHolder:
         assert cls.plugins, "No plugins defined"
 
     @classmethod
-    def get_plugin_instance(cls, plugin_cls):
+    def get_plugin_instance(cls, plugin_cls: Type[Plugin]):
         """Lazy-initialize  the instance. The classes are loaded in init()"""
         with cls.__lock:
-            assert plugin_cls in cls.plugins, plugin_cls + " " + cls.plugins
-            plugin_instance = cls.plugins[plugin_cls]
-
+            plugin_instance: Plugin = cls.plugins[plugin_cls]
+            # Note: We initialized all keys in cls.plugins
+            # with None values.
             assert not plugin_instance or isinstance(
                 plugin_instance, (Plugin, plugin_cls)
             )

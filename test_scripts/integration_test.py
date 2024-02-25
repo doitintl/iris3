@@ -19,6 +19,7 @@ from util.utils import (
     run_command,
     log_time,
     set_log_levels,
+    pause_for_user_input,
 )
 
 config_test_yaml = "config-test.yaml"
@@ -58,7 +59,7 @@ def run_command_or_commands_catch_exc(command_or_commands: Union[str, List[str]]
 
 
 @log_time
-def describe_resources(test_project, run_id, gce_zone):
+def describe_resources(test_project, run_id, gce_zone) -> List:
     describe_flags = f"--project {test_project} --format json"
     commands = [
         f"gcloud pubsub topics describe topic{run_id} {describe_flags}",
@@ -73,28 +74,28 @@ def describe_resources(test_project, run_id, gce_zone):
         commands_and_executors = list(
             zip(commands, executor.map(run_command_or_commands_catch_exc, commands))
         )
-        did_not_get_descrip = [
+        failed_in_getting_any_string_back = [
             cmd
             for cmd, result in commands_and_executors
             if isinstance(result, Exception)
         ]
-        got_a_description = {
+        got_some_string_back = {
             cmd: result
             for cmd, result in commands_and_executors
             if not isinstance(result, Exception)
         }
-    if did_not_get_descrip:
+    if failed_in_getting_any_string_back:
         print(
-            "Failed to get any description",
-            did_not_get_descrip,
-            "\nGot some desc",
-            got_a_description,
+            "Failed to get any description:",
+            failed_in_getting_any_string_back,
+            "\nGot some description:",
+            got_some_string_back,
         )
-        set_failing()
+        return False
     else:
         needed_label_not_found = []
         found = []
-        for cmd, result in got_a_description.items():
+        for cmd, result in got_some_string_back.items():
             j = json.loads(result)
             labels = j.get("labels", {})
             label_val = labels.get(f"{run_id}_name")
@@ -111,15 +112,9 @@ def describe_resources(test_project, run_id, gce_zone):
         if len(needed_label_not_found) > 0:
             print(
                 "Needed label not found:",
-                needed_label_not_found,
-                "\nNeeded label found:",
-                found,
+                __short_version_of_commands(needed_label_not_found),
             )
-            set_failing()
-        else:
-            print("Test succeeded, all needed labels found")
-    if not global_exit_code:
-        print("Success: All needed labels found")
+        return needed_label_not_found
 
 
 def get_gcs_label(run_id):
@@ -128,7 +123,6 @@ def get_gcs_label(run_id):
     label_val = None
     if isinstance(out_gcs, Exception):
         print("Failed to describe bucket:", gcs_cmd)
-        set_failing()
     else:
         assert isinstance(out_gcs, str), type(out_gcs)
         if out_gcs.strip() == "":
@@ -146,7 +140,6 @@ def get_gcs_label(run_id):
 
         if not label_val:
             print("GCS bucket did not have the needed label")
-            set_failing()
     return gcs_cmd, label_val
 
 
@@ -165,8 +158,10 @@ def main():
     deploy(deployment_project)
 
     try:
-        create_and_describe_resources(test_project, run_id, gce_zone)
-    except Exception:
+        succeed = create_and_describe_resources(test_project, run_id, gce_zone)
+        if not succeed:
+            set_failing()
+    except:
         logging.exception("")
 
     clean_resources(deployment_project, test_project, run_id, gce_zone)
@@ -204,12 +199,53 @@ def setup_configuration():
     )
 
 
-def create_and_describe_resources(test_project, run_id, gce_zone):
+def __short_version_of_commands(commands: List[str]) -> List[str]:
+    ret = []
+    for c in commands:
+        words = c.split()
+
+        if words[0] == "bq":
+            ret.append(" ".join(words[0:2]))
+        else:
+            assert words[0] == "gcloud", words
+            ret.append(" ".join(words[1:3]))
+    return ret
+
+
+def create_and_describe_resources(test_project, run_id, gce_zone) -> bool:
     create_resources(test_project, run_id, gce_zone)
-    # Next line necessary to let the labels be visible for PubSub topics and subscriptions.
-    # Could speed it up by repeatedly checking for the labels
-    time.sleep(30)
-    describe_resources(test_project, run_id, gce_zone)
+    print("DONE Create resources")
+    start = time.time()
+    try_count = 0
+    try:
+        labels_not_found = []
+        while time.time() - start < 120:  # Go at most 2 minutes
+            try_count += 1
+            labels_not_found: List = describe_resources(test_project, run_id, gce_zone)
+            print("label-check loop", try_count)
+            if labels_not_found is False:
+                print("Exceptions in get descriptions")
+                return False
+            elif len(labels_not_found) == 0:
+                print("Succeeded finding all labels")
+                return True  # Sucess: break if we found all relevant labels
+            else:
+                time.sleep(1)  # Try again
+
+        assert len(labels_not_found) > 0, "only get here on failure"
+        print("Exiting with failure: Needed label not found:", labels_not_found)
+
+        pause_for_user_input()
+
+        return False
+    finally:
+        print(
+            "Exiting checks of labels after",
+            int(time.time() - start),
+            "seconds;",
+            try_count,
+            "loops",
+        )
 
 
 def gce_region(gce_zone):
@@ -225,7 +261,7 @@ def wait_for_traffic_shift(deployment_project):
             if found_it:
                 return
             else:
-                time.sleep(3)
+                time.sleep(1)
                 continue
         except HTTPError as e:
             logging.error(e)  # Keep trying despite exception
@@ -236,7 +272,10 @@ def wait_for_traffic_shift(deployment_project):
 def gae_url_with_multiregion_abbrev(proj):
     """return: Something like
     https://iris3-dot-<PROJECTID>.<MULTIREGION_ABBREV>.r.appspot.com/
-    Where MULTIREGION_ABBREV may be uc (us-central), sa (southeast-asia)m or others."""
+    Where MULTIREGION_ABBREV may be uc (us-central), sa (southeast-asia)m or others.
+
+    In script _deploy.project.sh, similar functionality appears (as Bash)
+    """
     app_describe = run_cmd_catch_exc(f"gcloud app describe --project {proj}")
     search = re.search(r"defaultHostname: (.*)$", app_describe, re.MULTILINE)
     url_base = search.group(1)
@@ -290,9 +329,6 @@ def remove_config_file():
 
 @log_time
 def clean_resources(deployment_project, test_project, run_id, gce_zone):
-    def pause_for_user_input():
-        print("Type ENTER to proceed to clean up resources ")
-        _ = sys.stdin.readline()
 
     # pause_for_user_input()# Use this in debugging, to keep the test resources alive until you hit E
 
@@ -319,7 +355,6 @@ def clean_resources(deployment_project, test_project, run_id, gce_zone):
         ]
     if failed:
         print("Failed to delete", failed)
-    # Do not set_failing. If we fail on cleanup,there is not much to do
 
 
 def count_command_line_params():
@@ -402,15 +437,15 @@ def create_resources(test_project, run_id, gce_zone):
     ]
 
     with ThreadPoolExecutor(10) as executor:
-        failed = [
+        creation_failed = [
             cmd
             for cmd, result in zip(
                 commands, executor.map(run_command_or_commands_catch_exc, commands)
             )
             if isinstance(result, Exception)
         ]
-    if failed:
-        print("Failed ", failed)
+    if creation_failed:
+        print("Failed ", creation_failed)
         set_failing()
 
 

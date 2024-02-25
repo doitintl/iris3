@@ -25,9 +25,9 @@ Note that Iris is designed to serve the organization. It is not designed around 
 
 Iris does not *add* information, only *copy* values that already exist. For example, it can label a VM instance with its zone; but it cannot add a "business unit" label because it does not know a resource's business unit. For that, you should label all resources when creating them, e.g., in your Terraform scripts. (Indeed, iris can be made extraneous in this way.)
 
-## Existing resources are not all labeled (by default)
+## Labeling resources that existing resources when you deploy Iris
 
-If you want to label lots of virtual machines,PubSub topics etc. that *already exist* when you install Iris, see section "[Labeling existing resources](#labeling-existing-resources)" below.
+If you want to label lots of virtual machines,PubSub topics etc. that *already exist* when you deploy Iris, see section "[Labeling existing resources](#labeling-existing-resources)" below.
 
 # Open source
 
@@ -51,8 +51,7 @@ You can also  disable the scheduled labeling. See Deployment below or run `./dep
 ## Labeling existing resources
 
 * When you first use Iris, you may want to label all existing resources. Iris does not do this by default.
-* To do this, deploy Iris with `label_all_on_cron: True` and wait for the next scheduled run, or manually trigger a run   through Cloud Scheduler.
-* Thenּ, you may want to then **redeploy** Iris with `label_all_on_cron: False`, to avoid the resource consumption of  relabeling all resources with the same label every day forever.
+* To do this, publish a PubSub message (the content doesn't matter) to `iris_label_all_topic`, for example with `gcloud pubsub topics publish iris_label_all_topic --message=labelall --project $PROJECT_ID` (substituting the project ID where Iris is deployed.) Of course, you will need to have permissions to publish that message.
 
 # Supported Google Cloud resources
 

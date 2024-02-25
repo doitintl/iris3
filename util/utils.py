@@ -266,3 +266,8 @@ def sort_dict(d):
     keys = sorted(list(d.keys()))
     sorted_dict = {i: d[i] for i in keys}
     return sorted_dict
+
+
+def pause_for_user_input():
+    print("Type ENTER to proceed to clean up resources ")
+    _ = sys.stdin.readline()

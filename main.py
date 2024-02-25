@@ -28,7 +28,7 @@ if detect_gae():
 
 from functools import lru_cache
 
-from typing import Dict, Type
+from typing import Dict, Type, List
 
 import time
 
@@ -91,34 +91,53 @@ def warmup():
     return "", 200, {}
 
 
+@app.route("/label_all", methods=["POST"])
+@log_time
+def label_all():
+    with gae_memory_logging("label_all"):
+        logging.info("Start label_all() invocation")
+        increment_invocation_count("label_all")
+        __check_pubsub_jwt()
+        return __label_multiple_types(True)
+
+
 @app.route("/schedule", methods=["GET"])
 @log_time
 def schedule():
-    """
-    Send out a message per-plugin per-project to label all objects of that type and project.
-    """
-    # Not validated with JWT because validated with cron header (see below)
-    increment_invocation_count("schedule")
     with gae_memory_logging("schedule"):
-        try:
-            logging.info("Start schedule() invocation")
+        logging.info("Start schedule() invocation")
+        increment_invocation_count("schedule")
+        # Not validated with JWT because validated with cron header
+        is_cron = flask.request.headers.get("X-Appengine-Cron")
+        if not is_cron:
+            return "Access Denied: No Cron header found", 403
+        label_all_types = config_utils.label_all_on_cron()
+        return __label_multiple_types(label_all_types)
 
-            is_cron = flask.request.headers.get("X-Appengine-Cron")
-            if not is_cron:
-                return "Access Denied: No Cron header found", 403
 
-            enabled_projects = __get_enabled_projects()
-            __send_pubsub_per_projectplugin(enabled_projects)
-            # All errors are actually caught before this point,
-            # since most errors are unrecoverable.
-            return "OK", 200
-        except Exception:
-            logging.exception("In schedule()")
-            return "Error", 500
+def __label_multiple_types(label_all_types: bool):
+    """
+    Send out a message per-plugin per-project; each msg labels objects of a given type and project.
+    :param label_all_types: if false, only label those that are
+    not labeled on creation (CloudSQL) or those that must be relabeled on cron (Disks),
+    but if true, label all types;
+    """
+    assert label_all_types is not None
+    try:
+        enabled_projects = __get_enabled_projects()
+        __send_pubsub_per_projectplugin(
+            enabled_projects, label_all_types=label_all_types
+        )
+        # All errors are actually caught, logged and ignored *before* this point,
+        # since most errors are unrecoverable.
+        return "OK", 200
+    except Exception:
+        logging.exception("In schedule()")
+        return "Error", 500
 
 
 @lru_cache(maxsize=1)
-def __get_enabled_projects():
+def __get_enabled_projects() -> List:
     configured_as_enabled = config_utils.enabled_projects()
     if configured_as_enabled:
         enabled_projs = configured_as_enabled
@@ -142,14 +161,15 @@ def __get_enabled_projects():
     return enabled_projs
 
 
-def __send_pubsub_per_projectplugin(configured_projects):
+def __send_pubsub_per_projectplugin(configured_projects: List, label_all_types: bool):
     msg_count = 0
     for project_id in configured_projects:
         for plugin_cls in PluginHolder.plugins:
+
             if (
                 not plugin_cls.is_labeled_on_creation()
                 or plugin_cls.relabel_on_cron()
-                or config_utils.label_all_on_cron()
+                or label_all_types
             ):
                 pubsub_utils.publish(
                     msg=json.dumps(
@@ -205,6 +225,11 @@ def label_one():
                 for supported_method in method_names:
                     if supported_method.lower() in method_from_log.lower():
                         if plugin_cls.is_labeled_on_creation():
+                            logging.info(
+                                "plugin_cls %s, with method %s",
+                                plugin_cls.__name__,
+                                method_from_log,
+                            )
                             __label_one_0(data, plugin_cls)
 
                         plugins_found.append(
@@ -254,7 +279,7 @@ def __check_pubsub_jwt():
             logging.error(f"Email verified was {is_email_verif}")
             return False
 
-        logging.info("Claims: " + str(claim))
+        # logging.info("Claims: " + str(claim))
         if (
             email := claim.get("email")
         ) != f"iris-msg-sender@{current_project_id()}.iam.gserviceaccount.com":
@@ -263,7 +288,7 @@ def __check_pubsub_jwt():
     except Exception as e:
         logging.exception(f"Invalid JWT token: {e}")
         return False
-    logging.info("JWT Passed")
+    # logging.info("JWT Passed")
 
     return True
 
