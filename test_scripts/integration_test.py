@@ -111,8 +111,8 @@ def describe_resources(test_project, run_id, gce_zone) -> List:
 
         if len(needed_label_not_found) > 0:
             print(
-                "Needed label not found:",
-                __short_version_of_commands(needed_label_not_found),
+                "Needed labels not found:",
+               "; ".join( __short_version_of_commands(needed_label_not_found))
             )
         return needed_label_not_found
 

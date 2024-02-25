@@ -51,7 +51,11 @@ You can also  disable the scheduled labeling. See Deployment below or run `./dep
 ## Labeling existing resources
 
 * When you first use Iris, you may want to label all existing resources. Iris does not do this by default.
-* To do this, publish a PubSub message (the content doesn't matter) to `iris_label_all_topic`, for example with `gcloud pubsub topics publish iris_label_all_topic --message=does_not_matter --project $PROJECT_ID`.  Of course, you will need to have permissions to publish that message.
+* To do this, publish a PubSub message (the content doesn't matter) to `iris_label_all_topic`, for example with 
+
+ ```
+  gcloud pubsub topics publish iris_label_all_topic --message=does_not_matter --project $PROJECT_ID
+ ```
 
 # Supported Google Cloud resources
 
