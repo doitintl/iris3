@@ -112,7 +112,7 @@ def describe_resources(test_project, run_id, gce_zone) -> List:
         if len(needed_label_not_found) > 0:
             print(
                 "Needed labels not found:",
-               "; ".join( __short_version_of_commands(needed_label_not_found))
+                "; ".join(__short_version_of_commands(needed_label_not_found)),
             )
         return needed_label_not_found
 
@@ -204,7 +204,7 @@ def __short_version_of_commands(commands: List[str]) -> List[str]:
     for c in commands:
         words = c.split()
 
-        if words[0] == "bq":
+        if words[0] in ["bq", "gsutil"]:
             ret.append(" ".join(words[0:2]))
         else:
             assert words[0] == "gcloud", words

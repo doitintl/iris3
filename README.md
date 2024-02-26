@@ -10,7 +10,7 @@ the [post that presents Iris](https://blog.doit-intl.com/iris-3-automatic-labeli
 
 # What Iris does for you
 
-Iris automatically assigns labels to Google Cloud Platform resources for manageability and easier billing reporting.
+Iris automatically assigns labels to Google Cloud Platform resources for easier analysis, particularly of cost.
 
 Resources of all supported types in all or some of the projects in the GCP organization will get automatically-generated labels with keys like `iris_zone` (the prefix is configurable), and a value copied from the resource. For example, a Google
 Compute Engine instance would get labels like
