@@ -21,7 +21,6 @@ from util.utils import (
     run_command,
     log_time,
     set_log_levels,
-    wait_for_user_input,
 )
 
 config_test_yaml = "config-test.yaml"
@@ -276,11 +275,17 @@ def __write_results(labels_not_found):
     with open("./testresults/summary.txt", "a") as fa:
         fa.write(f"{len(labels_not_found)}\n"),
 
-    with open(f"./testresults/testresult-{test_start.replace(':','').replace(' ','T')}.txt", "w") as f:
-        f.write("start time: "+test_start + "\n")
-        f.write("iris prefix: "+iris_prefix() + "\n")
-        f.write(f"Count of resources for which label was not found: {len(labels_not_found)}\n"),
-        f.write("\n".join(labels_not_found))
+    with open(
+        f"./testresults/testresult-{test_start.replace(':', '').replace(' ', 'T')}.txt",
+        "w",
+    ) as f:
+        f.write("Start time: " + test_start + "\n")
+        f.write("Iris prefix: " + iris_prefix() + "\n")
+        f.write("Success: " + str(not bool(labels_not_found)) + "\n")
+        f.write(
+            f"Count of resources for which label was not found: {len(labels_not_found)}\n"
+        ),
+        f.write("\t" + "\n\t".join(labels_not_found))
 
 
 def gce_region(gce_zone):

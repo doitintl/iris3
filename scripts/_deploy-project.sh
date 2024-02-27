@@ -8,7 +8,7 @@
 #
 
 
-#set -x
+set -x
 set -u
 set -e
 
@@ -233,32 +233,9 @@ fi
 
 
 ######
-# Sometimes the subscription does not exist when add-iam-policy binding is done. So this is just an error-check.
-# Maybe keep checking until the subscription exists
-set +e
-gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
-do_label_subsc_exists=$?
 
-if [[ $do_label_subsc_exists -ne 0 ]]; then
-  echo "Cannot find $DO_LABEL_SUBSCRIPTION"
-  exit $do_label_subsc_exists
-fi
-set -e
-
-######
 
 if [[ "$LABEL_ON_CREATION_EVENT" == "true" ]]; then
-  # Sometimes the subscription does not exist when add-iam-policy binding is done. So this is just an error-check.
-  # Maybe keep checking until the subscription exists
-  set +e
-  gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
-  label_one_exists=$?
-
-  if [[ $label_one_exists -ne 0 ]]; then
-    echo "Cannot find $LABEL_ONE_SUBSCRIPTION"
-    exit $label_one_exists
-  fi
-  set -e
 
   # Allow Pubsub to delete failed message from this sub
   gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
@@ -266,43 +243,18 @@ if [[ "$LABEL_ON_CREATION_EVENT" == "true" ]]; then
       --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
 fi
-######
-# Sometimes the subscription does not exist when add-iam-policy binding is done. So this is just an error-check.
-# Maybe keep checking until the subscription exists
-set +e
-gcloud pubsub subscriptions describe "$LABEL_ALL_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
-label_all_subsc_exists=$?
-
-if [[ $label_all_subsc_exists -ne 0 ]]; then
-  echo "Cannot find $LABEL_ALL_SUBSCRIPTION"
-  exit $label_all_subsc_exists
-fi
-set -e
 
 gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
     --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
 
-#####
-# Sometimes the subscription does not exist when add-iam-policy binding is done. So this is just an error-check.
-# Maybe keep checking until the subscription exists
-
-set +e
-gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
-label_one_subsc_exists_2=$?
-
-if [[ $label_one_subsc_exists_2 -ne 0 ]]; then
-  echo "Cannot find $LABEL_ONE_SUBSCRIPTION"
-  exit $label_one_subsc_exists_2
-fi
-set -e
 
  # Allow Pubsub to delete failed message from this sub
   gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
       --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
       --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
-######
+
 
 # Allow Pubsub to publish into the deadletter topic
 gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
