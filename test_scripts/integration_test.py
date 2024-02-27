@@ -224,13 +224,15 @@ def __short_version_of_commands(commands: List[str]) -> List[str]:
 
 def create_and_describe_resources(test_project, run_id, gce_zone) -> bool:
     create_resources(test_project, run_id, gce_zone)
-    print("DONE Create resources")
+
     start = time.time()
     try_count = 0
     labels_not_found = []
     try:
         while time.time() - start < 120:  # Go at most 2 minutes
             try_count += 1
+            # Could loop for each command seoar4ately. As-is, we "wastefully" recheck
+            # all resources so long as just one is missing a label.
             labels_not_found: List = describe_resources(test_project, run_id, gce_zone)
             print("Label-check loop #", try_count)
             if labels_not_found is False:

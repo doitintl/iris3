@@ -8,7 +8,7 @@
 #
 
 
-set -x
+#set -x
 set -u
 set -e
 

@@ -149,7 +149,7 @@ def set_log_levels():
 
 
 def __log_end_timer(tag, start, logger):
-    logging.getLogger(logger).info(
+    logging.getLogger(logger).debug(
         f"{logger}: {tag}: {int((time.time() - start) * 1000)} ms"
     )
 
