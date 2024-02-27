@@ -218,7 +218,6 @@ def label_one():
             data = __extract_pubsub_content()
 
             method_from_log = data["protoPayload"]["methodName"]
-
             for plugin_cls in PluginHolder.plugins.keys():
                 method_names = plugin_cls.method_names()
 
@@ -238,7 +237,8 @@ def label_one():
 
             if not plugins_found:
                 logging.info(
-                    "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                    "(This message does not indicate an error if the plugin is disabled.)"
+                    + " No plugins found for %s. Enabled plugins are %s",
                     method_from_log,
                     config_utils.enabled_plugins(),
                 )
@@ -298,11 +298,12 @@ def __label_one_0(data, plugin_cls: Type[Plugin]):
     gcp_object = plugin.get_gcp_object(data)
     if gcp_object is not None:
         project_id = data["resource"]["labels"]["project_id"]
-        name = data["protoPayload"]["resourceName"]
+
         if is_project_enabled(project_id):
             logging.info(
+                # Bug: the below resource-name is INCORRECT in case of CreateSubscription, where the topic name is returned but it is only a log line
                 "Will label_one(): %s ",
-                name,
+                data["protoPayload"]["resourceName"],
             )
             plugin.label_resource(gcp_object, project_id)
             plugin.do_batch()

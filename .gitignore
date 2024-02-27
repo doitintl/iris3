@@ -6,7 +6,7 @@ config-dev.yaml
 config.yaml
 cron.yaml
 #
-
+/testresults
 #
 __pycache__/
 *.bak
@@ -14,6 +14,7 @@ __pycache__/
 *.swp
 
 TEMP*
+delete*.sh
 .idea/
 
 # Environments

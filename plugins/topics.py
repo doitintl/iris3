@@ -34,7 +34,7 @@ class Topics(Plugin):
 
     @staticmethod
     def method_names():
-        # Actually"google.pubsub.v1.Subscriber.CreateTopic", but substring is allowed
+        # Actually "google.pubsub.v1.Publisher.CreateTopic", but substring is allowed
         return ["Publisher.CreateTopic"]
 
     def label_all(self, project_id):

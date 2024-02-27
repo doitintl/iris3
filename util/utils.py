@@ -268,6 +268,6 @@ def sort_dict(d):
     return sorted_dict
 
 
-def pause_for_user_input():
+def wait_for_user_input():
     print("Type ENTER to proceed to clean up resources ")
     _ = sys.stdin.readline()

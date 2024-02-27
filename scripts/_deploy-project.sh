@@ -124,17 +124,6 @@ MSGSENDER_SERVICE_ACCOUNT=${msg_sender_sa_name}@${PROJECT_ID}.iam.gserviceaccoun
 
 
 
-
-# Allow Pubsub to publish into the deadletter topic
-gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
-        --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-         --role="roles/pubsub.publisher" --project $PROJECT_ID 2>&1
-
-
-gcloud projects add-iam-policy-binding ${PROJECT_ID} \
- --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}"\
- --role='roles/iam.serviceAccountTokenCreator'
-
 # Create PubSub subscription receiving commands from the /schedule handler that is triggered from cron
 # If the subscription exists, it will not be changed.
 # So, if you want to change the PubSub token, you have to manually delete this subscription first.
@@ -168,10 +157,7 @@ else
     --quiet >/dev/null
 fi
 
-# Allow Pubsub to delete failed message from this sub
-gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
-    --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
-    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
+
 
 if [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
   echo >&2 "Will not label on creation event."
@@ -211,10 +197,6 @@ else
         --quiet >/dev/null
   fi
 
-  # Allow Pubsub to delete failed message from this sub
-  gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
-      --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-      --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 fi
 
 gcloud pubsub topics describe "$LABEL_ALL_TOPIC" --project="$PROJECT_ID" &>/dev/null ||
@@ -249,9 +231,90 @@ else
     --quiet >/dev/null
 fi
 
+
+######
+# Sometimes the subscription does not exist when add-iam-policy binding is done. So this is just an error-check.
+# Maybe keep checking until the subscription exists
+set +e
+gcloud pubsub subscriptions describe "$DO_LABEL_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
+do_label_subsc_exists=$?
+
+if [[ $do_label_subsc_exists -ne 0 ]]; then
+  echo "Cannot find $DO_LABEL_SUBSCRIPTION"
+  exit $do_label_subsc_exists
+fi
+set -e
+
+######
+
+if [[ "$LABEL_ON_CREATION_EVENT" == "true" ]]; then
+  # Sometimes the subscription does not exist when add-iam-policy binding is done. So this is just an error-check.
+  # Maybe keep checking until the subscription exists
+  set +e
+  gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
+  label_one_exists=$?
+
+  if [[ $label_one_exists -ne 0 ]]; then
+    echo "Cannot find $LABEL_ONE_SUBSCRIPTION"
+    exit $label_one_exists
+  fi
+  set -e
+
+  # Allow Pubsub to delete failed message from this sub
+  gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
+      --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
+      --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
+
+fi
+######
+# Sometimes the subscription does not exist when add-iam-policy binding is done. So this is just an error-check.
+# Maybe keep checking until the subscription exists
+set +e
+gcloud pubsub subscriptions describe "$LABEL_ALL_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
+label_all_subsc_exists=$?
+
+if [[ $label_all_subsc_exists -ne 0 ]]; then
+  echo "Cannot find $LABEL_ALL_SUBSCRIPTION"
+  exit $label_all_subsc_exists
+fi
+set -e
+
 gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
     --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
+
+
+#####
+# Sometimes the subscription does not exist when add-iam-policy binding is done. So this is just an error-check.
+# Maybe keep checking until the subscription exists
+
+set +e
+gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null
+label_one_subsc_exists_2=$?
+
+if [[ $label_one_subsc_exists_2 -ne 0 ]]; then
+  echo "Cannot find $LABEL_ONE_SUBSCRIPTION"
+  exit $label_one_subsc_exists_2
+fi
+set -e
+
+ # Allow Pubsub to delete failed message from this sub
+  gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
+      --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
+      --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
+######
+
+# Allow Pubsub to publish into the deadletter topic
+gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
+        --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
+         --role="roles/pubsub.publisher" --project $PROJECT_ID 2>&1
+
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+ --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}"\
+ --role='roles/iam.serviceAccountTokenCreator'
+
+####
 
 if [[ "$LABEL_ON_CRON" == "true" ]]; then
     cp cron_full.yaml cron.yaml
@@ -259,6 +322,10 @@ else
    echo >&2 "Will not have a Cloud Scheduler schedule"
    cp cron_empty.yaml cron.yaml
 fi
+
+
+
+#####
 
 gcloud app deploy --project "$PROJECT_ID" --quiet app.yaml cron.yaml
 

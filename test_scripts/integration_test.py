@@ -1,7 +1,9 @@
 import atexit
+import datetime
 import json
 import logging
 import os
+import random
 import re
 import sys
 import time
@@ -19,7 +21,7 @@ from util.utils import (
     run_command,
     log_time,
     set_log_levels,
-    pause_for_user_input,
+    wait_for_user_input,
 )
 
 config_test_yaml = "config-test.yaml"
@@ -27,6 +29,7 @@ config_test_yaml = "config-test.yaml"
 GCE_ZONE = "europe-central2-b"
 
 global_exit_code = 0
+global test_start
 
 
 def set_failing():
@@ -43,17 +46,24 @@ def run_cmd_catch_exc(cmd):
 
 
 def run_command_or_commands_catch_exc(command_or_commands: Union[str, List[str]]):
+    time.sleep(random.randint(0, 3))  # avooid thundering herd
     if isinstance(command_or_commands, str):
         command = command_or_commands
         return run_cmd_catch_exc(command)
     else:
         ret = []
-        for command in command_or_commands:
-            one_return_value = run_cmd_catch_exc(command)
+        for i in range(len(command_or_commands)):
+            one_return_value = run_cmd_catch_exc(command_or_commands[i])
             if isinstance(one_return_value, Exception):
                 return one_return_value  # Return only the exception on first failure
             else:
                 ret.append(one_return_value)
+            # The second sequential command sometimes prevents the
+            # *first* from working. So, CreateTopic never generates a request to label_one.
+            # Maybe CreateInstance also, though more rarely.
+            # I don't know why.
+            if i < len(command_or_commands) - 1:
+                time.sleep(random.randint(5, 10))
 
         return ret
 
@@ -111,8 +121,9 @@ def describe_resources(test_project, run_id, gce_zone) -> List:
 
         if len(needed_label_not_found) > 0:
             print(
-                "Needed labels not found:",
-                "; ".join(__short_version_of_commands(needed_label_not_found)),
+                'Needed labels not found yet: "'
+                + "; ".join(__short_version_of_commands(needed_label_not_found))
+                + '"'
             )
         return needed_label_not_found
 
@@ -178,7 +189,7 @@ def deploy(deployment_project):
 
 @log_time
 def setup_configuration():
-    count_command_line_params()
+    check_usage()
     deployment_project = sys.argv[1]
     test_project = sys.argv[2]
     run_id = get_run_id()
@@ -204,7 +215,7 @@ def __short_version_of_commands(commands: List[str]) -> List[str]:
     for c in commands:
         words = c.split()
 
-        if words[0] in ["bq", "gsutil"]:
+        if words[0] == "bq":
             ret.append(" ".join(words[0:2]))
         else:
             assert words[0] == "gcloud", words
@@ -217,12 +228,12 @@ def create_and_describe_resources(test_project, run_id, gce_zone) -> bool:
     print("DONE Create resources")
     start = time.time()
     try_count = 0
+    labels_not_found = []
     try:
-        labels_not_found = []
         while time.time() - start < 120:  # Go at most 2 minutes
             try_count += 1
             labels_not_found: List = describe_resources(test_project, run_id, gce_zone)
-            print("label-check loop", try_count)
+            print("Label-check loop #", try_count)
             if labels_not_found is False:
                 print("Exceptions in get descriptions")
                 return False
@@ -230,22 +241,46 @@ def create_and_describe_resources(test_project, run_id, gce_zone) -> bool:
                 print("Succeeded finding all labels")
                 return True  # Sucess: break if we found all relevant labels
             else:
+                print("Still looking for", len(labels_not_found), "labels")
                 time.sleep(1)  # Try again
 
         assert len(labels_not_found) > 0, "only get here on failure"
-        print("Exiting with failure: Needed label not found:", labels_not_found)
+        print(
+            "Exiting with failure;",
+            len(labels_not_found),
+            "needed labels not found:",
+            "\n".join(labels_not_found),
+        )
 
-        pause_for_user_input()
+        # wait_for_user_input()
 
         return False
     finally:
+        __write_results(labels_not_found)
+
         print(
             "Exiting checks of labels after",
-            int(time.time() - start),
-            "seconds;",
             try_count,
-            "loops",
+            "loops;",
+            int(time.time() - start),
+            "seconds",
         )
+
+
+def __write_results(labels_not_found):
+    try:
+        os.mkdir("./testresults")
+    except:
+        pass
+
+    with open("./testresults/summary.txt", "a") as fa:
+        fa.write(f"{len(labels_not_found)}\n"),
+
+    with open(f"./testresults/testresult-{test_start.replace(':','').replace(' ','T')}.txt", "w") as f:
+        f.write("start time: "+test_start + "\n")
+        f.write("iris prefix: "+iris_prefix() + "\n")
+        f.write(f"Count of resources for which label was not found: {len(labels_not_found)}\n"),
+        f.write("\n".join(labels_not_found))
 
 
 def gce_region(gce_zone):
@@ -328,20 +363,19 @@ def remove_config_file():
 
 
 @log_time
-def clean_resources(deployment_project, test_project, run_id, gce_zone):
-
+def clean_resources(iris_project, resources_project, run_id, gce_zone):
     # pause_for_user_input()# Use this in debugging, to keep the test resources alive until you hit E
 
     remove_config_file()
     commands = [
-        f"gcloud compute instances delete -q instance{run_id} --project {test_project} --zone {gce_zone}",
-        f"gcloud compute snapshots delete -q snapshot{run_id} --project {test_project}",
-        f"gcloud compute disks delete -q disk{run_id} --project {test_project} --zone {gce_zone}",
-        f"gcloud pubsub topics delete -q topic{run_id} --project {test_project}",
-        f"gcloud pubsub subscriptions -q delete subscription{run_id} --project {test_project}",
+        f"gcloud compute instances delete -q instance{run_id} --project {resources_project} --zone {gce_zone}",
+        f"gcloud compute snapshots delete -q snapshot{run_id} --project {resources_project}",
+        f"gcloud compute disks delete -q disk{run_id} --project {resources_project} --zone {gce_zone}",
+        f"gcloud pubsub topics delete -q topic{run_id} --project {resources_project}",
+        f"gcloud pubsub subscriptions -q delete subscription{run_id} --project {resources_project}",
         [
-            f"bq rm -f --table {test_project}:dataset{run_id}.table{run_id}",
-            f"bq rm -f --dataset {test_project}:dataset{run_id}",
+            f"bq rm -f --table {resources_project}:dataset{run_id}.table{run_id}",
+            f"bq rm -f --dataset {resources_project}:dataset{run_id}",
         ],
         f"gsutil rm -r gs://bucket{run_id}",
     ]
@@ -357,13 +391,13 @@ def clean_resources(deployment_project, test_project, run_id, gce_zone):
         print("Failed to delete", failed)
 
 
-def count_command_line_params():
+def check_usage():
     if len(sys.argv) < 3:
         print(
             """
-       Usage: integration_test.py deployment-project project-under-test [execution-id]
-          - The project to which Iris is deployed
-          - The project where resources will be labeled (can be the same project)
+       Usage: integration_test.py iris-project resource-project  [execution-id]
+          - iris-project: The project to which Iris is deployed
+          - resource-project: The project where resources will be created and labeled (can be the same project)
           - An optional lower-case alphanumerical string to identify this run,
                used as a prefix on Iris labels and as part of the name of launched resources.
                If omitted, one will be generated.
@@ -419,7 +453,7 @@ def check_projects_exist(deployment_project, test_project):
 
 @log_time
 def create_resources(test_project, run_id, gce_zone):
-    commands = [  # Some must be run sequentially
+    commands = [  # Some must be run sequentially, and so are in list form
         f"gcloud compute instances create instance{run_id} --project {test_project} --zone {gce_zone}",
         [
             f"gcloud compute disks create disk{run_id} --project {test_project} --zone {gce_zone}",
@@ -452,6 +486,10 @@ def create_resources(test_project, run_id, gce_zone):
 if __name__ == "__main__":
     assert_root_path()
 
+    global test_start
+    test_start = str(datetime.datetime.now())[:-7]
+
+    print("Starting test at", test_start, "local time")
     main()
-    print("Exit Status:", "failure" if global_exit_code else "success")
+    print("Exit Status:", "Failure" if global_exit_code else "Success")
     sys.exit(global_exit_code)

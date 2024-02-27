@@ -1,8 +1,7 @@
 # Iris
 
-In Greek mythology, Iris(Ἶρις) is the personification of the rainbow and messenger of the gods. She was the handmaiden
-to Hera.
-
+In Greek mythology, Iris(Ἶρις) is the personification of the rainbow and messenger of the gods. She was the handmaiden to Hera.
+![Iris](./iris.jpg "Iris") 
 # Blog post
 
 See
@@ -186,8 +185,7 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
           use `export FLASK_ENV=development;export FLASK_RUN_PORT=8000;export FLASK_DEBUG=1;FLASK_APP=main.py python -m flask run`
         * In an interactive development environment, run `main.py`, first setting these environment variables.
 * For hands-on debugging
-    * Use `test_do_label` and `test_label_one` and `test_schedule` to trigger against your localhost dev-server, to
-      label actual Cloud resources that you pre-deploy.
+    * Use `test_do_label` and `test_label_one` and `test_schedule` to trigger against your localhost dev-server; this should   label actual Cloud resources that you have pre-deployed.
         * See the `test_...` files for instructions.
 
 ## Adding new kinds of labels
@@ -234,16 +232,13 @@ examples.
 4. Add permissions in `iris-custom-role.yaml` to be granted to the Iris custom role. 
    * This role allows Iris, for each resource type, to list, get, and update. 
      * ("Update" requires permission `setLabels` where available or permission `update`  otherwise.) 
-     * The name of this role is `iris3`by default, but may be set by passing env variable `IRIS_CUSTOM_ROLE` in calling `deploy.sh` or `uninstall.sh`
+     * The name of this custom role is `iris3`by default, but may be set by passing env variable `IRIS_CUSTOM_ROLE` in calling `deploy.sh` or `uninstall.sh`
 
 # Testing
 
 ## Integration test
 
-* `integration_test.sh` creates a Google App Engine app and cloud resources and tests against them. See the file for
-  instructions.
-* It's an easy sanity check to be sure that, for example, that you have the right permissions.
-* It works against two test projects that you specify.
+`./test_scripts/integration_test.py` creates a Google App Engine app and cloud resources, and tests against them. Run it without parameters for usage instructions.
 
 # Next steps
 
