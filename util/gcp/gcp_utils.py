@@ -45,8 +45,9 @@ def set_env():
         localdev_config.set_localdev_project_id_in_env()
 
 
-def region_from_zone(zone):
-    return zone[: len(zone) - 2].lower()
+def region_from_zone(gce_zone):
+    return gce_zone[: gce_zone.rfind("-")]
+
 
 
 def generate_uuid() -> str:
