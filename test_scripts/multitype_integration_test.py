@@ -14,6 +14,7 @@ class MultiTypeIntegTest(BaseIntegTest):
             f"gcloud compute instances describe instance{run_id} --zone {gce_zone} {describe_flags}",
             f"gcloud compute disks describe disk{run_id} --zone {gce_zone} {describe_flags}",
             f"gcloud compute snapshots describe snapshot{run_id} {describe_flags}",
+             f"gsutil label get gs://bucket{run_id}"
         ]
         return commands
 
@@ -52,3 +53,6 @@ class MultiTypeIntegTest(BaseIntegTest):
             f"gsutil mb -p {test_project} gs://bucket{run_id}",
         ]
         return commands
+
+    def do_gcs(cls)->bool:
+        pass

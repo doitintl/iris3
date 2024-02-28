@@ -75,6 +75,7 @@ class BaseIntegTest(ABC):
                 for cmd, result in commands_and_executors
                 if not isinstance(result, Exception)
             }
+
         if failed_in_getting_any_string_back:
             print(
                 "Failed to get any description:",
@@ -85,20 +86,12 @@ class BaseIntegTest(ABC):
             return False
         else:
             needed_label_not_found = []
-            found = []
-            for cmd, result in got_some_string_back.items():
-                j = json.loads(result)
-                labels = j.get("labels", {})
-                label_val = labels.get(f"{run_id}_name")
-                if label_val:
-                    found.append(cmd)
+            needed_label_found = []
+            for cmd, cmd_output in got_some_string_back.items():
+                if "gsutil" in cmd:
+                    cls.__extract_labels_from_result_gcs(cmd, cmd_output, run_id, needed_label_found, needed_label_not_found)
                 else:
-                    needed_label_not_found.append(cmd)
-            gcs_cmd, gcs_lbl_found = cls.__get_gcs_label(run_id)
-            if gcs_lbl_found:
-                found.append(gcs_cmd)
-            else:
-                needed_label_not_found.append(gcs_cmd)
+                    cls.__extract_labels_from_result_non_gcs(cmd, cmd_output, run_id, needed_label_found, needed_label_not_found)
 
             if len(needed_label_not_found) > 0:
                 print(
@@ -107,6 +100,32 @@ class BaseIntegTest(ABC):
                     + '"'
                 )
             return needed_label_not_found
+
+    @classmethod
+    def __extract_labels_from_result_gcs(cls, cmd, cmd_output, run_id, needed_label_found, needed_label_not_found):
+        try:
+            j = json.loads(cmd_output)
+            # GCS is different: No "labels" wrapper for the actual label
+            # Also, so that we can do a test of labels that are specific to a resource type,
+            # bucket labels start "gcs"
+            label_val = j.get(f"gcs{run_id}_name")
+        except json.decoder.JSONDecodeError as e:
+            print(e, 'for output"', cmd_output, '"')
+            label_val = None
+        if label_val:
+            needed_label_found.append(cmd)
+        else:
+            needed_label_not_found.append(cmd)
+
+    @classmethod
+    def __extract_labels_from_result_non_gcs(cls, cmd, cmd_output, run_id, needed_label_found, needed_label_not_found):
+        j = json.loads(cmd_output)
+        labels = j.get("labels", {})
+        label_val = labels.get(f"{run_id}_name")
+        if label_val:
+            needed_label_found.append(cmd)
+        else:
+            needed_label_not_found.append(cmd)
 
     @log_time
     def __create_resources(self, test_project, run_id, gce_zone):
@@ -183,30 +202,29 @@ class BaseIntegTest(ABC):
             return ret
 
     @classmethod
-    def __get_gcs_label(cls, run_id):
-        gcs_cmd = f"gsutil label get gs://bucket{run_id}"
-        out_gcs = cls.__run_command_or_commands_catch_exc(gcs_cmd)
+    def __get_gcs_label(cls, run_id, result:Union[str,Exception]):
+        cmd=""
         label_val = None
-        if isinstance(out_gcs, Exception):
-            print("Failed to describe bucket:", gcs_cmd)
+        if isinstance(result, Exception):
+            print("Failed to describe bucket:", cmd)
         else:
-            assert isinstance(out_gcs, str), type(out_gcs)
-            if out_gcs.strip() == "":
+            assert isinstance(result, str), type(result)
+            if result.strip() == "":
                 label_val = ""
             else:
                 try:
-                    j = json.loads(out_gcs)
+                    j = json.loads(result)
                     # In GCS, no "labels" wrapper for the actual label
                     # Also, for a test of labels that are specific to a resource type,
                     # bucket labels start "gcs"
                     label_val = j.get(f"gcs{run_id}_name")
                 except json.decoder.JSONDecodeError as e:
-                    print(e, 'for output"', out_gcs, '"')
+                    print(e, 'for output"', result, '"')
                     label_val = None
 
             if not label_val:
                 print("GCS bucket did not have the needed label")
-        return gcs_cmd, label_val
+        return result, label_val
 
     @staticmethod
     @log_time
@@ -475,3 +493,4 @@ class BaseIntegTest(ABC):
     @abstractmethod
     def _resource_description_commands( gce_zone, run_id, test_project):
         pass
+
