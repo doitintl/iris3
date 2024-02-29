@@ -110,8 +110,12 @@ else
   svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK"  |
     grep writerIdentity | awk '{print $2}')
 
-  # Assign a publisher role to the extracted service account.
-  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member="$svcaccount" --role=roles/pubsub.publisher --quiet > /dev/null
+  if [[ "$SKIP_ADDING_IAM_BINDINGS" != "true" ]]; then
+      echo >&2 "Adding IAM bindings in _deploy-org"
+    # Assign a publisher role to the extracted service account.
+    gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+      --member="$svcaccount" --role=roles/pubsub.publisher --quiet > /dev/null
+  else
+    echo >&2 "Not adding IAM bindings in _deploy-org"fi
+  fi
 fi
-

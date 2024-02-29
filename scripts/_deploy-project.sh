@@ -8,7 +8,7 @@
 #
 
 
-set -x
+#set -x
 set -u
 set -e
 
@@ -234,41 +234,39 @@ else
 fi
 
 
-######
 
+  if [[ "$LABEL_ON_CREATION_EVENT" == "true" ]]; then
 
-if [[ "$LABEL_ON_CREATION_EVENT" == "true" ]]; then
+    # Allow Pubsub to delete failed message from this sub
+    gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
+        --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
+        --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
-  # Allow Pubsub to delete failed message from this sub
-  gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
+  fi
+
+  gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
       --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
       --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
-fi
-
-
-gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
-    --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
-    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
-
-
-
- # Allow Pubsub to delete failed message from this sub
+   # Allow Pubsub to delete failed message from this sub
   gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
-      --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-      --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
-
-# Allow Pubsub to publish into the deadletter topic
-gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
         --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-         --role="roles/pubsub.publisher" --project $PROJECT_ID 2>&1
+        --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
+  # Allow Pubsub to publish into the deadletter topic
+  gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
+          --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
+           --role="roles/pubsub.publisher" --project $PROJECT_ID 2>&1
 
-gcloud projects add-iam-policy-binding ${PROJECT_ID} \
- --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}"\
- --role='roles/iam.serviceAccountTokenCreator'
+if [[ "$SKIP_ADDING_IAM_BINDINGS" != "true" ]]; then
+   echo >&2 "Adding IAM bindings in _deploy_project"
 
-####
+  gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+   --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}"\
+   --role='roles/iam.serviceAccountTokenCreator'
+else
+   echo >&2 "Not adding IAM bindings in _deploy_project"
+fi
 
 if [[ "$LABEL_ON_CRON" == "true" ]]; then
     cp cron_full.yaml cron.yaml

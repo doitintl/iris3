@@ -55,7 +55,7 @@ class Buckets(Plugin):
             return None
 
     def get_gcp_object(self, log_data):
-        #bucket_name is the built-in bucket name, not the label
+        # bucket_name is the built-in bucket name, not the label
         buck_name = log_data["resource"]["labels"]["bucket_name"]
         project_id = log_data["resource"]["labels"]["project_id"]
 

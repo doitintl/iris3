@@ -1,10 +1,11 @@
-from test_scripts.integ_test_base import BaseIntegTest
+from typing import List, Union
+
+from test_scripts.integration_test.integ_test_base import BaseIntegTest
 from util.gcp.gcp_utils import region_from_zone
 
 
 class ManyTypeIntegTest(BaseIntegTest):
-    @staticmethod
-    def _resource_description_commands(gce_zone, run_id, test_project):
+    def _resource_description_commands(self, gce_zone, run_id, test_project)->List[str]:
         describe_flags = f"--project {test_project} --format json"
         commands = [
             f"gcloud pubsub topics describe topic{run_id} {describe_flags}",
@@ -18,8 +19,7 @@ class ManyTypeIntegTest(BaseIntegTest):
         ]
         return commands
 
-    @staticmethod
-    def _resource_deletion_commands(gce_zone, resources_project, run_id):
+    def _resource_deletion_commands(self, gce_zone, resources_project, run_id)->List[Union[List[str],str]]:
         commands = [
             f"gcloud compute instances delete -q instance{run_id} --project {resources_project} --zone {gce_zone}",
             f"gcloud compute snapshots delete -q snapshot{run_id} --project {resources_project}",
@@ -34,8 +34,7 @@ class ManyTypeIntegTest(BaseIntegTest):
         ]
         return commands
 
-    @staticmethod
-    def _resource_creation_commands(gce_zone, run_id, test_project):
+    def _resource_creation_commands(self, gce_zone, run_id, test_project)-> List[Union[List[str], str]]:
         commands = [  # Some must be run sequentially, and so are in list form
             f"gcloud compute instances create instance{run_id} --project {test_project} --zone {gce_zone}",
             [

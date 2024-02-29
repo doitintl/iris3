@@ -46,23 +46,20 @@ class BaseIntegTest(ABC):
         ) = self.__configuration()
         self.__deploy(deployment_project)
 
-        self.__create_check_and_delete_resources(
-            deployment_project, gce_zone, run_id, test_project
-        )
+        self.__create_check_and_delete_resources(test_project, gce_zone, run_id)
 
         self.__uninstall(deployment_project)
         end = time.time()
         print("Time for integration test", int(end - start_test), "s")
 
-    @classmethod
     @log_time
-    def __describe_resources(cls, test_project, run_id, gce_zone) -> Union[List, bool]:
-        commands = cls._resource_description_commands(gce_zone, run_id, test_project)
+    def __describe_resources(self, test_project, run_id, gce_zone) -> Union[List, bool]:
+        commands = self._resource_description_commands(gce_zone, run_id, test_project)
         with ThreadPoolExecutor(10) as executor:
             commands_and_executors = list(
                 zip(
                     commands,
-                    executor.map(cls.__run_command_or_commands_catch_exc, commands),
+                    executor.map(self.__run_command_or_commands_catch_exc, commands),
                 )
             )
             failed_in_getting_any_string_back = [
@@ -89,29 +86,30 @@ class BaseIntegTest(ABC):
             needed_label_found = []
             for cmd, cmd_output in got_some_string_back.items():
                 if "gsutil" in cmd:
-                    extraction_method = cls.__extract_labels_from_result_for_gsutil
+                    extraction_method = self.__extract_labels_from_result_for_gsutil
                 else:
-                    extraction_method = cls.__extract_labels_from_result_non_gcs
+                    extraction_method = self.__extract_labels_from_result_non_gcs
 
                 extraction_method(
-                    cmd,
-                    cmd_output,
-                    run_id,
-                    needed_label_found,
-                    needed_label_not_found,
+                    cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
                 )
 
             if len(needed_label_not_found) > 0:
                 print(
-                    'Needed labels not found yet: "'
-                    + "; ".join(cls.__short_version_of_commands(needed_label_not_found))
-                    + '"'
+                    len(needed_label_found),
+                    "labels found;",
+                    'Needed labels not found: "'
+                    + "; ".join(
+                        self.__short_version_of_commands(needed_label_not_found)
+                    )
+                    + '"',
                 )
+
             return needed_label_not_found
 
     @staticmethod
     def __extract_labels_from_result_for_gsutil(
-            cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
+        cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
     ):
         try:
             j = json.loads(cmd_output)
@@ -132,7 +130,7 @@ class BaseIntegTest(ABC):
 
     @staticmethod
     def __extract_labels_from_result_non_gcs(
-            cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
+        cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
     ):
         j = json.loads(cmd_output)
         labels = j.get("labels", {})
@@ -159,19 +157,18 @@ class BaseIntegTest(ABC):
             print("Failed ", creation_failed)
             self.__set_failing()
 
-    @classmethod
     @log_time
-    def __delete_resources(cls, iris_project, resources_project, run_id, gce_zone):
+    def __delete_resources(self, resources_project, run_id, gce_zone):
         # pause_for_user_input()# Use this in debugging, to keep the test resources alive until you hit E
 
-        cls.remove_temporary_test_config_file()
-        commands = cls._resource_deletion_commands(gce_zone, resources_project, run_id)
+        self.remove_temporary_test_config_file()
+        commands = self._resource_deletion_commands(gce_zone, resources_project, run_id)
         with ThreadPoolExecutor() as executor:
             failed = [
                 cmd
                 for cmd, result in zip(
                     commands,
-                    executor.map(cls.__run_command_or_commands_catch_exc, commands),
+                    executor.map(self.__run_command_or_commands_catch_exc, commands),
                 )
                 if isinstance(result, Exception)
             ]
@@ -191,7 +188,7 @@ class BaseIntegTest(ABC):
 
     @classmethod
     def __run_command_or_commands_catch_exc(
-            cls, command_or_commands: Union[str, List[str]]
+        cls, command_or_commands: Union[str, List[str]]
     ):
         time.sleep(random.randint(0, 3))  # Avoid thundering herd
         if isinstance(command_or_commands, str):
@@ -252,24 +249,25 @@ class BaseIntegTest(ABC):
             f"gcloud app services delete --project {deployment_project} -q iris3"
         )
 
-    def __create_check_and_delete_resources(
-            self, deployment_project, gce_zone, run_id, test_project
-    ):
+    def __create_check_and_delete_resources(self, iris_project, gce_zone, run_id):
         try:
             succeed = self.__create_and_describe_resources(
-                test_project, run_id, gce_zone
+                iris_project, run_id, gce_zone
             )
             if not succeed:
                 self.__set_failing()
         except:
             logging.exception("")
 
-        self.__delete_resources(deployment_project, test_project, run_id, gce_zone)
+        self.__delete_resources(iris_project, run_id, gce_zone)
 
     @classmethod
     @log_time
     def __deploy(cls, deployment_project):
-        _ = run_command(f"./deploy.sh {deployment_project}")  # can fail
+        _ = run_command(
+            f"./deploy.sh {deployment_project}",
+            extra_env={"SKIP_ADDING_IAM_BINDINGS": "true"},
+        )  # can fail
         cls.wait_for_traffic_shift(deployment_project)
 
     @log_time
@@ -319,7 +317,7 @@ class BaseIntegTest(ABC):
                 labels_not_found: Union[List, bool] = self.__describe_resources(
                     test_project, run_id, gce_zone
                 )
-                print("Label-check loop #", try_count)
+
                 if labels_not_found is False:
                     print("Exceptions in getting descriptions")
                     return False
@@ -328,14 +326,26 @@ class BaseIntegTest(ABC):
                     return True  # Sucess: break if we found all relevant labels
                 else:
                     print("Still looking for", len(labels_not_found), "labels")
-                    time.sleep(1)  # Try again
+
+                    print(
+                        "Label-check loop #",
+                        try_count,
+                        int(time.time() - start),
+                        "seconds;",
+                        len(labels_not_found),
+                        "labels found so far;",
+                        'Needed labels not found yet: "'
+                        + "; ".join(self.__short_version_of_commands(labels_not_found))
+                        + '"',
+                    )
+                    time.sleep(2)  # Try again
 
             assert len(labels_not_found) > 0, "only get here on failure"
             print(
                 "Exiting with failure;",
                 len(labels_not_found),
-                "needed labels not found:",
-                "\n".join(labels_not_found),
+                "needed labels not found:\n\t\t",
+                "\n\t\t".join(labels_not_found),
             )
 
             # wait_for_user_input()
@@ -362,8 +372,8 @@ class BaseIntegTest(ABC):
             fa.write(f"{len(labels_not_found)}\n"),
 
         with open(
-                f"./testresults/testresult-{self.__test_start.replace(':', '').replace(' ', 'T')}.txt",
-                "w",
+            f"./testresults/testresult-{self.__test_start.replace(':', '').replace(' ', 'T')}.txt",
+            "w",
         ) as f:
             f.write("Start time: " + self.__test_start + "\n")
             f.write("Iris prefix: " + iris_prefix() + "\n")
@@ -430,7 +440,7 @@ class BaseIntegTest(ABC):
 
     @classmethod
     def fill_in_config_template(
-            cls, run_id, deployment_project, test_project, pubsub_test_token
+        cls, run_id, deployment_project, test_project, pubsub_test_token
     ):
         with open("config.yaml.test.template") as template_file:
             filled_template = template_file.read()
@@ -497,17 +507,15 @@ class BaseIntegTest(ABC):
         if failed:
             raise Exception("Illegal project(s)", ",".join(failed))
 
-    @staticmethod
     @abstractmethod
-    def _resource_deletion_commands(gce_zone, resources_project, run_id):
+    def _resource_deletion_commands(self, gce_zone, resources_project, run_id) -> List[Union[List[str], str]]:
+
         pass
 
-    @staticmethod
     @abstractmethod
-    def _resource_creation_commands(gce_zone, run_id, test_project):
+    def _resource_creation_commands(self, gce_zone, run_id, test_project)-> List[Union[List[str], str]]:
         pass
 
-    @staticmethod
     @abstractmethod
-    def _resource_description_commands(gce_zone, run_id, test_project):
+    def _resource_description_commands(self, gce_zone, run_id, test_project)->List[str]:
         pass
