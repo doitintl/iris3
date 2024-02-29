@@ -5,7 +5,9 @@ from util.gcp.gcp_utils import region_from_zone
 
 
 class ManyTypeIntegTest(BaseIntegTest):
-    def _resource_description_commands(self, gce_zone, run_id, test_project)->List[str]:
+    def _resource_description_commands(
+        self, gce_zone, run_id, test_project
+    ) -> List[str]:
         describe_flags = f"--project {test_project} --format json"
         commands = [
             f"gcloud pubsub topics describe topic{run_id} {describe_flags}",
@@ -19,7 +21,9 @@ class ManyTypeIntegTest(BaseIntegTest):
         ]
         return commands
 
-    def _resource_deletion_commands(self, gce_zone, resources_project, run_id)->List[Union[List[str],str]]:
+    def _resource_deletion_commands(
+        self, gce_zone, resources_project, run_id
+    ) -> List[Union[List[str], str]]:
         commands = [
             f"gcloud compute instances delete -q instance{run_id} --project {resources_project} --zone {gce_zone}",
             f"gcloud compute snapshots delete -q snapshot{run_id} --project {resources_project}",
@@ -34,7 +38,9 @@ class ManyTypeIntegTest(BaseIntegTest):
         ]
         return commands
 
-    def _resource_creation_commands(self, gce_zone, run_id, test_project)-> List[Union[List[str], str]]:
+    def _resource_creation_commands(
+        self, gce_zone, run_id, test_project
+    ) -> List[Union[List[str], str]]:
         commands = [  # Some must be run sequentially, and so are in list form
             f"gcloud compute instances create instance{run_id} --project {test_project} --zone {gce_zone}",
             [

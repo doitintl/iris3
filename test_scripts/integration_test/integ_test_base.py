@@ -55,6 +55,7 @@ class BaseIntegTest(ABC):
     @log_time
     def __describe_resources(self, test_project, run_id, gce_zone) -> Union[List, bool]:
         commands = self._resource_description_commands(gce_zone, run_id, test_project)
+        assert all(isinstance(x, str) for x in commands), commands
         with ThreadPoolExecutor(10) as executor:
             commands_and_executors = list(
                 zip(
@@ -67,24 +68,24 @@ class BaseIntegTest(ABC):
                 for cmd, result in commands_and_executors
                 if isinstance(result, Exception)
             ]
-            got_some_string_back = {
-                cmd: result
+            got_some_string_back = [
+                (cmd, result)
                 for cmd, result in commands_and_executors
                 if not isinstance(result, Exception)
-            }
+            ]
 
         if failed_in_getting_any_string_back:
             print(
                 "Failed to get any description:",
                 failed_in_getting_any_string_back,
-                "\nGot some description:",
+                "\nGot some description back:",
                 got_some_string_back,
             )
             return False
         else:
             needed_label_not_found = []
             needed_label_found = []
-            for cmd, cmd_output in got_some_string_back.items():
+            for cmd, cmd_output in got_some_string_back:
                 if "gsutil" in cmd:
                     extraction_method = self.__extract_labels_from_result_for_gsutil
                 else:
@@ -508,14 +509,20 @@ class BaseIntegTest(ABC):
             raise Exception("Illegal project(s)", ",".join(failed))
 
     @abstractmethod
-    def _resource_deletion_commands(self, gce_zone, resources_project, run_id) -> List[Union[List[str], str]]:
+    def _resource_deletion_commands(
+        self, gce_zone, resources_project, run_id
+    ) -> List[Union[List[str], str]]:
 
         pass
 
     @abstractmethod
-    def _resource_creation_commands(self, gce_zone, run_id, test_project)-> List[Union[List[str], str]]:
+    def _resource_creation_commands(
+        self, gce_zone, run_id, test_project
+    ) -> List[Union[List[str], str]]:
         pass
 
     @abstractmethod
-    def _resource_description_commands(self, gce_zone, run_id, test_project)->List[str]:
+    def _resource_description_commands(
+        self, gce_zone, run_id, test_project
+    ) -> List[str]:
         pass

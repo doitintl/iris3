@@ -13,7 +13,7 @@ if __name__ == "__main__":
         tst = FewTypeIntegTest()
     else:
         tst = ManyTypeIntegTest()
-
+    print("Test type", type(tst).__name__)
     tst.deploy_test_and_uninstall()
     print("Exit Status:", "Failure" if tst.exit_code else "Success")
     sys.exit(tst.exit_code)
