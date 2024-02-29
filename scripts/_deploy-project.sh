@@ -8,7 +8,7 @@
 #
 
 
-#set -x
+set -x
 set -u
 set -e
 
@@ -30,6 +30,8 @@ if [[ ! -f "config-test.yaml" ]]  && [[ ! -f "config.yaml" ]]; then
        echo >&2 "config.yaml Must have either config.yaml (use config.yaml.original as an example) or config-test.yaml"
        exit 1
 fi
+
+gcloud auth application-default set-quota-project $PROJECT_ID
 
 #Next line duplicate of our Python func gae_url_with_multiregion_abbrev
 appengineHostname=$(gcloud app describe --project $PROJECT_ID | grep defaultHostname |cut -d":" -f2 | awk '{$1=$1};1' )
@@ -244,6 +246,7 @@ if [[ "$LABEL_ON_CREATION_EVENT" == "true" ]]; then
 
 fi
 
+
 gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
     --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
@@ -254,7 +257,6 @@ gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
   gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
       --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
       --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
-
 
 # Allow Pubsub to publish into the deadletter topic
 gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \

@@ -69,5 +69,5 @@ def label_one(project, name, method_name, parent_name="", zone="", extra_args=No
 
 def assert_root_path():
     assert Path(__file__).parent.stem in os.listdir(os.getcwd()), (
-        "Should run in root; was " + os.getcwd()
+        "Should run in root directory; was " + os.getcwd()
     )

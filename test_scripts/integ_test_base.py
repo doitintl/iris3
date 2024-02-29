@@ -35,7 +35,7 @@ class BaseIntegTest(ABC):
 
         self.exit_code = 0
 
-    def deploy_test_uninstall(self):
+    def deploy_test_and_uninstall(self):
         start_test = time.time()
         set_log_levels()
         (
@@ -89,9 +89,17 @@ class BaseIntegTest(ABC):
             needed_label_found = []
             for cmd, cmd_output in got_some_string_back.items():
                 if "gsutil" in cmd:
-                    cls.__extract_labels_from_result_gcs(cmd, cmd_output, run_id, needed_label_found, needed_label_not_found)
+                    extraction_method = cls.__extract_labels_from_result_for_gsutil
                 else:
-                    cls.__extract_labels_from_result_non_gcs(cmd, cmd_output, run_id, needed_label_found, needed_label_not_found)
+                    extraction_method = cls.__extract_labels_from_result_non_gcs
+
+                extraction_method(
+                    cmd,
+                    cmd_output,
+                    run_id,
+                    needed_label_found,
+                    needed_label_not_found,
+                )
 
             if len(needed_label_not_found) > 0:
                 print(
@@ -101,24 +109,31 @@ class BaseIntegTest(ABC):
                 )
             return needed_label_not_found
 
-    @classmethod
-    def __extract_labels_from_result_gcs(cls, cmd, cmd_output, run_id, needed_label_found, needed_label_not_found):
+    @staticmethod
+    def __extract_labels_from_result_for_gsutil(
+            cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
+    ):
         try:
             j = json.loads(cmd_output)
-            # GCS is different: No "labels" wrapper for the actual label
-            # Also, so that we can do a test of labels that are specific to a resource type,
-            # bucket labels start "gcs"
+            # GCS is different in two ways
+            # 1. Because we are using a label-specific command  "gsutils labels", there is "No "labels" wrapper in the JSON
+            # 2. For the sake of a  testing resource-type specific labels, bucket labels start "gcs", not the usual iris prefix.
             label_val = j.get(f"gcs{run_id}_name")
+
         except json.decoder.JSONDecodeError as e:
-            print(e, 'for output"', cmd_output, '"')
+            logging.exception("")
+            print("Exception", e, 'for output"', cmd_output, '"')
             label_val = None
+
         if label_val:
             needed_label_found.append(cmd)
         else:
             needed_label_not_found.append(cmd)
 
-    @classmethod
-    def __extract_labels_from_result_non_gcs(cls, cmd, cmd_output, run_id, needed_label_found, needed_label_not_found):
+    @staticmethod
+    def __extract_labels_from_result_non_gcs(
+            cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
+    ):
         j = json.loads(cmd_output)
         labels = j.get("labels", {})
         label_val = labels.get(f"{run_id}_name")
@@ -176,7 +191,7 @@ class BaseIntegTest(ABC):
 
     @classmethod
     def __run_command_or_commands_catch_exc(
-        cls, command_or_commands: Union[str, List[str]]
+            cls, command_or_commands: Union[str, List[str]]
     ):
         time.sleep(random.randint(0, 3))  # Avoid thundering herd
         if isinstance(command_or_commands, str):
@@ -202,8 +217,8 @@ class BaseIntegTest(ABC):
             return ret
 
     @classmethod
-    def __get_gcs_label(cls, run_id, result:Union[str,Exception]):
-        cmd=""
+    def __get_gcs_label(cls, run_id, result: Union[str, Exception]):
+        cmd = ""
         label_val = None
         if isinstance(result, Exception):
             print("Failed to describe bucket:", cmd)
@@ -229,13 +244,16 @@ class BaseIntegTest(ABC):
     @staticmethod
     @log_time
     def __uninstall(deployment_project):
-        # Just uninstall the proj-level elements because uninstalling the org leaves us with a "soft-deleted" role
+
         _ = run_command(
-            f"./uninstall.sh -p {deployment_project}",
+            # Just uninstall the proj-level elements because uninstalling the org leaves us with a "soft-deleted" role
+            #   f"./uninstall.sh -p {deployment_project}",
+            # Just uninstall the App Engine because there is a strict quota/limit on iam-binding
+            f"gcloud app services delete --project {deployment_project} -q iris3"
         )
 
     def __create_check_and_delete_resources(
-        self, deployment_project, gce_zone, run_id, test_project
+            self, deployment_project, gce_zone, run_id, test_project
     ):
         try:
             succeed = self.__create_and_describe_resources(
@@ -344,8 +362,8 @@ class BaseIntegTest(ABC):
             fa.write(f"{len(labels_not_found)}\n"),
 
         with open(
-            f"./testresults/testresult-{self.__test_start.replace(':', '').replace(' ', 'T')}.txt",
-            "w",
+                f"./testresults/testresult-{self.__test_start.replace(':', '').replace(' ', 'T')}.txt",
+                "w",
         ) as f:
             f.write("Start time: " + self.__test_start + "\n")
             f.write("Iris prefix: " + iris_prefix() + "\n")
@@ -391,7 +409,7 @@ class BaseIntegTest(ABC):
         with urllib.request.urlopen(url) as response:
             txt_b = response.read()
             txt = str(txt_b, "UTF-8")
-            time_waiting=round( (time.time() - start_wait_for_trafficshift),1)
+            time_waiting = round((time.time() - start_wait_for_trafficshift), 1)
             if iris_homepage_text() in txt:
                 print(
                     "Wait for traffic shift took",
@@ -406,13 +424,13 @@ class BaseIntegTest(ABC):
                 iris_prefix(),
                 "\nSo far waited",
                 time_waiting,
-                "sec"
+                "sec",
             )
             return False
 
     @classmethod
     def fill_in_config_template(
-        cls, run_id, deployment_project, test_project, pubsub_test_token
+            cls, run_id, deployment_project, test_project, pubsub_test_token
     ):
         with open("config.yaml.test.template") as template_file:
             filled_template = template_file.read()
@@ -481,16 +499,15 @@ class BaseIntegTest(ABC):
 
     @staticmethod
     @abstractmethod
-    def _resource_deletion_commands( gce_zone, resources_project, run_id):
+    def _resource_deletion_commands(gce_zone, resources_project, run_id):
         pass
 
     @staticmethod
     @abstractmethod
-    def _resource_creation_commands(  gce_zone, run_id, test_project):
+    def _resource_creation_commands(gce_zone, run_id, test_project):
         pass
 
     @staticmethod
     @abstractmethod
-    def _resource_description_commands( gce_zone, run_id, test_project):
+    def _resource_description_commands(gce_zone, run_id, test_project):
         pass
-

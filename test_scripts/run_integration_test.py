@@ -1,6 +1,6 @@
 import sys
 
-from test_scripts.multitype_integration_test import MultiTypeIntegTest
+from test_scripts.manytype_integ_test import ManyTypeIntegTest
 from test_scripts.utils_for_tests import assert_root_path
 
 if __name__ == "__main__":
@@ -11,8 +11,8 @@ if __name__ == "__main__":
     if repeat_a_few_resource_types:
         assert False
     else:
-        tst = MultiTypeIntegTest()
-        tst.deploy_test_uninstall()
+        tst = ManyTypeIntegTest()
+        tst.deploy_test_and_uninstall()
         exit_code = tst.exit_code
 
     print("Exit Status:", "Failure" if exit_code else "Success")

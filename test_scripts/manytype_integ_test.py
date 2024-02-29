@@ -1,10 +1,10 @@
-from test_scripts.integration_test_base import BaseIntegTest
+from test_scripts.integ_test_base import BaseIntegTest
 from util.gcp.gcp_utils import region_from_zone
 
 
-class MultiTypeIntegTest(BaseIntegTest):
+class ManyTypeIntegTest(BaseIntegTest):
     @staticmethod
-    def _resource_description_commands( gce_zone, run_id, test_project):
+    def _resource_description_commands(gce_zone, run_id, test_project):
         describe_flags = f"--project {test_project} --format json"
         commands = [
             f"gcloud pubsub topics describe topic{run_id} {describe_flags}",
@@ -14,13 +14,12 @@ class MultiTypeIntegTest(BaseIntegTest):
             f"gcloud compute instances describe instance{run_id} --zone {gce_zone} {describe_flags}",
             f"gcloud compute disks describe disk{run_id} --zone {gce_zone} {describe_flags}",
             f"gcloud compute snapshots describe snapshot{run_id} {describe_flags}",
-             f"gsutil label get gs://bucket{run_id}"
+            f"gsutil label get gs://bucket{run_id}",
         ]
         return commands
 
-
     @staticmethod
-    def _resource_deletion_commands(  gce_zone, resources_project, run_id):
+    def _resource_deletion_commands(gce_zone, resources_project, run_id):
         commands = [
             f"gcloud compute instances delete -q instance{run_id} --project {resources_project} --zone {gce_zone}",
             f"gcloud compute snapshots delete -q snapshot{run_id} --project {resources_project}",
@@ -34,8 +33,9 @@ class MultiTypeIntegTest(BaseIntegTest):
             f"gsutil rm -r gs://bucket{run_id}",
         ]
         return commands
+
     @staticmethod
-    def _resource_creation_commands(   gce_zone, run_id, test_project):
+    def _resource_creation_commands(gce_zone, run_id, test_project):
         commands = [  # Some must be run sequentially, and so are in list form
             f"gcloud compute instances create instance{run_id} --project {test_project} --zone {gce_zone}",
             [
@@ -53,6 +53,3 @@ class MultiTypeIntegTest(BaseIntegTest):
             f"gsutil mb -p {test_project} gs://bucket{run_id}",
         ]
         return commands
-
-    def do_gcs(cls)->bool:
-        pass
