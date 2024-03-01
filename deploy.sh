@@ -72,6 +72,10 @@ while getopts 'cepoh' opt; do
           Environment variable:
                   IRIS_CUSTOM_ROLE (Optional, default is iris3) An identifier for the Iris custom role,
                   which will be created as needed.
+                  SKIP_ADDING_IAM_BINDINGS: If "true", then IAM bindings will not be added
+                  on the org or project level. This is useful when rerunning many times for a test,
+                  since quotas/limits kick in.
+
 EOF
     exit 1
     ;;

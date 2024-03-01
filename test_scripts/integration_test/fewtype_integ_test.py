@@ -8,14 +8,14 @@ from test_scripts.integration_test.integ_test_base import BaseIntegTest
 class FewTypeIntegTest(BaseIntegTest):
     def __init__(self):
         super().__init__()
-        loops = 10
+        loops = 20
         self.__sfxs = ["number" + str(i) for i in range(loops)]
-        pass
 
     def _resource_creation_commands(
         self, gce_zone, run_id, test_project
     ) -> List[Union[List[str], str]]:
-        # Some must be run sequentially, and so are in list form
+        # Some must be run sequentially, and so are bundled into lists
+
 
         return [
             [

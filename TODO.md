@@ -13,8 +13,7 @@
     * The attachment status of disks
         * When attachment status changes, a label needs to change from false to true or vice versa.
         * Current code does it on cron schedule.
-        * We could do it on-event by capturing the log for the attachment event, just as we already capture logs for
-          creation events.
+        * We could do it on-event by capturing the log for the attachment event, just as we already capture logs for creation events.
 
 * P3 Address the error *"Labels fingerprint either invalid or resource labels have changed",* printed
   in `_batch_callback`, which occurs intermittently, especially with disks. Solutions:

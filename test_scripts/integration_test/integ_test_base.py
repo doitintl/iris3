@@ -54,8 +54,7 @@ class BaseIntegTest(ABC):
 
     @log_time
     def __describe_resources(self, test_project, run_id, gce_zone) -> Union[List, bool]:
-        commands = self._resource_description_commands(gce_zone, run_id, test_project)
-        assert all(isinstance(x, str) for x in commands), commands
+        commands:List[str] = self._resource_description_commands(gce_zone, run_id, test_project)
         with ThreadPoolExecutor(10) as executor:
             commands_and_executors = list(
                 zip(
@@ -331,6 +330,7 @@ class BaseIntegTest(ABC):
                     print(
                         "Label-check loop #",
                         try_count,
+                        ";",
                         int(time.time() - start),
                         "seconds;",
                         len(labels_not_found),
