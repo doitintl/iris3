@@ -41,11 +41,12 @@ class ManyTypeIntegTest(BaseIntegTest):
     def _resource_creation_commands(
         self, gce_zone, run_id, test_project
     ) -> List[Union[List[str], str]]:
+        region = region_from_zone(gce_zone)
         commands = [  # Some must be run sequentially, and so are in list form
             f"gcloud compute instances create instance{run_id} --project {test_project} --zone {gce_zone}",
             [
                 f"gcloud compute disks create disk{run_id} --project {test_project} --zone {gce_zone}",
-                f"gcloud compute snapshots create snapshot{run_id} --source-disk disk{run_id} --source-disk-zone {gce_zone} --storage-location {region_from_zone(gce_zone)} --project {test_project}",
+                f"gcloud compute snapshots create snapshot{run_id} --source-disk disk{run_id} --source-disk-zone {gce_zone} --storage-location {region} --project {test_project}",
             ],
             [
                 f"gcloud pubsub topics create topic{run_id} --project {test_project}",

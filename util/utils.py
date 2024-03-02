@@ -248,7 +248,7 @@ def curr_func() -> str:
 
 
 def run_command(command_s, extra_env: typing.Dict[str, str] = None):
-    assert "  " not in command_s  # double-space diesrupts the split
+    assert "  " not in command_s, command_s  # double-space diesrupts the split
     command = command_s.split(" ")
     env = os.environ
     if extra_env is not None:

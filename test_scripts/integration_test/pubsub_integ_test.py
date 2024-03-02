@@ -5,7 +5,7 @@ from typing import List, Union
 from test_scripts.integration_test.integ_test_base import BaseIntegTest
 
 
-class FewTypeIntegTest(BaseIntegTest):
+class PubSubIntegTest(BaseIntegTest):
     def __init__(self):
         super().__init__()
         loops = 20
@@ -15,8 +15,6 @@ class FewTypeIntegTest(BaseIntegTest):
         self, gce_zone, run_id, test_project
     ) -> List[Union[List[str], str]]:
         # Some must be run sequentially, and so are bundled into lists
-
-
         return [
             [
                 f"gcloud pubsub topics create topic{run_id}{sfx} --project {test_project}",
@@ -36,16 +34,17 @@ class FewTypeIntegTest(BaseIntegTest):
             ]
             for sfx in self.__sfxs
         ]
-        ret = list(reduce(operator.concat, cmdlists))
-        return ret
+        return list(reduce(operator.concat, cmdlists))
 
     def _resource_deletion_commands(
         self, gce_zone, resources_project, run_id
-    ) -> List[Union[List[str], str]]:
-        return [
+    ) -> List[str]:
+        cmdlists = [
             [
                 f"gcloud pubsub topics delete -q topic{run_id}{sfx} --project {resources_project}",
                 f"gcloud pubsub subscriptions -q delete subscription{run_id}{sfx} --project {resources_project}",
             ]
             for sfx in self.__sfxs
         ]
+
+        return list(reduce(operator.concat, cmdlists))
