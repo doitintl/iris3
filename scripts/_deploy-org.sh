@@ -4,33 +4,36 @@
 # Usage
 # - Called from deploy.sh
 
-#set -x
-
-# The following line must come before set -u
+set -x
+# The following lines must come before set -u
 if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
-
+if [[ -z "$SKIP_ADDING_IAM_BINDINGS" ]] ; then SKIP_ADDING_IAM_BINDINGS=""; fi
 set -u
 set -e
-
-
-if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
 
 LOG_SINK=iris_log
 
 # Get organization id for this project
-ORGID=$(curl -X POST -H "Authorization: Bearer \"$(gcloud auth print-access-token)\"" \
-  -H "Content-Type: application/json; charset=utf-8" \
-  https://cloudresourcemanager.googleapis.com/v1/projects/"${PROJECT_ID}":getAncestry | grep -A 1 organization |
-  tail -n 1 | tr -d ' ' | cut -d'"' -f4)
+ORGID=$(gcloud projects get-ancestors $PROJECT_ID --format='value(TYPE,ID)' | awk '/org/ {print $2}')
 
 set +e
 # Create custom role to run iris
-if gcloud iam roles describe "$IRIS_CUSTOM_ROLE" --organization "$ORGID"  > /dev/null; then
+existing_role=$(gcloud iam roles describe --organization "$ORGID" $IRIS_CUSTOM_ROLE --format='value(deleted,etag)')
+# existing_role variable as follows:
+# 1. For soft-deleted role, existing_role is like "True BwYSsZlhISU="
+# 2. For active role, without the string True.
+# 3. For non-existing role, empty-string
+if [ -n "$existing_role" ]; then
+  if [[ "$existing_role" == *"True"* ]]; then # It's a soft-deleted role
+    gcloud iam roles undelete -q "$IRIS_CUSTOM_ROLE"  --organization "$ORGID"  >/dev/null
+  fi
+
   gcloud iam roles update -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" --file iris-custom-role.yaml >/dev/null
   role_error=$?
+
 else
-  gcloud iam roles create -q "$IRIS_CUSTOM_ROLE"  --organization "$ORGID" --file iris-custom-role.yaml  >/dev/null
-  role_error=$?
+    gcloud iam roles create -q "$IRIS_CUSTOM_ROLE"  --organization "$ORGID" --file iris-custom-role.yaml  >/dev/null
+    role_error=$?
 fi
 
 set -e

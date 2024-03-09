@@ -9,6 +9,8 @@
 
 
 #set -x
+# The following muyst come before set -u
+if [[ -z "$SKIP_ADDING_IAM_BINDINGS" ]] ; then SKIP_ADDING_IAM_BINDINGS=""; fi
 set -u
 set -e
 

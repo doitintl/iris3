@@ -63,24 +63,23 @@ def label_all_on_cron() -> bool:
 
 @functools.lru_cache
 def get_config() -> typing.Dict:
-    test_config = "config-test.yaml"
-    prod_config = "config.yaml"
-    if os.path.isfile(test_config):
-        config_name = test_config
+    test_config_file = "config-test.yaml"
+    prod_config_file = "config.yaml"
+    if os.path.isfile(test_config_file):
+        config_file_to_use = test_config_file
 
     else:
-        config_name = prod_config
-
-    print("Using config file:", config_name, file=sys.stderr)  # logging not yet enabled
+        config_file_to_use = prod_config_file
 
     try:
-        with open(config_name) as config_file:
-            config = yaml.full_load(config_file)
+        with open(config_file_to_use) as f:
+            config = yaml.full_load(f)
     except FileNotFoundError:
         raise FileNotFoundError(
-            f"Could not find the config-*.yaml file, specifically {config_name}. You may want to create one, based perhaps on config.yaml.original"
+            f"Could not find the needed config file {config_file_to_use}."
+            f"You may want to create one, based perhaps on config.yaml.original"
         )
-    config["config_file"] = config_name
+    config["config_file"] = config_file_to_use
 
     return config
 

@@ -132,11 +132,9 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
   * If you use **both** `-c` and `-e` or **neither**, both types of labeling occur.
   * If you change from having Cloud Scheduler labeling to not having it, or vice versa, be sure to deploy both org-level and project-level elements , not just project elements, since this involves the org-level sink.
 * Organization-level and project-level elements
-  * First, note that Iris is an organization-level application. Iris labels all projects in an org (unless you filter it down). Iris has architecture elements which are deployed to both the org and the project.
-  * By default, deployment is of both  organization-level elements (e.g., Log Sinks) and project-level elements (e.g., App Engine app). In general, you can just use this default every time you redeploy. 
-  * Alternatively, you can have a person without org-level permissions redeploy only the project-level elements (e.g. when you change configuration), after the first deployment. Do this with the `-p` switch on `deploy.sh`.
-  * Likewise, org-level elements only are deployed when you use the `-o` switch on `deploy.sh`.
-  * If you use **both** `-p` and `-o` or **neither**, both types of elements are deployed.
+  * First, note that Iris is an organization-level application. A single instance of Iris labels all projects in an org (unless you limit it by configuration). Iris has architecture elements which are deployed to both the org and the project.
+  * If you want a person with all permissions to deploy the org-level elements and a person without org-level permissions to redeploy only the project-level elements (e.g. when you change configuration), you can do this with flags on the script. Run   `deploy.sh -h`.
+
 
 # Configuration
 
