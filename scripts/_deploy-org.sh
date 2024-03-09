@@ -4,7 +4,7 @@
 # Usage
 # - Called from deploy.sh
 
-set -x
+#set -x
 # The following lines must come before set -u
 if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
 if [[ -z "$SKIP_ADDING_IAM_BINDINGS" ]] ; then SKIP_ADDING_IAM_BINDINGS=""; fi

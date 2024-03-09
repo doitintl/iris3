@@ -2,7 +2,7 @@
 # This script deletes, on the org level (see `_deploy-org.sh`):
 #  * Iris Custom role   along with the policy binding  granting this role to the  built-in App Engine service account `$PROJECT_ID@appspot.gserviceaccount.com`
 #  * Log sinks `iris_sink`
-set -x
+#set -x
 
 # The following line must come before set -u
 if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
