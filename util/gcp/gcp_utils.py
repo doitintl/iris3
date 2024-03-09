@@ -17,6 +17,7 @@ from util.utils import timed_lru_cache, log_time, dict_to_camelcase, sort_dict
 
 __invocation_count = Counter()
 
+
 def increment_invocation_count(path: str):
     global __invocation_count
     __invocation_count[path] += 1

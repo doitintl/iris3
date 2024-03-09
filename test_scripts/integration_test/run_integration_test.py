@@ -19,7 +19,7 @@ if __name__ == "__main__":
     elif clsname_base == "GCE":
         test = PubSubIntegTest()
     else:
-        raise Exception(clsname_base + " unknown")
+        raise Exception("No class " + clsname_base + " known")
     print("Test " + type(test).__name__)
     test.deploy_test_and_uninstall()
     print("Exit Status:", "Failure" if test.exit_code else "Success")

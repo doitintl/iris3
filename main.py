@@ -66,7 +66,9 @@ else:
 gcp_utils.set_env()
 
 logging.info("env  is %s", sort_dict((os.environ.copy())))
-logging.info("Configuration is %s", json.dumps(config_utils.get_config()).replace("\n",""))
+logging.info(
+    "Configuration is %s", json.dumps(config_utils.get_config()).replace("\n", "")
+)
 
 PluginHolder.init()
 
