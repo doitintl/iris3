@@ -11,20 +11,18 @@ the [post that presents Iris](https://blog.doit-intl.com/iris-3-automatic-labeli
 
 Iris automatically assigns labels to Google Cloud Platform resources for easier analysis, particularly of cost.
 
-Resources of all supported types in all or some of the projects in the GCP organization will get automatically-generated labels with keys like `iris_zone` (the prefix is configurable), and a value copied from the resource. For example, a Google
-Compute Engine instance would get labels like
-`[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`. This behavior can be configured in
-various ways; see below.
+Resources of all supported types in all or some of the projects in the GCP organization will get automatically-generated labels with keys like `iris_zone` (the prefix is configurable), and a value copied from the resource. For example, a Google Compute Engine instance would get labels like
+`[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`. This behavior can be configured in various ways; see below.
 
 ## Note: Organization focus
 
-Note that Iris is designed to serve the organization. It is not designed around serving a single project (though you can configure that).
+Note that Iris is designed to serve the organization. It is not designed around serving a single project (though you can configure that). Only one instance of Iris runs at any one time in an organization. 
 
 ## Iris doesn't add new information
 
 Iris does not *add* information, only *copy* values that already exist. For example, it can label a VM instance with its zone; but it cannot add a "business unit" label because it does not know a resource's business unit. For that, you should label all resources when creating them, e.g., in your Terraform scripts. (Indeed, iris can be made extraneous in this way.)
 
-## Labeling resources that existing resources when you deploy Iris
+## Labeling existing resources when you deploy Iris
 
 If you want to label lots of virtual machines,PubSub topics etc. that *already exist* when you deploy Iris, see section "[Labeling existing resources](#labeling-existing-resources)" below.
 
