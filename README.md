@@ -148,8 +148,8 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 # Uninstalling
 
 * Run script `uninstall.sh`
+* * See a comment in `uninstall.sh` that describes what elements are uninstalled. The default is to uninstall everything, both the org-level components and the project-level components.
 * Run `uninstall.sh -h` for help.
-* See a comment in `uninstall.sh` that describes what elements are uninstalled.
 * A full uninstall will also delete the custom role. This will then block you from re-deploying  unless you first either undelete the custom role or else give a new custom-role name at the top of `custom-iris-role.yaml`.
 
 # Architecture

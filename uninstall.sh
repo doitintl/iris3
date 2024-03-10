@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 
 # See usage (uninstall.sh -h).
-# This script deletes the following:
-#* On the org level (see `_deploy-org.sh`), it deletes
-#  * Custom role `iris3`  along with the   policy binding  granting this role to the  built-in App Engine service account `$PROJECT_ID@appspot.gserviceaccount.com`
-#  * Log sinks `iris_sink`
-#* On the project level (see `_deploy-project.sh`), it deletes
-#  * [The Cloud Scheduler job](https://cloud.google.com/sdk/gcloud/reference/scheduler/jobs/delete)
-#  * The  GAE service, from [CLI](https://cloud.google.com/sdk/gcloud/reference/app/services/delete) or the GCP Console.
-# * The policy bindings allowing the PubSub service account to access `label_one` and `do_label`   subscriptions and `iris_deadletter_topic` Topic
-# * The PubSub topics
-#    - `iris_schedulelabeling_topic`
-#    - `iris_deadletter_topic`
-#  *  and the associated  PubSub subscriptions
-#    - `iris_deadletter`
-#    - `do_label`
+# This script deletes all the following, unless you use a flag (see usage):
+# * On the org level (see `_deploy-org.sh`), it deletes
+#   * Custom role `iris3` along with the policy binding granting this role to the built-in App Engine service account `$PROJECT_ID@appspot.gserviceaccount.com`
+#   * Log sink `iris_sink`
+# * On the project level (see `_deploy-project.sh`), it deletes
+#   * [The Cloud Scheduler job](https://cloud.google.com/sdk/gcloud/reference/scheduler/jobs/delete)
+#   * The GAE service, from [CLI](https://cloud.google.com/sdk/gcloud/reference/app/services/delete) or the GCP Console.
+#   * The policy bindings allowing the PubSub service account to access `label_one` and `do_label` subscriptions and `iris_deadletter_topic` Topic
+#   * The PubSub topics
+#     - `iris_schedulelabeling_topic`
+#     - `iris_deadletter_topic`
+#   * and the associated PubSub subscriptions
+#     - `iris_deadletter`
+#     - `do_label`
 
 #set -x
 set -u
