@@ -9,7 +9,7 @@
 
 
 #set -x
-# The following muyst come before set -u
+# The following must come before set -u
 if [[ -z "$SKIP_ADDING_IAM_BINDINGS" ]] ; then SKIP_ADDING_IAM_BINDINGS=""; fi
 set -u
 set -e
@@ -38,12 +38,27 @@ gcloud auth application-default set-quota-project $PROJECT_ID
 #Next line duplicate of our Python func gae_url_with_multiregion_abbrev
 appengineHostname=$(gcloud app describe --project $PROJECT_ID | grep defaultHostname |cut -d":" -f2 | awk '{$1=$1};1' )
 if [[ -z "$appengineHostname" ]]; then
-   echo >&2 "App Engine is not enabled in $PROJECT_ID.
+   echo  "App Engine is not enabled in $PROJECT_ID.
    To do this, please enable it with \"gcloud app create [--region=REGION]\",
    and then deploy a simple \"Hello World\" default service to enable App Engine."
 
    exit 1
 fi
+
+
+
+appengine_sa_has_editor=$(gcloud projects get-iam-policy ${PROJECT_ID} \
+  --flatten="bindings[].members" \
+  --format='table(bindings.role)' \
+  --filter="bindings.members:${PROJECT_ID}@appspot.gserviceaccount.com" | grep "roles/editor" || true )
+
+
+if [ -z "$appengine_sa_has_editor" ]; then
+     echo "Must bind role Project Editor for project ${PROJECT_ID} to service account ${PROJECT_ID}@appspot.gserviceaccount.com.
+      (The binding exists by default  but is missing.)"
+     exit 1
+fi
+
 
 gae_svc=$(grep "service:" app.yaml | awk '{print $2}')
 

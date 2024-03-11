@@ -100,7 +100,7 @@ if [[ "$LABEL_ON_CRON" != "true" ]] && [[ "$LABEL_ON_CREATION_EVENT" != "true" ]
 fi
 
 
-# If both -p and -o are not given, then actually act as if both are there.
+# If both -p and -o or neither is given, we do the default behavior of deploying both types of components
 if [[ "$deploy_org" != "true" ]] && [[ "$deploy_proj" != "true" ]]; then
   deploy_org=true
   deploy_proj=true

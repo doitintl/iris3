@@ -16,7 +16,10 @@ Resources of all supported types in all or some of the projects in the GCP organ
 
 ## Note: Organization focus
 
-Note that Iris is designed to serve the organization. It is not designed around serving a single project (though you can configure that). Only one instance of Iris runs at any one time in an organization. 
+Note that Iris is designed to serve the organization. 
+* It is not designed around serving a single project (though you can configure that). 
+* Only one instance of Iris runs at any one time in an organization. 
+* The organization focus was chosen because labels are used for billing analysis which is typically done on the organization level (even though projects can be associated arbitrarily with billing accounts). 
 
 ## Iris doesn't add new information
 
@@ -24,7 +27,7 @@ Iris does not *add* information, only *copy* values that already exist. For exam
 
 ## Labeling existing resources when you deploy Iris
 
-If you want to label lots of virtual machines,PubSub topics etc. that *already exist* when you deploy Iris, see section "[Labeling existing resources](#labeling-existing-resources)" below.
+If you want to label the resources -- virtual machines, PubSub topics etc. -- that *already exist* when you deploy Iris, see section "[Labeling existing resources](#labeling-existing-resources)" below.
 
 # Open source
 
@@ -48,11 +51,9 @@ You can also  disable the scheduled labeling. See Deployment below or run `./dep
 ## Labeling existing resources
 
 * When you first use Iris, you may want to label all existing resources. Iris does not do this by default.
-* To do this, publish a PubSub message (the content doesn't matter) to `iris_label_all_topic`, for example with 
-
- ```
-  gcloud pubsub topics publish iris_label_all_topic --message=does_not_matter --project $PROJECT_ID
- ```
+* You have two choices:
+  * Set configuration `label_all_on_cron: true` before deploying. Then, on the next daily Cloud Scheduler run, all resources will be labeled. However, this will increase cost, since all resources will be rescanned every day.
+  * Alternatively, after deploying publish a PubSub message (the content doesn't matter) to `iris_label_all_topic`, for example with `gcloud pubsub topics publish iris_label_all_topic --message=does_not_matter --project $PROJECT_ID` and a full labeling will be triggered.
 
 # Supported Google Cloud resources
 
