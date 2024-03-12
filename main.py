@@ -97,6 +97,7 @@ def warmup():
 @app.route("/label_all", methods=["POST"])
 @log_time
 def label_all():
+    """ labels resources of all types, even if label_all_on_cron=False"""
     with gae_memory_logging("label_all"):
         logging.info("Start label_all() invocation")
         increment_invocation_count("label_all")
