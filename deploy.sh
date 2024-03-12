@@ -34,7 +34,6 @@ deploy_org=
 export LABEL_ON_CRON=
 export LABEL_ON_CREATION_EVENT=
 
-
 while getopts 'cepoh' opt; do
   case $opt in
   c)
@@ -91,7 +90,7 @@ fi
 
 export PROJECT_ID=$1
 
-pip3 install -r requirements.txt >/dev/null
+pip3 install -r requirements.txt > /dev/null
 
 # If both -c and -e are not given, then actually act as if both are there.
 if [[ "$LABEL_ON_CRON" != "true" ]] && [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
@@ -106,14 +105,13 @@ if [[ "$deploy_org" != "true" ]] && [[ "$deploy_proj" != "true" ]]; then
   deploy_proj=true
 fi
 
-
-gcloud projects describe "$PROJECT_ID" >/dev/null|| {
+gcloud projects describe "$PROJECT_ID" >/dev/null || {
   echo "Project $PROJECT_ID not found"
   exit 1
 }
 
-#echo "Project ID $PROJECT_ID"
-gcloud config set project "$PROJECT_ID"
+gcloud auth application-default set-quota-project $PROJECT_ID > /dev/null 2>&1
+gcloud config set project "$PROJECT_ID" > /dev/null  2>&1
 
 
 if [[ "$deploy_org" == "true" ]]; then

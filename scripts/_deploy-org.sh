@@ -7,14 +7,14 @@
 #set -x
 # The following lines must come before set -u
 if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
-if [[ -z "$SKIP_ADDING_IAM_BINDINGS" ]] ; then SKIP_ADDING_IAM_BINDINGS=""; fi
+if [[ -z "$SKIP_ADDING_IAM_BINDINGS" ]]; then SKIP_ADDING_IAM_BINDINGS=""; fi
 set -u
 set -e
 
 LOG_SINK=iris_log
 
 # Get organization id for this project
-ORGID=$(gcloud projects get-ancestors $PROJECT_ID --format='value(TYPE,ID)' | awk '/org/ {print $2}')
+ORGID=$(gcloud projects get-ancestors "$PROJECT_ID" --format='value(TYPE,ID)' | awk '/org/ {print $2}')
 
 set +e
 # Create custom role to run iris
@@ -25,19 +25,17 @@ existing_role=$(gcloud iam roles describe --organization "$ORGID" $IRIS_CUSTOM_R
 # 3. For non-existing role, empty-string
 if [ -n "$existing_role" ]; then
   if [[ "$existing_role" == *"True"* ]]; then # It's a soft-deleted role
-    gcloud iam roles undelete -q "$IRIS_CUSTOM_ROLE"  --organization "$ORGID"  >/dev/null
+    gcloud iam roles undelete -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" >/dev/null
   fi
 
   gcloud iam roles update -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" --file iris-custom-role.yaml >/dev/null
   role_error=$?
-
 else
-    gcloud iam roles create -q "$IRIS_CUSTOM_ROLE"  --organization "$ORGID" --file iris-custom-role.yaml  >/dev/null
-    role_error=$?
+  gcloud iam roles create -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" --file iris-custom-role.yaml >/dev/null
+  role_error=$?
 fi
 
 set -e
-
 if [[ "$role_error" != "0" ]]; then
   echo "Error in accessing organization.
    If you just want to redeploy to the same project,
@@ -52,8 +50,7 @@ fi
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECT_ID@appspot.gserviceaccount.com" \
   --role "organizations/$ORGID/roles/$IRIS_CUSTOM_ROLE" \
-  --condition=None >/dev/null
-
+  --condition=None >/dev/null 2>&1
 
 if [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
   echo >&2 "Will not label on creation event."
@@ -95,30 +92,25 @@ else
 
   # Create or update a sink at org level
   if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
-    #echo >&2 "Creating Log Sink/Router at Organization level."
     gcloud logging sinks create "$LOG_SINK" \
       pubsub.googleapis.com/projects/"$PROJECT_ID"/topics/"$LOGS_TOPIC" \
       --organization="$ORGID" --include-children \
-      --log-filter="${log_filter[*]}" --quiet
+      --log-filter="${log_filter[*]}" --quiet >/dev/null 2>&1
   else
-    #echo >&2 "Updating Log Sink/Router at Organization level."
     gcloud logging sinks update "$LOG_SINK" \
       pubsub.googleapis.com/projects/"$PROJECT_ID"/topics/"$LOGS_TOPIC" \
       --organization="$ORGID" \
-      --log-filter="${log_filter[*]}" --quiet
+      --log-filter="${log_filter[*]}" --quiet >/dev/null 2>&1
   fi
 
   # Extract service account from sink configuration.
   # This is the service account that publishes to PubSub.
-  svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK"  |
+  svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |
     grep writerIdentity | awk '{print $2}')
 
   if [[ "$SKIP_ADDING_IAM_BINDINGS" != "true" ]]; then
-      echo >&2 "Adding IAM bindings in _deploy-org"
     # Assign a publisher role to the extracted service account.
     gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-      --member="$svcaccount" --role=roles/pubsub.publisher --quiet > /dev/null
-  else
-    echo >&2 "Not adding IAM bindings in _deploy-org"fi
+      --member="$svcaccount" --role=roles/pubsub.publisher --quiet >/dev/null 2>&1
   fi
 fi

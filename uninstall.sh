@@ -38,7 +38,6 @@ START=$(date "+%s")
 
 export LOGS_TOPIC=iris_logs_topic
 
-
 uninstall_for_proj=
 uninstall_for_org=
 
@@ -47,7 +46,6 @@ while getopts 'poh' opt; do
   case $opt in
   p)
     uninstall_for_proj=true
-
     ;;
   o)
     uninstall_for_org=true
@@ -59,7 +57,7 @@ while getopts 'poh' opt; do
             The project to which Iris was  deployed
           Options, to be given before project ID.
             If neither -p nor -o is given, the default behavior is used:
-            both are uninstalled; this is equivalent to  giving both -p -o
+            both are uninstalled; this is equivalent to giving both -p -o
             Flags:
                   -p: Uninstall project-level elements of Iris.
                   This is useful if you deployed Iris to two projects
@@ -99,9 +97,7 @@ gcloud projects describe "$PROJECT_ID" >/dev/null`` || {
   exit 1
 }
 
-#echo "Project ID $PROJECT_ID"
 gcloud config set project "$PROJECT_ID"
-
 
 if [[ "$uninstall_for_org" == "true" ]]; then
   ./uninstall_scripts/_uninstall-for-org.sh || exit 1
