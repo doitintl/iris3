@@ -172,5 +172,5 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 
 # Development and Testing
 
-Please see [docs_for_dev_and_testing](./docs_for_dev_and_testing)
+Please see [README_for_dev_and_testing](./README_for_dev_and_testing.md)
  
