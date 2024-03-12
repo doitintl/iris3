@@ -1,5 +1,7 @@
 # Iris: Dev and Testing
  
+# For the main documentation
+See [README](./README.md).
  
 ## Development tools
 
