@@ -7,14 +7,9 @@
 #set -x
 # The following lines must come before set -u
 if [[ -z "$IRIS_CUSTOM_ROLE" ]]; then IRIS_CUSTOM_ROLE=iris3; fi
-if [[ -z "$SKIP_ADDING_IAM_BINDINGS" ]]; then SKIP_ADDING_IAM_BINDINGS=""; fi
 set -u
 set -e
 
-LOG_SINK=iris_log
-
-# Get organization id for this project
-ORGID=$(gcloud projects get-ancestors "$PROJECT_ID" --format='value(TYPE,ID)' | awk '/org/ {print $2}')
 
 set +e
 # Create custom role to run iris
@@ -50,13 +45,12 @@ fi
 gcloud organizations add-iam-policy-binding "$ORGID" \
   --member "serviceAccount:$PROJECT_ID@appspot.gserviceaccount.com" \
   --role "organizations/$ORGID/roles/$IRIS_CUSTOM_ROLE" \
-  --condition=None >/dev/null 2>&1
+  --condition=None >/dev/null
 
 if [[ "$LABEL_ON_CREATION_EVENT" != "true" ]]; then
   echo >&2 "Will not label on creation event."
   gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" || true
 else
-  # Create PubSub topic for receiving logs about new GCP objects
 
   log_filter=("")
 
@@ -91,26 +85,17 @@ else
   log_filter+=(')')
 
   # Create or update a sink at org level
+  # Logs topic does not yet exist!
   if ! gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
     gcloud logging sinks create "$LOG_SINK" \
       pubsub.googleapis.com/projects/"$PROJECT_ID"/topics/"$LOGS_TOPIC" \
       --organization="$ORGID" --include-children \
-      --log-filter="${log_filter[*]}" --quiet >/dev/null 2>&1
+      --log-filter="${log_filter[*]}" --quiet >/dev/null
   else
     gcloud logging sinks update "$LOG_SINK" \
       pubsub.googleapis.com/projects/"$PROJECT_ID"/topics/"$LOGS_TOPIC" \
       --organization="$ORGID" \
-      --log-filter="${log_filter[*]}" --quiet >/dev/null 2>&1
+      --log-filter="${log_filter[*]}" --quiet >/dev/null
   fi
 
-  # Extract service account from sink configuration.
-  # This is the service account that publishes to PubSub.
-  svcaccount=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |
-    grep writerIdentity | awk '{print $2}')
-
-  if [[ "$SKIP_ADDING_IAM_BINDINGS" != "true" ]]; then
-    # Assign a publisher role to the extracted service account.
-    gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-      --member="$svcaccount" --role=roles/pubsub.publisher --quiet >/dev/null 2>&1
-  fi
 fi

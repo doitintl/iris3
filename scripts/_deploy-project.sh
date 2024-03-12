@@ -36,15 +36,17 @@ fi
 appengineHostname=$(gcloud app describe --project $PROJECT_ID | grep defaultHostname | cut -d":" -f2 | awk '{$1=$1};1')
 if [[ -z "$appengineHostname" ]]; then
   echo "App Engine is not enabled in $PROJECT_ID.
-   To do this, please enable it with \"gcloud app create [--region=REGION]\",
-   and then deploy a simple \"Hello World\" default service to enable App Engine."
+  As a pre-req for this, as for all App Engine services, please
+  (1) Create the app with  \"gcloud app create [--region=REGION]\",
+  (2) and then deploy a simple \"Hello World\" default-service."
   exit 1
 fi
 
 appengine_sa_has_editor_role=$(gcloud projects get-iam-policy ${PROJECT_ID} \
   --flatten="bindings[].members" \
-  --format='table(bindings.role)' \
+  --format='table[no-heading](bindings.role)' \
   --filter="bindings.members:${PROJECT_ID}@appspot.gserviceaccount.com" | grep "roles/editor" || true)
+
 
 if [ -z "$appengine_sa_has_editor_role" ]; then
   echo "Must bind role Project Editor for project ${PROJECT_ID} to service account ${PROJECT_ID}@appspot.gserviceaccount.com.
@@ -79,9 +81,34 @@ required_svcs=(
 )
 for svc in "${required_svcs[@]}"; do
   if ! [ ${enabled_services["$svc"]+_} ]; then
-    gcloud services enable "$svc"
+    gcloud services enable "$svc" --project $PROJECT_ID
   fi
 done
+
+
+# Extract service account from sink configuration.
+# This is the service account that publishes to PubSub.
+sink_svc_account=$(gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" |
+  grep writerIdentity | awk '{print $2}')
+
+if [[ "$SKIP_ADDING_IAM_BINDINGS" != "true" ]]; then
+  # Assign a publisher role to the extracted service account.
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member="$sink_svc_account" --role=roles/pubsub.publisher --quiet >/dev/null
+else
+  #Check to avoid situation where a test does SKIP_ADDING_IAM_BINDINGS and they don't at all exist
+  already_have_binding=$(  gcloud projects get-iam-policy $PROJECT_ID  \
+    --flatten="bindings[].members" \
+    --format='table[no-heading](bindings.role)' \
+    --filter="bindings.members:${sink_svc_account}" |grep "pubsub.publisher" ||true)
+
+  if [ -z $already_have_binding ]; then
+    echo "SKIP_ADDING_IAM_BINDINGS is meant for tests
+    (to avoid overloading the quotas when you repeated run the tests).
+    First deploy the usual way before running the tests."
+    exit 1
+  fi
+fi
 
 # Create PubSub topic for receiving commands from the /schedule handler that is triggered from cron
 gcloud pubsub topics describe "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" &>/dev/null ||
@@ -99,21 +126,21 @@ if gcloud pubsub subscriptions describe "$DEADLETTER_SUB" --project="$PROJECT_ID
     gcloud pubsub subscriptions update $DEADLETTER_SUB \
     --project="$PROJECT_ID" \
     --message-retention-duration=2d \
-    --quiet >/dev/null 2>&1
+    --quiet >/dev/null
 
 else
    gcloud pubsub subscriptions create $DEADLETTER_SUB \
     --project="$PROJECT_ID" \
     --topic $DEADLETTER_TOPIC \
     --message-retention-duration=2d \
-    --quiet >/dev/null 2>&1
+    --quiet >/dev/null
 fi
 
 project_number=$(gcloud projects describe $PROJECT_ID --format json | jq -r '.projectNumber')
 PUBSUB_SERVICE_ACCOUNT="service-${project_number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 # The following line is only needed on first deployment, and so slows things
 # down unnecessarily otherwise. But most users do not install Iris repeatedly.
-gcloud beta services identity create --project $PROJECT_ID --service pubsub >/dev/null 2>&1
+gcloud beta services identity create --project $PROJECT_ID --service pubsub >/dev/null
 
 if ! gcloud iam service-accounts describe iris-msg-sender@${PROJECT_ID}.iam.gserviceaccount.com --project $PROJECT_ID >/dev/null ;
 then
@@ -139,7 +166,7 @@ then
     --dead-letter-topic=$DEADLETTER_TOPIC \
     --min-retry-delay=$MIN_RETRY \
     --max-retry-delay=$MAX_RETRY \
-    --quiet >/dev/null 2>&1
+    --quiet >/dev/null
 else
   gcloud pubsub subscriptions create "$DO_LABEL_SUBSCRIPTION" \
     --topic "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" \
@@ -150,7 +177,7 @@ else
     --dead-letter-topic=$DEADLETTER_TOPIC \
     --min-retry-delay=$MIN_RETRY \
     --max-retry-delay=$MAX_RETRY \
-    --quiet >/dev/null 2>&1
+    --quiet >/dev/null
 fi
 
 if [[ "$LABEL_ON_CREATION_EVENT" != "true" ]];
@@ -160,7 +187,7 @@ then
 else
   # Create PubSub topic for receiving logs about new GCP objects
   gcloud pubsub topics describe "$LOGS_TOPIC" --project="$PROJECT_ID" &>/dev/null ||
-    gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECT_ID" --quiet >/dev/null 2>&1
+    gcloud pubsub topics create $LOGS_TOPIC --project="$PROJECT_ID" --quiet >/dev/null
 
   # Create or update PubSub subscription for receiving log about new GCP objects
   if gcloud pubsub subscriptions describe "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null ;
@@ -173,7 +200,7 @@ else
       --dead-letter-topic=$DEADLETTER_TOPIC \
       --min-retry-delay=$MIN_RETRY \
       --max-retry-delay=$MAX_RETRY \
-      --quiet >/dev/null 2>&1
+      --quiet >/dev/null
   else
     gcloud pubsub subscriptions create "$LABEL_ONE_SUBSCRIPTION" \
       --topic "$LOGS_TOPIC" --project="$PROJECT_ID" \
@@ -184,14 +211,13 @@ else
       --dead-letter-topic=$DEADLETTER_TOPIC \
       --min-retry-delay=$MIN_RETRY \
       --max-retry-delay=$MAX_RETRY \
-      --quiet >/dev/null 2>&1
+      --quiet >/dev/null
   fi
 
 fi
 
 gcloud pubsub topics describe "$LABEL_ALL_TOPIC" --project="$PROJECT_ID" &>/dev/null ||
   gcloud pubsub topics create $LABEL_ALL_TOPIC --project="$PROJECT_ID" --quiet >/dev/null
-
 
 if gcloud pubsub subscriptions describe "$LABEL_ALL_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null; then
   gcloud pubsub subscriptions update "$LABEL_ALL_SUBSCRIPTION" \
@@ -203,7 +229,7 @@ if gcloud pubsub subscriptions describe "$LABEL_ALL_SUBSCRIPTION" --project="$PR
     --dead-letter-topic=$DEADLETTER_TOPIC \
     --min-retry-delay=$MIN_RETRY \
     --max-retry-delay=$MAX_RETRY \
-    --quiet >/dev/null 2>&1
+    --quiet >/dev/null
 else
   gcloud pubsub subscriptions create "$LABEL_ALL_SUBSCRIPTION" \
     --topic "$LABEL_ALL_TOPIC" --project="$PROJECT_ID" \
@@ -221,28 +247,28 @@ if [[ "$LABEL_ON_CREATION_EVENT" == "true" ]]; then
   # Allow Pubsub to delete failed message from this sub
   gcloud pubsub subscriptions add-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
-    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null 2>&1
+    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
 fi
 
 gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
   --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
-  --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null 2>&1
+  --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
 # Allow Pubsub to delete failed message from this sub
 gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
   --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
-  --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null 2>&1
+  --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
 # Allow Pubsub to publish into the deadletter topic
 gcloud pubsub topics add-iam-policy-binding $DEADLETTER_TOPIC \
   --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
-  --role="roles/pubsub.publisher" --project "$PROJECT_ID" >/dev/null 2>&1
+  --role="roles/pubsub.publisher" --project "$PROJECT_ID" >/dev/null
 
 if [[ "$SKIP_ADDING_IAM_BINDINGS" != "true" ]]; then
   gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}" \
-    --role='roles/iam.serviceAccountTokenCreator' >/dev/null 2>&1
+    --role='roles/iam.serviceAccountTokenCreator' >/dev/null
 fi
 
 if [[ "$LABEL_ON_CRON" == "true" ]]; then

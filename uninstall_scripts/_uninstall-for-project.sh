@@ -21,39 +21,39 @@ PUBSUB_SERVICE_ACCOUNT="service-${project_number}@gcp-sa-pubsub.iam.gserviceacco
 
 gcloud pubsub topics remove-iam-policy-binding $DEADLETTER_TOPIC \
         --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-         --role="roles/pubsub.publisher" --project $PROJECT_ID >/dev/null 2>&1 || true
+         --role="roles/pubsub.publisher" --project $PROJECT_ID >/dev/null  || true
 
 gcloud pubsub subscriptions remove-iam-policy-binding $DO_LABEL_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null 2>&1  || true
+    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null   || true
 
 gcloud pubsub subscriptions remove-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null 2>&1  ||true
+    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null   ||true
 
 gcloud pubsub subscriptions remove-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
-    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null 2>&1 ||true
+    --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null  ||true
 
 # We don't do the following to avoid disrupting PubSub more generally in the project.
 #gcloud projects remove-iam-policy-binding ${PROJECT_ID}  \
 #    --member="serviceAccount:${PUBSUB_SERVICE_ACCOUNT}"\
 #    --role='roles/iam.serviceAccountTokenCreator' ||true
 
-gcloud pubsub subscriptions delete $DEADLETTER_SUB --project="$PROJECT_ID" -q >/dev/null 2>&1 || true
-gcloud pubsub subscriptions delete "$DO_LABEL_SUBSCRIPTION" -q --project="$PROJECT_ID" >/dev/null 2>&1 || true
-gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" >/dev/null 2>&1  || true
-gcloud pubsub subscriptions delete "$LABEL_ALL_SUBSCRIPTION" --project="$PROJECT_ID" >/dev/null 2>&1  || true
+gcloud pubsub subscriptions delete $DEADLETTER_SUB --project="$PROJECT_ID" -q >/dev/null  || true
+gcloud pubsub subscriptions delete "$DO_LABEL_SUBSCRIPTION" -q --project="$PROJECT_ID" >/dev/null  || true
+gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" >/dev/null   || true
+gcloud pubsub subscriptions delete "$LABEL_ALL_SUBSCRIPTION" --project="$PROJECT_ID" >/dev/null   || true
 
-gcloud pubsub topics delete "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" -q >/dev/null 2>&1  ||true
-gcloud pubsub topics delete "$LABEL_ALL_TOPIC" --project="$PROJECT_ID" -q >/dev/null 2>&1  || true
-gcloud pubsub topics delete "$DEADLETTER_TOPIC" --project="$PROJECT_ID" -q >/dev/null 2>&1  || true
-gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID" 2>/dev/null >/dev/null 2>&1 || true
+gcloud pubsub topics delete "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" -q >/dev/null   ||true
+gcloud pubsub topics delete "$LABEL_ALL_TOPIC" --project="$PROJECT_ID" -q >/dev/null   || true
+gcloud pubsub topics delete "$DEADLETTER_TOPIC" --project="$PROJECT_ID" -q >/dev/null   || true
+gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID"   >/dev/null  || true
 
-gcloud app services delete --project $PROJECT_ID -q iris3  >/dev/null 2>&1 || true
+gcloud app services delete --project $PROJECT_ID -q iris3  >/dev/null  || true
 
 cp cron_empty.yaml cron.yaml
-gcloud app deploy -q cron.yaml -q --project $PROJECT_ID >/dev/null 2>&1 || true
+gcloud app deploy -q cron.yaml -q --project $PROJECT_ID >/dev/null  || true
 rm cron.yaml
 
 

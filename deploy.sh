@@ -105,14 +105,20 @@ if [[ "$deploy_org" != "true" ]] && [[ "$deploy_proj" != "true" ]]; then
   deploy_proj=true
 fi
 
+gcloud services enable cloudresourcemanager.googleapis.com --project $PROJECT_ID > /dev/null ||true
+
 gcloud projects describe "$PROJECT_ID" >/dev/null || {
   echo "Project $PROJECT_ID not found"
   exit 1
 }
 
-gcloud auth application-default set-quota-project $PROJECT_ID > /dev/null 2>&1
-gcloud config set project "$PROJECT_ID" > /dev/null  2>&1
+gcloud config set project "$PROJECT_ID" > /dev/null
 
+export LOG_SINK=iris_log
+
+# Get organization id for this project
+ORGID=$(gcloud projects get-ancestors "$PROJECT_ID" --format='value(TYPE,ID)' | awk '/org/ {print $2}')
+export ORGID
 
 if [[ "$deploy_org" == "true" ]]; then
   ./scripts/_deploy-org.sh || exit 1

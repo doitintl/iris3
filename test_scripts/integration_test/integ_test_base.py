@@ -20,7 +20,7 @@ from util.utils import (
     random_hex_str,
     run_command,
     log_time,
-    set_log_levels,
+    set_log_levels, wait_for_user_input,
 )
 
 
@@ -90,13 +90,14 @@ class BaseIntegTest(ABC):
                 if "gsutil" in cmd:
                     extraction_method = self.__extract_labels_from_result_for_gsutil
                 else:
-                    extraction_method = self.__extract_labels_from_result_non_gcs
+                    extraction_method = self.__extract_labels_from_result_non_gutil
 
                 extraction_method(
                     cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
                 )
 
-            if len(needed_label_not_found) > 0:
+            len_needed_labels_not_found = len(needed_label_not_found)
+            if len_needed_labels_not_found > 0 or len_needed_labels_not_found + len(needed_label_found) == 0:
                 print(
                     len(needed_label_found),
                     "labels found;",
@@ -111,19 +112,24 @@ class BaseIntegTest(ABC):
 
     @staticmethod
     def __extract_labels_from_result_for_gsutil(
-        cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
+            cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
     ):
-        try:
-            j = json.loads(cmd_output)
-            # GCS is different in two ways
-            # 1. Because we are using a label-specific command  "gsutils labels", there is "No "labels" wrapper in the JSON
-            # 2. For the sake of a  testing resource-type specific labels, bucket labels start "gcs", not the usual iris prefix.
-            label_val = j.get(f"gcs{run_id}_name")
+        if "has no label configuration" in cmd_output:
+            label_val=None
+        else:
+            try:
 
-        except json.decoder.JSONDecodeError as e:
-            logging.exception("")
-            print("Exception", e, 'for output"', cmd_output, '"')
-            label_val = None
+                j = json.loads(cmd_output)
+                # GCS is different in two ways
+                # 1. Because we are using a label-specific command  "gsutils labels", there is "No "labels" wrapper in the JSON
+                # 2. For the sake of a  testing resource-type specific labels, bucket labels start "gcs", not the usual iris prefix.
+                label_val = j.get(f"gcs{run_id}_name")
+
+            except json.decoder.JSONDecodeError as e:
+                logging.exception("")
+                print("Exception", e, 'for output"', cmd_output, '"')
+                label_val = None
+
 
         if label_val:
             needed_label_found.append(cmd)
@@ -131,8 +137,8 @@ class BaseIntegTest(ABC):
             needed_label_not_found.append(cmd)
 
     @staticmethod
-    def __extract_labels_from_result_non_gcs(
-        cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
+    def __extract_labels_from_result_non_gutil(
+            cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
     ):
         j = json.loads(cmd_output)
         labels = j.get("labels", {})
@@ -155,6 +161,7 @@ class BaseIntegTest(ABC):
                 )
                 if isinstance(result, Exception)
             ]
+
         if creation_failed:
             print("Failed ", creation_failed)
             self.__set_failing()
@@ -190,7 +197,7 @@ class BaseIntegTest(ABC):
 
     @classmethod
     def __run_command_or_commands_catch_exc(
-        cls, command_or_commands: Union[str, List[str]]
+            cls, command_or_commands: Union[str, List[str]]
     ):
         time.sleep(random.randint(0, 3))  # Avoid thundering herd
         if isinstance(command_or_commands, str):
@@ -300,6 +307,8 @@ class BaseIntegTest(ABC):
 
             if words[0] == "bq":
                 ret.append(" ".join(words[0:2]))
+            elif words[0] == "gsutil":
+                ret.append(" ".join(words[0:3]))
             else:
                 assert words[0] == "gcloud", words
                 ret.append(" ".join(words[1:3]))
@@ -375,8 +384,8 @@ class BaseIntegTest(ABC):
             fa.write(f"{len(labels_not_found)}\n"),
 
         with open(
-            f"./testresults/testresult-{self.__test_start.replace(':', '').replace(' ', 'T')}.txt",
-            "w",
+                f"./testresults/testresult-{self.__test_start.replace(':', '').replace(' ', 'T')}.txt",
+                "w",
         ) as f:
             f.write("Start time: " + self.__test_start + "\n")
             f.write("Iris prefix: " + iris_prefix() + "\n")
@@ -443,7 +452,7 @@ class BaseIntegTest(ABC):
 
     @classmethod
     def fill_in_config_template(
-        cls, run_id, deployment_project, test_project, pubsub_test_token
+            cls, run_id, deployment_project, test_project, pubsub_test_token
     ):
         with open("config.yaml.test.template") as template_file:
             filled_template = template_file.read()
@@ -512,19 +521,19 @@ class BaseIntegTest(ABC):
 
     @abstractmethod
     def _resource_deletion_commands(
-        self, gce_zone, resources_project, run_id
+            self, gce_zone, resources_project, run_id
     ) -> List[Union[List[str], str]]:
 
         pass
 
     @abstractmethod
     def _resource_creation_commands(
-        self, gce_zone, run_id, test_project
+            self, gce_zone, run_id, test_project
     ) -> List[Union[List[str], str]]:
         pass
 
     @abstractmethod
     def _resource_description_commands(
-        self, gce_zone, run_id, test_project
+            self, gce_zone, run_id, test_project
     ) -> List[str]:
         pass

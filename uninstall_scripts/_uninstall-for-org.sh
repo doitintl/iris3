@@ -17,9 +17,9 @@ ORGID=$(gcloud projects get-ancestors "${PROJECT_ID}" | grep organization |tr -s
 
 gcloud organizations remove-iam-policy-binding "$ORGID" --all \
   --member "serviceAccount:$PROJECT_ID@appspot.gserviceaccount.com" \
-  --role "organizations/$ORGID/roles/$IRIS_CUSTOM_ROLE" >/dev/null >/dev/null 2>&1 || true
+  --role "organizations/$ORGID/roles/$IRIS_CUSTOM_ROLE" >/dev/null >/dev/null  || true
 
-gcloud iam roles delete -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" >/dev/null 2>&1 || true
+gcloud iam roles delete -q "$IRIS_CUSTOM_ROLE" --organization "$ORGID" >/dev/null  || true
 
 
 if  gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/null; then
@@ -27,9 +27,9 @@ if  gcloud logging sinks describe --organization="$ORGID" "$LOG_SINK" >&/dev/nul
       grep writerIdentity | awk '{print $2}')
 
     gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
-      --member="$svcaccount" --role=roles/pubsub.publisher -q > /dev/null 2>&1 ||true
+      --member="$svcaccount" --role=roles/pubsub.publisher -q > /dev/null  ||true
 
-    gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" >/dev/null 2>&1 || true
+    gcloud logging sinks delete -q --organization="$ORGID" "$LOG_SINK" >/dev/null  || true
 
 fi
 

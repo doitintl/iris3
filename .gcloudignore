@@ -1,8 +1,9 @@
 
 test_scripts/
-
+uninstall_scripts/
+scripts/
 sample_data/
-memray/
+
 README.md
 *.sh
 TEMP*

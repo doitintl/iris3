@@ -253,6 +253,7 @@ def run_command(command_s, extra_env: typing.Dict[str, str] = None):
     env = os.environ
     if extra_env is not None:
         env |= extra_env
+
     result = subprocess.run(command, stdout=subprocess.PIPE, check=True, env=env)
     output = result.stdout.decode("utf-8")
     return output.strip("\n")
@@ -269,5 +270,5 @@ def sort_dict(d):
 
 
 def wait_for_user_input():
-    print("Type ENTER to proceed to clean up resources ")
+    print("Type ENTER to proceed ")
     _ = sys.stdin.readline()
