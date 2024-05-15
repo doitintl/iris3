@@ -105,7 +105,7 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 
 * Fine-granted "predefined roles" are not possible because deploying Cloud Scheduler cron requires at least Editor or Owner, per GCP docs.
 
-### App Engine Defaults
+ 
 
 ## Deployment
 
