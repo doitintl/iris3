@@ -119,7 +119,7 @@ class Cloudsql(Plugin):
             if "PENDING_CREATE" == gcp_object.get("state"):
                 logging.exception(
                     "CloudSQL cannot accept labels until it is fully initialized, which is why"
-                    "we do not label it on-demand in the usual way",
+                    "we do not label it on-creation in the usual way",
                 )
 
             raise e
