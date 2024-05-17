@@ -53,20 +53,19 @@ while getopts 'cepoh' opt; do
       Usage deploy.sh PROJECT_ID
           Argument:
                   The project to which Iris will be deployed
-          Options, to be given before project ID.
-            If neither -p nor -o is given, the default behavior is used:
-            to do both; this is equivalent to -p -o
-            Flags:
+          Advancd options, to be given before project ID. These are  not to be used except in advanced schenarios.
+                  A. Labeling only on-creation or on-schedule:
+                  -c: Label on Cloud Scheduler cron only
+                  -e: Label on-creation-event only
+                  The default, if neither -c or -e are given, is to enable both; equivalent to -c -e
+
+                  B. Project/Org level with -p or -o. If neither -p nor -o is given,
+                  the default behavior is to do both; equivalent to -p -o
                   -o: Deploy org-level elements like Log Sink
-                  -p: Deploy project-level elements.
-                  Org-level elements are a pre-requisite.
+                  -p: Deploy project-level elements.  Org-level elements are a pre-requisite.
                   This is useful for redeploying to the same project, e.g., to change config.
                   If you want to deploy to a *different* project,
                   then you have to deploy the org-level elements.
-                  The default, if neither -o or -p are given, is to enable both.
-                  -c: Label on Cloud Scheduler cron to add labels
-                  -e: Label on-creation-event.
-                  The default if neither -c or -e are given is to enable both.
 
           Environment variable:
                   IRIS_CUSTOM_ROLE (Optional, default is iris3) An identifier for the Iris custom role,

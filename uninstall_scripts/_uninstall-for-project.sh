@@ -9,12 +9,12 @@ set -u
 set -e
 
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
-LABEL_ALL_TOPIC=iris_label_all_topic
+LABEL_ALL_TYPES_TOPIC=iris_label_all_types_topic
 DEADLETTER_TOPIC=iris_deadletter_topic
 DEADLETTER_SUB=iris_deadletter
 DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
-LABEL_ALL_SUBSCRIPTION=label_all
+LABEL_ALL_TYPES_SUBSCRIPTION=label_all_types
 
 project_number=$(gcloud projects describe $PROJECT_ID --format json|jq -r '.projectNumber')
 PUBSUB_SERVICE_ACCOUNT="service-${project_number}@gcp-sa-pubsub.iam.gserviceaccount.com"
@@ -31,7 +31,7 @@ gcloud pubsub subscriptions remove-iam-policy-binding $LABEL_ONE_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
     --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null   ||true
 
-gcloud pubsub subscriptions remove-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
+gcloud pubsub subscriptions remove-iam-policy-binding $LABEL_ALL_TYPES_SUBSCRIPTION \
     --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT"\
     --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null  ||true
 
@@ -43,10 +43,10 @@ gcloud pubsub subscriptions remove-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
 gcloud pubsub subscriptions delete $DEADLETTER_SUB --project="$PROJECT_ID" -q >/dev/null  || true
 gcloud pubsub subscriptions delete "$DO_LABEL_SUBSCRIPTION" -q --project="$PROJECT_ID" >/dev/null  || true
 gcloud pubsub subscriptions delete "$LABEL_ONE_SUBSCRIPTION" --project="$PROJECT_ID" >/dev/null   || true
-gcloud pubsub subscriptions delete "$LABEL_ALL_SUBSCRIPTION" --project="$PROJECT_ID" >/dev/null   || true
+gcloud pubsub subscriptions delete "$LABEL_ALL_TYPES_SUBSCRIPTION" --project="$PROJECT_ID" >/dev/null   || true
 
 gcloud pubsub topics delete "$SCHEDULELABELING_TOPIC" --project="$PROJECT_ID" -q >/dev/null   ||true
-gcloud pubsub topics delete "$LABEL_ALL_TOPIC" --project="$PROJECT_ID" -q >/dev/null   || true
+gcloud pubsub topics delete "$LABEL_ALL_TYPES_TOPIC" --project="$PROJECT_ID" -q >/dev/null   || true
 gcloud pubsub topics delete "$DEADLETTER_TOPIC" --project="$PROJECT_ID" -q >/dev/null   || true
 gcloud pubsub topics delete "$LOGS_TOPIC" --project="$PROJECT_ID"   >/dev/null  || true
 

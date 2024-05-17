@@ -2,7 +2,7 @@
 
 ## Note: see also Github Issues
 
-* P2 Memory consumption: Even an empty AppEngine app (not Iris, just a Hello World with 3 lines of code in total) crashes on out-of-memory for the smalled AppEngine instance. Google has confirmed this. See if there is a workaround.  This will save money.
+* P2 Memory consumption: Even an empty App Engine app (not Iris, just a Hello World with 3 lines of code in total) crashes on out-of-memory for the smalled App Engine instance. Google has confirmed this. See if there is a workaround.  This will save money.
 
 * P3 Label immediately after an event in certain cases, as opposed to using a daily cron as is now done.
     * Cloud SQL Instances

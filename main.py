@@ -93,16 +93,15 @@ def warmup():
 
     return "", 200, {}
 
-
-@app.route("/label_all", methods=["POST"])
+@app.route("/label_all_types", methods=["POST"])
 @log_time
-def label_all():
-    """ labels resources of all types, even if label_all_on_cron=False"""
-    with gae_memory_logging("label_all"):
-        logging.info("Start label_all() invocation")
-        increment_invocation_count("label_all")
+def label_all_types():
+    """labels resources of all types, even if label_all_on_cron=False"""
+    with gae_memory_logging("label_all_types"):
+        logging.info("Start label_all_types() invocation")
+        increment_invocation_count("label_all_types")
         __check_pubsub_jwt()
-        return __label_multiple_types(True)
+        return __label_multiple_resource_types(True)
 
 
 @app.route("/schedule", methods=["GET"])
@@ -116,15 +115,15 @@ def schedule():
         if not is_cron:
             return "Access Denied: No Cron header found", 403
         label_all_types = config_utils.label_all_on_cron()
-        return __label_multiple_types(label_all_types)
+        return __label_multiple_resource_types(label_all_types)
 
 
-def __label_multiple_types(label_all_types: bool):
+def __label_multiple_resource_types(label_all_types: bool=False):
     """
     Send out a message per-plugin per-project; each msg labels objects of a given type and project.
-    :param label_all_types: if false, only label those that are
+    :param label_all_types: if False, only label those that are
     not labeled on creation (CloudSQL) or those that must be relabeled on cron (Disks),
-    but if true, label all types;
+    but if True, label all types regardless;
     """
     assert label_all_types is not None
     try:
@@ -264,8 +263,8 @@ def label_one():
 
 def __check_pubsub_jwt():
     try:
-        # TODO the sample https://github.com/GoogleCloudPlatform/python-docs-samples/blob/ff4c1d55bb5b6995c63383469535604002dc9ba2/appengine/standard_python3/pubsub/main.py#L69
-        # has this. I am not sure why or how the token arg gets there.
+        # TODO The sample https://github.com/GoogleCloudPlatform/python-docs-samples/blob/ff4c1d55bb5b6995c63383469535604002dc9ba2/appengine/standard_python3/pubsub/main.py#L69
+        # has the following code. I am not sure why or how the token arg gets there.
         # if request.args.get("token", "") != current_app.config["PUBSUB_VERIFICATION_TOKEN"]:
         #     return "Invalid request", 400
         bearer_token = flask.request.headers.get("Authorization")
@@ -273,7 +272,7 @@ def __check_pubsub_jwt():
 
         claim = id_token.verify_oauth2_token(token, requests.Request())
 
-        # example claim:  { "aud": "https://iris3-dot-myproj.appspot.com/label_one?token=xxxxxxxxx",
+        # Here is an example claim:  { "aud": "https://iris3-dot-myproj.appspot.com/label_one?token=xxxxxxxxx",
         #     "azp": "1125239305332910191520",
         #     "email": "iris-msg-sender@myproj.iam.gserviceaccount.com",
         #     "email_verified": True, "exp": 1708281691, "iat": 1708278091,
@@ -292,7 +291,6 @@ def __check_pubsub_jwt():
     except Exception as e:
         logging.exception(f"Invalid JWT token: {e}")
         return False
-    # logging.info("JWT Passed")
 
     return True
 
@@ -305,7 +303,9 @@ def __label_one_0(data, plugin_cls: Type[Plugin]):
 
         if is_project_enabled(project_id):
             logging.info(
-                # Bug: the below resource-name is INCORRECT in case of CreateSubscription, where the topic name is returned but it is only a log line
+                # Bug: the below resource-name is INCORRECT in case of CreateSubscription,
+                # where the topic name is returned instead.
+                # However, the following line is only for logging, so no damage.
                 "Will label_one(): %s ",
                 data["protoPayload"]["resourceName"],
             )
@@ -330,7 +330,7 @@ def __label_one_0(data, plugin_cls: Type[Plugin]):
 
 def __extract_pubsub_content() -> Dict:
     """Take the value at the relevant key in the logging message from PubSub,
-    Base64-decode, convert to Python object."""
+    Base64-decode, convert to Python dict."""
 
     envelope = flask.request.get_json()
     msg = envelope.get("message", {})
@@ -371,7 +371,7 @@ def do_label():
             plugin = PluginHolder.get_plugin_instance_by_name(plugin_class_name)
             if not plugin:
                 logging.info(
-                    "(OK if plugin is disabled.) No plugins found for %s. Enabled plugins are %s",
+                    "No enabled plugins found for %s. Enabled plugins are %s",
                     plugin_class_name,
                     config_utils.enabled_plugins(),
                 )
@@ -384,13 +384,15 @@ def do_label():
                         project_id,
                     )
                     plugin.label_all(project_id)
-                logging.info("OK on do_label %s %s", plugin_class_name, project_id)
-            # All errors are actually caught before this point, since most errors are unrecoverable.
-            # However, Subscription gets "InternalServerError"" "InactiveRpcError" on occasion
-            #  so retry could be relevant. B
+                logging.info(
+                    "Returning OK on do_label %s %s", plugin_class_name, project_id
+                )
 
             return "OK", 200
         except Exception:
+            # All errors are actually caught, logged (and ignored in a loop, or else thrown)  *before* this point
+            # However, Subscription gets "InternalServerError"" "InactiveRpcError" on occasion
+            #  so retry could be relevant.
             logging.exception("Error on do_label %s %s", plugin_class_name, project_id)
             return "Error", 500
 

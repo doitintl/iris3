@@ -118,8 +118,10 @@ class Cloudsql(Plugin):
         except errors.HttpError as e:
             if "PENDING_CREATE" == gcp_object.get("state"):
                 logging.exception(
-                    "CloudSQL cannot accept labels until it is fully initialized, which is why"
-                    "we do not label it on-creation in the usual way",
+                    "CloudSQL cannot accept labels until it is fully initialized, and that occurs long after"
+                    "Iris receives the notification. This is why"
+                    "we do not label it on-creation in the usual way, but "
+                    "rather in a scheduled job.",
                 )
 
             raise e

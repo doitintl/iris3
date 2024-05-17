@@ -16,7 +16,7 @@ if __name__ == "__main__":
         test = ManyTypeIntegTest()
     elif clsname_base == "GCE":
         test = GCEIntegTest()
-    elif clsname_base == "GCE":
+    elif clsname_base == "PubSub":
         test = PubSubIntegTest()
     else:
         raise Exception("No class " + clsname_base + " known")

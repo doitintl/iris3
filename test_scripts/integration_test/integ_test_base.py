@@ -20,7 +20,8 @@ from util.utils import (
     random_hex_str,
     run_command,
     log_time,
-    set_log_levels, wait_for_user_input,
+    set_log_levels,
+    wait_for_user_input,
 )
 
 
@@ -97,7 +98,10 @@ class BaseIntegTest(ABC):
                 )
 
             len_needed_labels_not_found = len(needed_label_not_found)
-            if len_needed_labels_not_found > 0 or len_needed_labels_not_found + len(needed_label_found) == 0:
+            if (
+                len_needed_labels_not_found > 0
+                or len_needed_labels_not_found + len(needed_label_found) == 0
+            ):
                 print(
                     len(needed_label_found),
                     "labels found;",
@@ -112,10 +116,10 @@ class BaseIntegTest(ABC):
 
     @staticmethod
     def __extract_labels_from_result_for_gsutil(
-            cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
+        cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
     ):
         if "has no label configuration" in cmd_output:
-            label_val=None
+            label_val = None
         else:
             try:
 
@@ -130,7 +134,6 @@ class BaseIntegTest(ABC):
                 print("Exception", e, 'for output"', cmd_output, '"')
                 label_val = None
 
-
         if label_val:
             needed_label_found.append(cmd)
         else:
@@ -138,7 +141,7 @@ class BaseIntegTest(ABC):
 
     @staticmethod
     def __extract_labels_from_result_non_gutil(
-            cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
+        cmd, cmd_output, run_id, needed_label_found, needed_label_not_found
     ):
         j = json.loads(cmd_output)
         labels = j.get("labels", {})
@@ -197,7 +200,7 @@ class BaseIntegTest(ABC):
 
     @classmethod
     def __run_command_or_commands_catch_exc(
-            cls, command_or_commands: Union[str, List[str]]
+        cls, command_or_commands: Union[str, List[str]]
     ):
         time.sleep(random.randint(0, 3))  # Avoid thundering herd
         if isinstance(command_or_commands, str):
@@ -384,8 +387,8 @@ class BaseIntegTest(ABC):
             fa.write(f"{len(labels_not_found)}\n"),
 
         with open(
-                f"./testresults/testresult-{self.__test_start.replace(':', '').replace(' ', 'T')}.txt",
-                "w",
+            f"./testresults/testresult-{self.__test_start.replace(':', '').replace(' ', 'T')}.txt",
+            "w",
         ) as f:
             f.write("Start time: " + self.__test_start + "\n")
             f.write("Iris prefix: " + iris_prefix() + "\n")
@@ -452,7 +455,7 @@ class BaseIntegTest(ABC):
 
     @classmethod
     def fill_in_config_template(
-            cls, run_id, deployment_project, test_project, pubsub_test_token
+        cls, run_id, deployment_project, test_project, pubsub_test_token
     ):
         with open("config.yaml.test.template") as template_file:
             filled_template = template_file.read()
@@ -521,19 +524,19 @@ class BaseIntegTest(ABC):
 
     @abstractmethod
     def _resource_deletion_commands(
-            self, gce_zone, resources_project, run_id
+        self, gce_zone, resources_project, run_id
     ) -> List[Union[List[str], str]]:
 
         pass
 
     @abstractmethod
     def _resource_creation_commands(
-            self, gce_zone, run_id, test_project
+        self, gce_zone, run_id, test_project
     ) -> List[Union[List[str], str]]:
         pass
 
     @abstractmethod
     def _resource_description_commands(
-            self, gce_zone, run_id, test_project
+        self, gce_zone, run_id, test_project
     ) -> List[str]:
         pass

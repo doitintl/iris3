@@ -1,6 +1,6 @@
-# Iris: Dev and Testing
- 
-# For the main documentation
+# Iris: How to develop and test  
+
+## For the main documentation
 See [README](./README.md).
  
 ## Development tools
@@ -14,7 +14,7 @@ See [README](./README.md).
           use `export FLASK_ENV=development;export FLASK_RUN_PORT=8000;export FLASK_DEBUG=1;FLASK_APP=main.py python -m flask run`
         * In an interactive development environment, run `main.py`, first setting these environment variables.
 * For hands-on debugging
-    * Use `test_do_label` and `test_label_one` and `test_schedule` to trigger against your localhost dev-server; this should   label actual Cloud resources that you have pre-deployed.
+    * Use `test_do_label` and `test_label_one` and `test_schedule` to trigger against your localhost dev-server; this will label actual Cloud resources that you have pre-deployed.
         * See the `test_...` files for instructions.
 
 ## Adding new kinds of labels

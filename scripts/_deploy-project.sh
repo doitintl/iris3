@@ -14,12 +14,12 @@ set -u
 set -e
 
 SCHEDULELABELING_TOPIC=iris_schedulelabeling_topic
-LABEL_ALL_TOPIC=iris_label_all_topic
+LABEL_ALL_TYPES_TOPIC=iris_label_all_types_topic
 DEADLETTER_TOPIC=iris_deadletter_topic
 DEADLETTER_SUB=iris_deadletter
 DO_LABEL_SUBSCRIPTION=do_label
 LABEL_ONE_SUBSCRIPTION=label_one
-LABEL_ALL_SUBSCRIPTION=label_all
+LABEL_ALL_TYPES_SUBSCRIPTION=label_all_types
 
 ACK_DEADLINE=60
 MAX_DELIVERY_ATTEMPTS=10
@@ -32,13 +32,15 @@ if [[ ! -f "config-test.yaml" ]] && [[ ! -f "config.yaml" ]]; then
   exit 1
 fi
 
-#Next line duplicate of our Python func gae_url_with_multiregion_abbrev
 appengineHostname=$(gcloud app describe --project $PROJECT_ID | grep defaultHostname | cut -d":" -f2 | awk '{$1=$1};1')
 if [[ -z "$appengineHostname" ]]; then
   echo "App Engine is not enabled in $PROJECT_ID.
   As a pre-req for this, as for all App Engine services, please
   (1) Create the app with  \"gcloud app create [--region=REGION]\",
-  (2) and then deploy a simple \"Hello World\" default-service."
+  (2) and then deploy a simple \"Hello World\" default-service.
+  You can see an example in create_project.sh
+  (not a runnable part of the installation) for initalizing App Engine
+   then creating a trivial default App Engine service."
   exit 1
 fi
 
@@ -58,7 +60,7 @@ gae_svc=$(grep "service:" app.yaml | awk '{print $2}')
 
 LABEL_ONE_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/label_one"
 DO_LABEL_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/do_label"
-LABEL_ALL_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/label_all"
+LABEL_ALL_TYPES_SUBSCRIPTION_ENDPOINT="https://${gae_svc}-dot-${appengineHostname}/label_all_types"
 
 # The following code to enable service is only needed on first deployment, and so slows things
 # down unnecessarily otherwise. But most users do not install Iris repeatedly.
@@ -216,13 +218,13 @@ else
 
 fi
 
-gcloud pubsub topics describe "$LABEL_ALL_TOPIC" --project="$PROJECT_ID" &>/dev/null ||
-  gcloud pubsub topics create $LABEL_ALL_TOPIC --project="$PROJECT_ID" --quiet >/dev/null
+gcloud pubsub topics describe "$LABEL_ALL_TYPES_TOPIC" --project="$PROJECT_ID" &>/dev/null ||
+  gcloud pubsub topics create $LABEL_ALL_TYPES_TOPIC --project="$PROJECT_ID" --quiet >/dev/null
 
-if gcloud pubsub subscriptions describe "$LABEL_ALL_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null; then
-  gcloud pubsub subscriptions update "$LABEL_ALL_SUBSCRIPTION" \
+if gcloud pubsub subscriptions describe "$LABEL_ALL_TYPES_SUBSCRIPTION" --project="$PROJECT_ID" &>/dev/null; then
+  gcloud pubsub subscriptions update "$LABEL_ALL_TYPES_SUBSCRIPTION" \
     --project="$PROJECT_ID" \
-    --push-endpoint "$LABEL_ALL_SUBSCRIPTION_ENDPOINT" \
+    --push-endpoint "$LABEL_ALL_TYPES_SUBSCRIPTION_ENDPOINT" \
     --push-auth-service-account $MSGSENDER_SERVICE_ACCOUNT \
     --ack-deadline=$ACK_DEADLINE \
     --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
@@ -231,9 +233,9 @@ if gcloud pubsub subscriptions describe "$LABEL_ALL_SUBSCRIPTION" --project="$PR
     --max-retry-delay=$MAX_RETRY \
     --quiet >/dev/null
 else
-  gcloud pubsub subscriptions create "$LABEL_ALL_SUBSCRIPTION" \
-    --topic "$LABEL_ALL_TOPIC" --project="$PROJECT_ID" \
-    --push-endpoint "$LABEL_ALL_SUBSCRIPTION_ENDPOINT" \
+  gcloud pubsub subscriptions create "$LABEL_ALL_TYPES_SUBSCRIPTION" \
+    --topic "$LABEL_ALL_TYPES_TOPIC" --project="$PROJECT_ID" \
+    --push-endpoint "$LABEL_ALL_TYPES_SUBSCRIPTION_ENDPOINT" \
     --push-auth-service-account $MSGSENDER_SERVICE_ACCOUNT \
     --ack-deadline=$ACK_DEADLINE \
     --max-delivery-attempts=$MAX_DELIVERY_ATTEMPTS \
@@ -251,7 +253,7 @@ if [[ "$LABEL_ON_CREATION_EVENT" == "true" ]]; then
 
 fi
 
-gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_SUBSCRIPTION \
+gcloud pubsub subscriptions add-iam-policy-binding $LABEL_ALL_TYPES_SUBSCRIPTION \
   --member="serviceAccount:$PUBSUB_SERVICE_ACCOUNT" \
   --role="roles/pubsub.subscriber" --project $PROJECT_ID >/dev/null
 
