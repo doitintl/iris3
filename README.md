@@ -88,6 +88,7 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 * You can deploy Iris in any project within your Google Cloud organization, but we recommend using a
   [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
 
+
 ### Needed roles for deployment
 #### Organization-level roles
 
@@ -105,7 +106,7 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 
 * Fine-granted "predefined roles" are not possible because deploying Cloud Scheduler cron requires at least Editor or Owner, per GCP docs.
 
-### App Engine Defaults
+ 
 
 ## Deployment
 
@@ -119,7 +120,7 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 * Set up the configuration
     * Copy `config.yaml.original` to `config.yaml`.
     * Optionally configure by editing the config file. ([See more documentation below](#configuration).)
-
+* As always with App Engine, a default service must exist before any other exists. So if you are working with a new project, create a simple Hello World App Engine service to fulfil that App Engine requirement. 
 * Now, run `./deploy.sh <PROJECT_ID> `.
   * For documentation on usage of command-line options, run `deploy.sh -h` 
  
