@@ -24,5 +24,5 @@ See [README](./README.md).
     * A dead-letter subscription. This is a pull subscription. By default, it just accumulates the messages. You can use it to see statistics, or you can pull messages from it.
 
 # Development and Testing
-Please see [HACKING](./HACKING.md)
+Please see [HACKING](./HACKING.md).
  

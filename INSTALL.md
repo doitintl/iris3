@@ -5,6 +5,7 @@
 ## Before deploying
 
 ### In which Project 
+### In which Project 
 
 * You can deploy Iris in any one project within your Google Cloud organization, but we recommend using a [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project) just for this.
 * The script will deploy Iris (an App Engine service) into this project. That does not mean that Iris is focused on labeling this project. (See [README](./README.md).)
@@ -34,7 +35,7 @@
     * `envsubst`
     * `jq`
     * The command-line `pip3`
-    * `gcloud`. Make sure it is logged-in using an account with the [above-mentioned](#before-deploying) roles.
+    * `gcloud`. Make sure it is logged-in using an account with the above-mentioned roles.
 * Set up the configuration
     * Copy `config.yaml.original` to `config.yaml`.
     * Optionally configure by editing the config file. ([See more documentation below](#configuration).)
@@ -45,7 +46,7 @@
   * For documentation on usage of command-line options, run `deploy.sh -h` 
 * Choosing when the labeling occurs
   * By default, labeling occurs on resource-creation, and also using Cloud Scheduler ("cron"). 
-    * Each of these works on certain resource types and not others (see [Supported Google Cloud resources](README#Supported Google Cloud resources) in the main README), depending on configuration (`config.yaml`).
+    * Each of these works on certain resource types and not others (see the list of supported resources in the main [README](README.md)), depending on configuration (`config.yaml`).
   * Use `-c` switch on `deploy.sh` to label using Cloud Scheduler only.
   * Use `-e` switch on `deploy.sh` to label on-event only.
   * If you use **both** `-c` and `-e` or **neither**, then both types of labeling occur.
@@ -67,8 +68,8 @@
 * Use `uninstall.sh -h` for help.
 
 # Architecture
-Please see [README_architecture](README_architecture.md)
+Please see [README_architecture](README_architecture.md).
 
 # Development and Testing
-Please see [HACKING](./HACKING.md)
+Please see [HACKING](./HACKING.md).
  

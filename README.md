@@ -37,7 +37,7 @@ issues for features and fixes you might do.
 
 ## On resource creation
 
-Iris labels newly-created resources by listening to Google Cloud Operations   Logs. You can disable this: See ["Deploy"](#deployment) or run `deploy.sh -h`.
+Iris labels newly-created resources by listening to Google Cloud Operations   Logs. You can disable this: See [INSTALL](INSTALL.md) or run `deploy.sh -h`.
 
 ## On schedule
 
@@ -79,11 +79,10 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 
  
 # Installing
-Please see [INSTALL](./INSTALL.md)
+Please see [INSTALL](./INSTALL.md).
 # Architecture
-Please see [README_architecture](./README_architecture.md)
+Please see [README_architecture](./README_architecture.md).
 
 # Development and Testing
-
-Please see [HACKING](./HACKING.md)
+Please see [HACKING](./HACKING.md).
  

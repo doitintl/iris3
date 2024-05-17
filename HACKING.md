@@ -6,7 +6,7 @@ See [README](./README.md).
 ## Development tools
 
 * Prerequisites for developing and building.
-    * See [Installation](#installation)
+    * See [INSTALL](INSTALL.md).
     * Also, for development, set up a virtual env and run `pip3 install -r requirements.txt`
 * Run the server locally
     * Run `main.py` as an ordinary Flask application as follows:
