@@ -1,14 +1,12 @@
 # How to Install
 
-(For the main documentation, see [README](./README.md).)
+For the main documentation, See [README](./README.md).
 
 ## Before deploying
-
-### In which Project 
-### In which Project 
+### Selecting a  Project 
 
 * You can deploy Iris in any one project within your Google Cloud organization, but we recommend using a [new project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project) just for this.
-* The script will deploy Iris (an App Engine service) into this project. That does not mean that Iris is focused on labeling this project. (See [README](./README.md).)
+* The script will deploy Iris (an App Engine service) into this project. That does not mean that Iris is focused on labeling this project. Rather, Iris is always focused on labeling across an organization (though you can filter that to specific projects). See [README](./README.md).
 
 ### Needed roles for deployment
 #### Organization-level roles
@@ -55,10 +53,10 @@
 
 # Configuration
 
-* Iris' config file is `config*.yaml`.
+* Iris' config file is `config.yaml`.
     * All values are optional.
     * `config.yaml.orig` has detailed documentation of the fields.
-* Alternatively, you can have `config-test.yaml`. It takes priority if both it and `config-test.yaml` are present.
+* Alternatively, you can have `config-test.yaml`. It takes priority if both it and `config.yaml` are present.
 * `app.yaml` lets you configure App Engine, for example, to set a maximum number of instances. See App Engine documentation.
 * Editing `cron_full.yaml` lets you optionally change the timing for the Cloud Scheduler scheduled labelings, e.g. to do it more frequently. See Google App Engine documentation.
 
@@ -68,7 +66,7 @@
 * Use `uninstall.sh -h` for help.
 
 # Architecture
-Please see [README_architecture](README_architecture.md).
+Please see [ARCHITECTURE](./ARCHITECTURE.md).
 
 # Development and Testing
 Please see [HACKING](./HACKING.md).

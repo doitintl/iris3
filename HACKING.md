@@ -1,7 +1,6 @@
-# Iris: How to develop and test  
+# How to develop and test in this codebase
 
-## For the main documentation
-See [README](./README.md).
+For the main documentation, see [README](./README.md).
  
 ## Development tools
 

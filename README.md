@@ -1,6 +1,7 @@
 # Iris
 
 In Greek mythology, Iris(Ἶρις) is the personification of the rainbow and messenger of the gods. She was the handmaiden to Hera.
+
 ![Iris](./iris.jpg "Iris") 
 # Blog post
 
@@ -14,15 +15,18 @@ Iris automatically assigns labels to Google Cloud Platform resources for easier 
 Resources of all supported types in all or some of the projects in the GCP organization will get automatically-generated labels with keys like `iris_zone` (the prefix is configurable), and a value copied from the resource. For example, a Google Compute Engine instance would get labels like
 `[iris_name:nginx]`, `[iris_region:us-central1]` and `[iris_zone:us-central1-a]`. This behavior can be configured in various ways; see below.
 
-## Note: Organization focus
+##  Organization focus
 
-Note that Iris is designed to serve the organization. 
-* It is designed to label all projects in the organization (though you can configure that).
-* The organization focus was chosen because labels are used for billing analysis which is typically done on the organization level (even though projects can in fact be associated arbitrarily with billing accounts). 
+Note that Iris is designed to serve the organization.
+* Iris is designed to label all projects in the organization (though you can filter that down).
+* Iris does not have a project-focused design, where you launch it in a project, and it labels just that project. 
+* The organization focus was chosen because labels are used for billing analysis, which is typically done on the organization level. (But this is not mandatory: Projects can be associated arbitrarily with any billing accounts). 
 
 ## Iris doesn't add new information
 
-Iris does not *add* information, only *copy* values that already exist. For example, it can label a VM instance with its zone; but it cannot add a "business unit" label because it does not know a resource's business unit. For that, you should label all resources when creating them, e.g., in your Terraform scripts. (Indeed, iris can be made extraneous in this way.)
+Iris does not *add* information, only *copy* values that already exist. For example, it can label a VM instance with its zone; but it cannot add a "business unit" label because it does not know a resource's business unit. 
+
+For that, you should label all resources when creating them, e.g., in your Terraform scripts. In fact, I recommend doing that (and making Iris extraneous.)
 
 ## Labeling existing resources when you deploy Iris
 
@@ -30,27 +34,26 @@ If you want to label the resources -- virtual machines, PubSub topics etc. -- th
 
 # Open source
 
-Iris is open-source;it is not an official DoiT product. Feel free to send Pull Requests with  new functionality and add new types of labels. See the `TODO.md` file and Github
-issues for features and fixes you might do.
+Iris is open-source; it is not an official DoiT product. Feel free to send Pull Requests with  new functionality and add new types of labels. See the `TODO.md` file and Github issues for features and fixes you might do.
 
 # When Iris adds labels
 
 ## On resource creation
 
-Iris labels newly-created resources by listening to Google Cloud Operations   Logs. You can disable this: See [INSTALL](INSTALL.md) or run `deploy.sh -h`.
+Iris labels most types of newly-created resources by listening to Google Cloud Operations Logs. You can disable this: See [INSTALL](INSTALL.md) or run `deploy.sh -h`.  
 
 ## On schedule
 
-Iris labels resources periodically on a Cloud Scheduler "cron" job. By default, only some types of resources are labeled on  these Cloud Scheduler runs, while most types are not labeled on schedule,  , to save the costs of relabeling with the same label every day.
+Iris labels a few types of resources periodically on a Cloud Scheduler "cron" job. By default, Iris does not label all types of resources  on these cron runs, to save the costs of relabeling -- with the same label -- every day.
 
-You can change that in configuration. Set `label_all_on_cron` to `True` in the configuration file.
+You can have Iris relabel everything on every cron run, See `label_all_on_cron` to `True` in the configuration file.
 
-You can also  disable the scheduled labeling. See Deployment below or run `./deploy.sh -h`
+You can also disable the scheduled labeling entirely. See Deployment below or run `./deploy.sh -h`
 
 ## Labeling existing resources
 
-* When you first use Iris, you may want to label all existing resources. Iris does not do this by default.
-* Publish a PubSub message (the content doesn't matter) to `iris_label_all_types_topic`, for example with `gcloud pubsub topics publish iris_label_all_types_topic --message=does_not_matter --project $PROJECT_ID` and a full labeling will be triggered.
+* When you first use Iris, you may want to label all existing resources. Iris *does not* do this by default.
+* To do this, publish a PubSub message (the content doesn't matter) to `iris_label_all_types_topic`, and a full labeling will be triggered. For example, run with `gcloud pubsub topics publish iris_label_all_types_topic --message=does_not_matter --project $PROJECT_ID` where `$PROJECT_ID` is where Iris is deployed.
 
 # Supported Google Cloud resources
 
@@ -63,7 +66,7 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
     * Including preemptible instances and instances created by Managed Instance Groups.
     * Including instances used as GKE Nodes
 * Compute Engine Disks (Labels name, zone, region)
-    * Disks are labeld on creation and on schedule.
+    * Disks are labeled on creation and on schedule.
     * But disks created along with an Instance are not labeled on creation. They are labeled with the Cloud Scheduler cron job.
     * The label indicating whether a disk is attached will change, if the state changed, on the scheduled labeling.
 * Compute Engine Snapshots (Labels name, zone, region)
@@ -81,8 +84,7 @@ names start `_gcp_`. The part of the function name after `_gcp_` is used for the
 # Installing
 Please see [INSTALL](./INSTALL.md).
 # Architecture
-Please see [README_architecture](./README_architecture.md).
-
+Please see [ARCHITECTURE](./ARCHITECTURE.md).
 # Development and Testing
 Please see [HACKING](./HACKING.md).
  
