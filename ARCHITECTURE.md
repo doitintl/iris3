@@ -14,9 +14,6 @@ For the main documentation, See [README](./README.md).
     * The Log Sink is filtered to include only supported resource types.
     * If you edit the configuration file so that only specific projects are to be labeled, the Log Sink only captures these.
 * PubSub topics:
-*  
-
-iris_deadletter_topic	 
     * `iris_logs_topic`  receives the resource-creation logs from the Log Sink
     * `iris_schedulelabeling_topic`  receives messages sent by the `/schedule` endpoint in `main.py` (after the `/schedule` endpoint was triggered by the Cloud Scheduler). Each message goes to endpoint `/do_label` to trigger the labeling of a given resource type in a given project.
     * Messages to `iris_label_all_types_topic` triggers the labeling of all resources regardless of type.
