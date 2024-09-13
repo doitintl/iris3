@@ -1,4 +1,4 @@
-pyyaml==6.0
+pyyaml==6.0.1
 Flask==2.2.3
 Werkzeug==2.2.2
 google-api-python-client==2.84.0
